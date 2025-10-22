@@ -1466,9 +1466,35 @@ class MainWindow(QMainWindow):
         #tb.addAction(act_export_html)
 
 
-        # --- table ---
-        self.table = QTableWidget(self)
-        self.table.setColumnCount(4)
+        # --- central widget + filter strip + table ---
+        central = QWidget(self)
+        central_layout = QVBoxLayout(central)
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(6)
+
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(8, 6, 8, 0)
+        filter_row.setSpacing(8)
+        filter_label = QLabel("Filter")
+        filter_label.setObjectName("SifuFilterLabel")
+        filter_row.addWidget(filter_label)
+
+        self.sifu_filter = QLineEdit()
+        self.sifu_filter.setObjectName("SifuFilterEdit")
+        self.sifu_filter.setPlaceholderText("Filter SIFUs (name, components, SIL…)")
+        self.sifu_filter.setClearButtonEnabled(True)
+        self.sifu_filter.setToolTip("Type to filter the SIFU table by name, demand mode or contained components")
+        filter_row.addWidget(self.sifu_filter, 1)
+
+        self.sifu_filter_info = QLabel("All SIFUs")
+        self.sifu_filter_info.setObjectName("SifuFilterInfo")
+        self.sifu_filter_info.setProperty("filtered", False)
+        self.sifu_filter_info.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        filter_row.addWidget(self.sifu_filter_info)
+
+        central_layout.addLayout(filter_row)
+
+        self.table = QTableWidget(0, 4, central)
         self.table.setHorizontalHeaderLabels(["Sensor / Input", "Logic", "Output / Actuator", "Result"])
 
         # Header-Resize-Modi: Result (3) kompakt, 0..2 interaktiv
@@ -1481,7 +1507,8 @@ class MainWindow(QMainWindow):
         self.table.setHorizontalScrollMode(QAbstractItemView.ScrollPerPixel)
         # Ensure the table occupies the central area (prevents docks from filling the whole window)
         self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setCentralWidget(self.table)
+        central_layout.addWidget(self.table, 1)
+        self.setCentralWidget(central)
 
         self.table.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._open_table_ctx_menu)
@@ -1489,6 +1516,22 @@ class MainWindow(QMainWindow):
         vh = self.table.verticalHeader()
         vh.setContextMenuPolicy(Qt.CustomContextMenu)
         vh.customContextMenuRequested.connect(self._open_header_ctx_menu)
+
+        # Filter helper: delayed updates to keep UI responsive while typing
+        self._filter_timer = QtCore.QTimer(self)
+        self._filter_timer.setSingleShot(True)
+        self._filter_timer.setInterval(120)
+        self._filter_timer.timeout.connect(self._reapply_sifu_filter)
+        self.sifu_filter.textChanged.connect(self._schedule_filter_update)
+        self.sifu_filter.returnPressed.connect(self._reapply_sifu_filter)
+
+        self._filter_focus_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
+        self._filter_focus_shortcut.setContext(Qt.ApplicationShortcut)
+        self._filter_focus_shortcut.activated.connect(self._focus_sifu_filter)
+
+        self._filter_clear_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self.sifu_filter)
+        self._filter_clear_shortcut.setContext(Qt.WidgetShortcut)
+        self._filter_clear_shortcut.activated.connect(self.sifu_filter.clear)
 
         # --- docks: libraries ---
         self.logic_lib  = ComponentLibraryDock("Logic Library",  "logic",   os.path.join(os.getcwd(), "logic_library.yaml"),    self)
@@ -1659,12 +1702,22 @@ class MainWindow(QMainWindow):
                     self.table.setColumnWidth(i, int(w))
                 except Exception:
                     pass
+        filter_text = self.settings.value("ui/sifu_filter", "", type=str)
+        if isinstance(filter_text, str):
+            block = self.sifu_filter.blockSignals(True)
+            self.sifu_filter.setText(filter_text)
+            self.sifu_filter.blockSignals(block)
+            self._apply_sifu_filter(filter_text)
+        else:
+            self._apply_sifu_filter("")
 
     def closeEvent(self, e):
         self.settings.setValue("win/geo", self.saveGeometry())
         self.settings.setValue("win/state", self.saveState())
         widths = [self.table.columnWidth(i) for i in range(self.table.columnCount())]
         self.settings.setValue("table/col_widths", widths)
+        if hasattr(self, "sifu_filter"):
+            self.settings.setValue("ui/sifu_filter", self.sifu_filter.text())
         super().closeEvent(e)
 
         # ----- QSS theme (Light) -----
@@ -1710,6 +1763,25 @@ class MainWindow(QMainWindow):
         }}
         QLineEdit:focus, QDoubleSpinBox:focus, QSpinBox:focus, QComboBox:focus {{
             border-color:{primary};
+        }}
+        QLineEdit#SifuFilterEdit {{
+            padding:6px 8px;
+        }}
+        QLineEdit#SifuFilterEdit:focus {{
+            border-color:{primary};
+            box-shadow:0 0 0 1px rgba(59,130,246,0.15);
+        }}
+        QLabel#SifuFilterLabel {{
+            color:#4b5563;
+            font-weight:600;
+        }}
+        QLabel#SifuFilterInfo {{
+            color:#6b7280;
+            min-width:120px;
+        }}
+        QLabel#SifuFilterInfo[filtered="true"] {{
+            color:{primary};
+            font-weight:600;
         }}
 
         /* Dock Header */
@@ -2769,10 +2841,95 @@ class MainWindow(QMainWindow):
         self._update_row_height(row_idx)
         # refresh 1oo2 tooltips
         self._refresh_group_tooltips_in_row(row_idx)
+        self._schedule_filter_update()
 
     def recalculate_all(self):
         for row_idx in range(self.table.rowCount()):
             self.recalculate_row(row_idx)
+        self._reapply_sifu_filter()
+
+    # ----- SIFU filter helpers -----
+    def _schedule_filter_update(self, _text: str = "") -> None:
+        timer = getattr(self, "_filter_timer", None)
+        if timer is None:
+            return
+        if timer.isActive():
+            timer.stop()
+        timer.start()
+
+    def _reapply_sifu_filter(self) -> None:
+        if not hasattr(self, "sifu_filter"):
+            return
+        self._apply_sifu_filter(self.sifu_filter.text())
+
+    def _apply_sifu_filter(self, text: str) -> None:
+        if not hasattr(self, "table"):
+            return
+        tokens = [tok.casefold() for tok in re.split(r"\s+", text.strip()) if tok]
+        total = self.table.rowCount()
+        matches = 0
+        for row_idx in range(total):
+            visible = True
+            if tokens:
+                haystack = self._row_filter_haystack(row_idx)
+                visible = all(tok in haystack for tok in tokens)
+            self.table.setRowHidden(row_idx, not visible)
+            if visible:
+                matches += 1
+
+        if hasattr(self, "sifu_filter_info"):
+            if total == 0:
+                status = "No SIFUs"
+            elif tokens:
+                suffix = "match" if matches == 1 else "matches"
+                status = f"{matches}/{total} {suffix}"
+            else:
+                suffix = "SIFU" if total == 1 else "SIFUs"
+                status = f"{total} {suffix}"
+            self.sifu_filter_info.setText(status)
+            self.sifu_filter_info.setProperty("filtered", bool(tokens))
+            self.sifu_filter_info.style().unpolish(self.sifu_filter_info)
+            self.sifu_filter_info.style().polish(self.sifu_filter_info)
+
+    def _row_filter_haystack(self, row_idx: int) -> str:
+        parts: List[str] = []
+        if 0 <= row_idx < len(self.rows_meta):
+            meta = self.rows_meta[row_idx]
+            for key in ("sifu_name", "sil_required", "demand_mode_required", "demand_mode_override"):
+                val = meta.get(key)
+                if val:
+                    parts.append(str(val))
+        parts.append(str(row_idx + 1))
+        widgets = self.sifu_widgets.get(row_idx)
+        if widgets:
+            lists = (widgets.in_list, widgets.logic_list, widgets.out_list)
+            for lw in lists:
+                for i in range(lw.count()):
+                    item = lw.item(i)
+                    if not item:
+                        continue
+                    text = item.text()
+                    if text:
+                        parts.append(str(text))
+                    data = item.data(Qt.UserRole) or {}
+                    for key in ("code", "name", "pdm_code", "syscap", "sys_cap", "architecture"):
+                        val = data.get(key)
+                        if val:
+                            parts.append(str(val))
+                    members = data.get("members")
+                    if isinstance(members, list):
+                        for member in members:
+                            if isinstance(member, dict):
+                                for key in ("code", "name"):
+                                    val = member.get(key)
+                                    if val:
+                                        parts.append(str(val))
+        return " ".join(parts).casefold()
+
+    def _focus_sifu_filter(self) -> None:
+        if hasattr(self, "sifu_filter"):
+            self.sifu_filter.setFocus(Qt.OtherFocusReason)
+            self.sifu_filter.selectAll()
 
     def _row_preferred_height(self, widgets: SifuRowWidgets) -> int:
         def list_height(lw: QListWidget) -> int:
@@ -2974,6 +3131,7 @@ class MainWindow(QMainWindow):
             if widgets and not meta.get("demand_mode_override"):
                 widgets.result.combo.setCurrentText(meta["demand_mode_required"])
             self.recalculate_row(row_idx)
+            self._reapply_sifu_filter()
             self.statusBar().showMessage("SIFU updated", 1500)
 
     def _append_sifu_row(self, meta: RowMeta):
@@ -2999,6 +3157,7 @@ class MainWindow(QMainWindow):
 
         self._update_row_height(row_idx)
         self.recalculate_row(row_idx)
+        self._reapply_sifu_filter()
 
     # ----- Add Component dialog -----
     def open_add_component_dialog(self, pref_kind: Optional[str] = None, insert_into_row: bool = False):
@@ -3182,7 +3341,8 @@ class EnhancedMainWindow(MainWindow):
                 'Save: Ctrl+S\n'
                 'Export HTML: Ctrl+Shift+E\n'
                 'Add SIFU: Ctrl+N | Edit: Ctrl+E | Duplicate: Ctrl+D | Remove: Ctrl+Del\n'
-                'Add Component: Ctrl+Alt+N')
+                'Add Component: Ctrl+Alt+N\n'
+                'Filter SIFUs: Ctrl+F')
         self.act_shortcuts.triggered.connect(_show_shortcuts)
         m_help.addAction(self.act_shortcuts)
 
