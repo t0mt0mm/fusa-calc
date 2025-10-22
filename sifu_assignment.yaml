@@ -1,0 +1,5181 @@
+sifus:
+- sifu_name: SIFU 002
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: FTZ-H1.IN.F.2.04
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.SL.F.1.02
+    pfd_avg: 0.00097
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0267
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  pfd_sum: 0.0017601876602739725
+  pfh_sum: 4.015013698630137e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 003a
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: FTZ-H1.IN.F.2.04
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.SL.F.1.02
+    pfd_avg: 0.00097
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0267
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0034462942611872146
+  pfh_sum: 7.859890410958903e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 003b
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: FTZ-H1.IN.F.2.02
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.IN.F.2.04
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.SL.F.1.02
+    pfd_avg: 0.00097
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0267
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.003985716178995433
+  pfh_sum: 9.090484018264841e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 003c
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: FTZ-H1.IN.F.2.04
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.IN.F.2.05
+    pfd_avg: 0.00077
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0306
+  - code: FTZ-H1.SL.F.1.02
+    pfd_avg: 0.00097
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0267
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.003985716178995433
+  pfh_sum: 9.090484018264841e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 010
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-H1.IN.P.7.01
+    pfd_avg: 0.00045
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0288
+  - code: PTZ-H1.IN.P.7.02
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.00092984200913242
+  pfh_sum: 2.1210045662100455e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 020a
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: GSZ-FI.FC.O.1.01
+    pfd_avg: 0.00066
+    pfh_avg: 7.0e-08
+    sys_cap: 2
+    pdm_code: 003.020.0169
+  - code: GSZ-FI.S2.O.1.05
+    pfd_avg: 0.00018
+    pfh_avg: 4.6e-08
+    sys_cap: 2
+    pdm_code: 003.020.0129
+  - code: PTZ-F3.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F3.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  - code: PTZ-F4.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F4.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.0035825424986301365
+  pfh_sum: 8.171442922374431e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 020b
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: GSZ-FI.FC.O.1.02
+    pfd_avg: 0.00066
+    pfh_avg: 7.0e-08
+    sys_cap: 2
+    pdm_code: 003.020.0169
+  - code: GSZ-FI.S2.O.1.06
+    pfd_avg: 0.00018
+    pfh_avg: 4.6e-08
+    sys_cap: 2
+    pdm_code: 003.020.0129
+  - code: PTZ-F2.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F2.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  - code: PTZ-F5.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F5.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.0035825424986301365
+  pfh_sum: 8.171442922374431e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 020c
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: GSZ-FI.FC.O.1.03
+    pfd_avg: 0.00066
+    pfh_avg: 7.0e-08
+    sys_cap: 2
+    pdm_code: 003.020.0169
+  - code: GSZ-FI.S2.O.1.07
+    pfd_avg: 0.00018
+    pfh_avg: 4.6e-08
+    sys_cap: 2
+    pdm_code: 003.020.0129
+  - code: PTZ-F1.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F1.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  - code: PTZ-F6.IN.P.2.04
+    pfd_avg: 0.0005
+    pfh_avg: 9.9e-08
+    sys_cap: 2
+    pdm_code: 009.003.0287
+  - code: PTZ-F6.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.0035825424986301365
+  pfh_sum: 8.171442922374431e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 031
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-H1.IN.P.5.03
+    pfd_avg: 0.00028
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0145
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  pfd_sum: 0.0003216580602739726
+  pfh_sum: 7.336803652968036e-08
+  sil_calculated: SIL 3
+  sil_required_met: true
+- sifu_name: SIFU 042
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-H1.SL.P.1.03
+    pfd_avg: 0.00032
+    pfh_avg: 6.0e-08
+    sys_cap: 2
+    pdm_code: 009.003.0231
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002451516178995434
+  pfh_sum: 5.59048401826484e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 050
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-H1.IN.P.5.13
+    pfd_avg: 0.00017
+    pfh_avg: 3.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0300
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: NSZ-SY.RB.SV.4.01
+    pfd_avg: 0.00013
+    pfh_avg: 2.5e-08
+    sys_cap: 2
+    pdm_code: 007.001.0242
+  - code: NSZ-SY.RB.SV.4.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 8.1e-08
+    sys_cap: 2
+    pdm_code: 007.001.0241
+  pfd_sum: 0.00044635916347031965
+  pfh_sum: 1.0179634703196347e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 100a
+  sil_required: SIL 1
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-FI.MS.L.4.01
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005092770973515981
+  pfh_sum: 1.161331506849315e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 100b
+  sil_required: SIL 1
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-FI.MS.L.4.02
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005092770973515981
+  pfh_sum: 1.161331506849315e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 101a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-H1.MS.L.4.01
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: NSZ-SY.IN.SV.4.01
+    pfd_avg: 0.00053
+    pfh_avg: 7.3e-08
+    sys_cap: 2
+    pdm_code: 007.001.0329
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005411158188127854
+  pfh_sum: 1.2339342465753421e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 101b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-H1.MS.L.4.02
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: NSZ-SY.IN.SV.4.01
+    pfd_avg: 0.00053
+    pfh_avg: 7.3e-08
+    sys_cap: 2
+    pdm_code: 007.001.0329
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005411158188127854
+  pfh_sum: 1.2339342465753421e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 101c
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-H1.MS.L.4.03
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: NSZ-SY.IN.SV.4.01
+    pfd_avg: 0.00053
+    pfh_avg: 7.3e-08
+    sys_cap: 2
+    pdm_code: 007.001.0329
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005411158188127854
+  pfh_sum: 1.2339342465753421e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 101d
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-H1.MS.L.4.04
+    pfd_avg: 0.00018
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0027
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: NSZ-SY.IN.SV.4.01
+    pfd_avg: 0.00053
+    pfh_avg: 7.3e-08
+    sys_cap: 2
+    pdm_code: 007.001.0329
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005411158188127854
+  pfh_sum: 1.2339342465753421e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 102
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-SY.IN.P.4.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 111
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: ATZ-SY.FC.G.2.01
+    pfd_avg: 0.00029
+    pfh_avg: 1.0e-08
+    sys_cap: 2
+    pdm_code: 009.003.0312
+  - code: ATZ-SY.RB.G.6.01
+    pfd_avg: 0.00091
+    pfh_avg: 1.6e-08
+    sys_cap: 2
+    pdm_code: 009.000.0132
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.007213039466666667
+  pfh_sum: 1.6448931506849314e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 112
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: ATZ-FI.MS.G.0.01
+    pfd_avg: 0.001
+    pfh_avg: 7.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0221
+  - code: ATZ-FI.MS.G.0.02
+    pfd_avg: 0.001
+    pfh_avg: 7.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0221
+  - code: ATZ-H1.MS.G.0.01
+    pfd_avg: 0.00042
+    pfh_avg: 3.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0223
+  - code: ATZ-H1.MS.G.0.02
+    pfd_avg: 0.001
+    pfh_avg: 7.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0221
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.00876825590502283
+  pfh_sum: 1.999687671232877e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 114
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: FSZ-SY.RB.F.6.01
+    pfd_avg: 0.0
+    pfh_avg: 0.0
+    sys_cap: -1
+    pdm_code: ''
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022273408365296806
+  pfh_sum: 5.079068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 130a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-H1.MS.B.0.01
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 130b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-H1.MS.B.0.02
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 130c
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-H1.MS.B.0.03
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 130d
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-H1.MS.B.0.04
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 131
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: STZ-SY.FC.S.2.01
+    pfd_avg: 0.00088
+    pfh_avg: 1.3e-08
+    sys_cap: 2
+    pdm_code: 009.003.0311
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005583154535159817
+  pfh_sum: 1.2732036529680363e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 140a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-FI.MS.B.0.01
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 140b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: BSZ-FI.MS.B.0.02
+    pfd_avg: 0.00021
+    pfh_avg: 8.8e-08
+    sys_cap: 2
+    pdm_code: 009.003.0160
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005236691543378995
+  pfh_sum: 1.1941643835616438e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 150
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: FTZ-SY.IN.F.0.01
+    pfd_avg: 0.00097
+    pfh_avg: 2.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0307
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002906872343378996
+  pfh_sum: 6.629296803652966e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 160
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PDZ-H1.MS.P.0.01
+    pfd_avg: 0.00025
+    pfh_avg: 8.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0313
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.005230554743378996
+  pfh_sum: 1.1927643835616437e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 170
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: LSZ-H1.IN.L.4.02
+    pfd_avg: 0.00092
+    pfh_avg: 9.2e-08
+    sys_cap: 2
+    pdm_code: 009.003.0219
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0028718449461187217
+  pfh_sum: 6.549388127853879e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 203
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.FC.T.2.03
+    pfd_avg: 2.0e-05
+    pfh_avg: 8.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0261
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: 70K1
+    pfd_avg: 0.00567
+    pfh_avg: 8.9e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 70K2
+    pfd_avg: 0.00567
+    pfh_avg: 8.9e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.007112211167123288
+  pfh_sum: 1.6218438356164383e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 303
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.FC.T.1.01
+    pfd_avg: 0.00014
+    pfh_avg: 2.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0263
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0023254175488584476
+  pfh_sum: 5.302812785388128e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 309
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.RB.T.6.09
+    pfd_avg: 0.00045
+    pfh_avg: 1.1e-08
+    sys_cap: 2
+    pdm_code: 009.003.0257
+  - code: TTZ-H1.RB.T.6.10
+    pfd_avg: 0.00016
+    pfh_avg: 4.1e-08
+    sys_cap: 2
+    pdm_code: 009.003.0253
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.00166654138630137
+  pfh_sum: 3.800698630136986e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 311
+  sil_required: SIL 1
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.RB.T.6.02
+    pfd_avg: 0.00056
+    pfh_avg: 3.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0258
+  - code: TTZ-H1.RB.T.6.09
+    pfd_avg: 0.00045
+    pfh_avg: 1.1e-08
+    sys_cap: 2
+    pdm_code: 009.003.0257
+  - code: TTZ-H1.RB.T.6.10
+    pfd_avg: 0.00016
+    pfh_avg: 4.1e-08
+    sys_cap: 2
+    pdm_code: 009.003.0253
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.003060698661187215
+  pfh_sum: 6.980223744292237e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 320
+  sil_required: SIL 2
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.RB.T.1.31
+    pfd_avg: 0.00075
+    pfh_avg: 9.4e-08
+    sys_cap: 2
+    pdm_code: 009.003.0262
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.0012462876712328768
+  pfh_sum: 2.842465753424657e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 330
+  sil_required: SIL 1
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.S1.T.1.04
+    pfd_avg: 0.0002
+    pfh_avg: 9.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0255
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0025249756365296806
+  pfh_sum: 5.758068493150684e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 331
+  sil_required: SIL 1
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.S2.T.1.04
+    pfd_avg: 0.0002
+    pfh_avg: 9.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0255
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0025249756365296806
+  pfh_sum: 5.758068493150684e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 340
+  sil_required: SIL 1
+  demand_mode_required: High demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-FI.MS.T.6.08
+    pfd_avg: 0.00014
+    pfh_avg: 2.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0263
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0023254175488584476
+  pfh_sum: 5.302812785388128e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F1.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F2.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351c
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F3.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351d
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F4.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351e
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F5.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 351f
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F6.FC.T.1.02
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F1.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F2.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361c
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F3.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361d
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F4.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361e
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F5.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 361f
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-F6.S2.T.1.01
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.0022457512365296806
+  pfh_sum: 5.121068493150685e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 370
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.SL.T.1.06
+    pfd_avg: 2.0e-05
+    pfh_avg: 6.0e-09
+    sys_cap: 2
+    pdm_code: 009.003.0151
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  pfd_sum: 0.0007392871123287671
+  pfh_sum: 1.685835616438356e-07
+  sil_calculated: SIL 3
+  sil_required_met: true
+- sifu_name: SIFU 401
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors: []
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.0063723819324200915
+  pfh_sum: 1.4531123287671234e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 404
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors: []
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.0063723819324200915
+  pfh_sum: 1.4531123287671234e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 405
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors: []
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.0063723819324200915
+  pfh_sum: 1.4531123287671234e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 406
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors: []
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: 45K6
+    pfd_avg: 0.00234
+    pfh_avg: 5.67e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.0063723819324200915
+  pfh_sum: 1.4531123287671234e-06
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 420
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-H1.LT.P.3.06
+    pfd_avg: 0.00073
+    pfh_avg: 3.6e-08
+    sys_cap: 2
+    pdm_code: 009.003.0088
+  - code: PTZ-H1.SL.P.1.03
+    pfd_avg: 0.00032
+    pfh_avg: 6.0e-08
+    sys_cap: 2
+    pdm_code: 009.003.0231
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002962916178995434
+  pfh_sum: 6.757150684931506e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440a
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F1.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440b
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F2.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440c
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F3.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440d
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F4.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440e
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F5.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 440f
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: PTZ-F6.S2.P.1.01
+    pfd_avg: 0.00056
+    pfh_avg: 7.7e-08
+    sys_cap: 2
+    pdm_code: 009.003.0286
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002619647685844749
+  pfh_sum: 5.974045662100457e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 470
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors:
+  - code: TTZ-H1.RB.T.6.03
+    pfd_avg: 0.00086
+    pfh_avg: 5.1e-08
+    sys_cap: 2
+    pdm_code: 009.003.0291
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  pfd_sum: 0.002829812069406393
+  pfh_sum: 6.453497716894976e-07
+  sil_calculated: SIL 2
+  sil_required_met: true
+- sifu_name: SIFU 500
+  sil_required: SIL 2
+  demand_mode_required: Low demand
+  demand_mode_override: null
+  sensors: []
+  logic:
+  - code: CPU
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-AI 4..20mA
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  - code: F-DQ 4x24VDC/2A
+    pfd_avg: 2.0e-05
+    pfh_avg: 1.0e-09
+    sys_cap: 2
+    pdm_code: ''
+  actuators:
+  - code: YSZ-H1.IN.SV.2.04
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.2.05
+    pfd_avg: 0.00014
+    pfh_avg: 9.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0235
+  - code: YSZ-H1.IN.SV.5.01
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.02
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.03
+    pfd_avg: 0.00013
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0200
+  - code: YSZ-H1.IN.SV.5.11
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.14
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.5.15
+    pfd_avg: 0.00042
+    pfh_avg: 5.0e-08
+    sys_cap: 2
+    pdm_code: 007.001.0227
+  - code: YSZ-H1.IN.SV.5.16
+    pfd_avg: 0.00057
+    pfh_avg: 3.4e-08
+    sys_cap: 2
+    pdm_code: 007.001.0228
+  - code: YSZ-H1.IN.SV.7.01
+    pfd_avg: 0.00038
+    pfh_avg: 6.6e-08
+    sys_cap: 2
+    pdm_code: 007.001.0207
+  - code: 12K3
+    pfd_avg: 0.00456
+    pfh_avg: 7.89e-09
+    sys_cap: 2
+    pdm_code: ''
+  pfd_sum: 0.0049666723433789955
+  pfh_sum: 1.1325643835616439e-06
+  sil_calculated: SIL 2
+  sil_required_met: true

@@ -1,0 +1,522 @@
+components:
+- name: YSZ-H1.IN.SV.2.04
+  pfd_avg: 0.00014
+  pfh_avg: 9.6e-08
+  sys_cap: 2
+  pdm_code: 007.001.0235
+- name: YSZ-H1.IN.SV.2.05
+  pfd_avg: 0.00014
+  pfh_avg: 9.6e-08
+  sys_cap: 2
+  pdm_code: 007.001.0235
+- name: YSZ-H1.IN.SV.5.01
+  pfd_avg: 0.00013
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 007.001.0200
+- name: YSZ-H1.IN.SV.5.02
+  pfd_avg: 0.00013
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 007.001.0200
+- name: YSZ-H1.IN.SV.5.03
+  pfd_avg: 0.00013
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 007.001.0200
+- name: YSZ-H1.IN.SV.5.11
+  pfd_avg: 0.00042
+  pfh_avg: 5.0e-08
+  sys_cap: 2
+  pdm_code: 007.001.0227
+- name: YSZ-H1.IN.SV.5.14
+  pfd_avg: 0.00057
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 007.001.0228
+- name: YSZ-H1.IN.SV.5.15
+  pfd_avg: 0.00042
+  pfh_avg: 5.0e-08
+  sys_cap: 2
+  pdm_code: 007.001.0227
+- name: YSZ-H1.IN.SV.5.16
+  pfd_avg: 0.00057
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 007.001.0228
+- name: YSZ-H1.IN.SV.7.01
+  pfd_avg: 0.00038
+  pfh_avg: 6.6e-08
+  sys_cap: 2
+  pdm_code: 007.001.0207
+- name: NSZ-SY.RB.SV.4.01
+  pfd_avg: 0.00013
+  pfh_avg: 2.5e-08
+  sys_cap: 2
+  pdm_code: 007.001.0242
+- name: NSZ-SY.RB.SV.4.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 8.1e-08
+  sys_cap: 2
+  pdm_code: 007.001.0241
+- name: 12K3
+  pfd_avg: 0.00456
+  pfh_avg: 7.89e-09
+  sys_cap: 2
+  pdm_code: ''
+- name: NSZ-SY.IN.SV.4.01
+  pfd_avg: 0.00053
+  pfh_avg: 7.3e-08
+  sys_cap: 2
+  pdm_code: 007.001.0329
+- name: "Emerson Fisher DVC6200 SIS"
+  manufacturer: "Emerson"
+  model: "DVC6200 SIS"
+  category: "Digital Valve Controller"
+  description: "Safety-certified smart positioner for control and shutdown valves."
+  
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.4e-04
+  sys_cap: 3
+  proof_test_interval_months: 36
+  valve_type: "Globe / Rotary"
+  notes: "Enables partial stroke testing and advanced diagnostics."
+- name: "Emerson Fisher ET Valve + 3610J"
+  manufacturer: "Emerson"
+  model: "Fisher ET + 3610J"
+  category: "Globe Control Valve"
+  description: "Fail-safe globe valve assembly for emergency shutdown service."
+  
+  pfh_avg: 5.5e-08
+  pfd_avg: 3.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  valve_type: "Globe"
+  notes: "Use with partial stroke test to maintain low PFDavg."
+- name: "SAMSON 3730-6 Positioner"
+  manufacturer: "SAMSON"
+  model: "3730-6"
+  category: "Valve Positioner"
+  description: "SIL-approved electropneumatic positioner with diagnostics."
+  
+  pfh_avg: 4.7e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  valve_type: "Globe / Rotary"
+  notes: "Supports PST, 1oo1D architectures."
+- name: "SAMSON 3241 Safety Shut-off Valve"
+  manufacturer: "SAMSON"
+  model: "Type 3241"
+  category: "Shut-off Valve"
+  description: "Pneumatic on/off valve with optional metal bellows seal for SIL service."
+  
+  pfh_avg: 6.0e-08
+  pfd_avg: 3.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  valve_type: "On/Off"
+  notes: "Combine with solenoid and PST for high diagnostic coverage."
+- name: "ASCO Series 327 Solenoid Valve"
+  manufacturer: "ASCO"
+  model: "327 Series"
+  category: "Solenoid Valve"
+  description: "2/2-way normally closed solenoid for emergency shutdown systems."
+  
+  pfh_avg: 8.0e-08
+  pfd_avg: 4.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  valve_type: "Solenoid"
+  notes: "Redundant solenoids recommended for higher SIL targets."
+- name: "ASCO Series 8317 Solenoid"
+  manufacturer: "ASCO"
+  model: "8317"
+  category: "Solenoid Valve"
+  description: "Pilot-operated solenoid with SIL3 capable certification."
+  
+  pfh_avg: 6.8e-08
+  pfd_avg: 3.9e-04
+  sys_cap: 3
+  proof_test_interval_months: 12
+  valve_type: "Solenoid"
+  notes: "Use for redundant pilot control in ESD skids."
+- name: "Valmet Neles NDX"
+  manufacturer: "Valmet"
+  model: "NDX"
+  category: "Digital Positioner"
+  description: "Smart positioner optimized for safety instrumented valves."
+  
+  pfh_avg: 4.0e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 3
+  proof_test_interval_months: 36
+  valve_type: "Globe / Rotary"
+  notes: "Remote diagnostics via HART and FOUNDATION Fieldbus."
+- name: "Metso Neles BWX Ball Valve"
+  manufacturer: "Metso"
+  model: "BWX"
+  category: "Ball Valve"
+  description: "Metal seated ball valve for high-cycle shutdown duties."
+  
+  pfh_avg: 5.9e-08
+  pfd_avg: 3.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  valve_type: "Ball"
+  notes: "Includes travel stops and limit switches for diagnostics."
+- name: "IMI STI FasTrak II"
+  manufacturer: "IMI Critical Engineering"
+  model: "FasTrak II"
+  category: "Valve Actuator"
+  description: "High-speed pneumatic actuator package certified for SIL3."
+  
+  pfh_avg: 3.5e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  valve_type: "Linear / Rotary"
+  notes: "Delivers fast stroking times and partial stroke monitoring."
+- name: "Rotork CP Range Electric Actuator"
+  manufacturer: "Rotork"
+  model: "CP"
+  category: "Electric Actuator"
+  description: "Compact electric actuator with SIL2 safety certification."
+  
+  pfh_avg: 4.9e-08
+  pfd_avg: 2.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 36
+  valve_type: "Quarter-turn"
+  notes: "Built-in torque monitoring and manual override."
+- name: "Rotork PAX1 Pneumatic Actuator"
+  manufacturer: "Rotork"
+  model: "PAX1"
+  category: "Pneumatic Actuator"
+  description: "SIL3 capable rack-and-pinion actuator for ESD valves."
+  
+  pfh_avg: 3.8e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  valve_type: "Quarter-turn"
+  notes: "Compatible with high-integrity solenoid manifolds."
+- name: "Emerson Fisher DVC6200SIS Positioner"
+  manufacturer: "Emerson"
+  model: "DVC6200SIS"
+  category: "Digital Valve Controller"
+  description: "Safety-certified HART positioner with partial-stroke testing for critical shutdown valves."
+  pfh_avg: 2.8e-08
+  pfd_avg: 1.4e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  diagnostics: "Partial stroke, travel deviation"
+  enclosure_rating: "IP66/67"
+- name: "SAMSON 3730-6 Electro-pneumatic Positioner"
+  manufacturer: "SAMSON"
+  model: "3730-6"
+  category: "Valve Positioner"
+  description: "Fail-safe positioner with TÜV approval for SIL2/3 loops and valve diagnostics."
+  pfh_avg: 3.1e-08
+  pfd_avg: 1.6e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  communication: "HART, PROFIBUS PA"
+  housing: "Aluminium"
+- name: "ASCO Series 327 Ex d Solenoid Valve"
+  manufacturer: "ASCO"
+  model: "327"
+  category: "Solenoid Valve"
+  description: "3/2-way solenoid valve with high flow and SIL 3 capable redundant pilot applications."
+  pfh_avg: 4.4e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 3
+  proof_test_interval_months: 12
+  orifice_mm: 6.0
+  certification: "ATEX Ex d"
+- name: "Bürkert Type 3360 Control Valve"
+  manufacturer: "Bürkert"
+  model: "Type 3360"
+  category: "Electric Control Valve"
+  description: "High-precision hygienic control valve with integrated safety diagnostics."
+  pfh_avg: 3.5e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  material: "Stainless steel"
+  application: "Food & pharma"
+- name: "Metso Neles NDX Valve Controller"
+  manufacturer: "Metso"
+  model: "NDX-S"
+  category: "Digital Valve Controller"
+  description: "Universal smart positioner with embedded safety diagnostics and Bluetooth setup."
+  pfh_avg: 3.0e-08
+  pfd_avg: 1.5e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  communication: "HART, FOUNDATION Fieldbus"
+  diagnostics: "Signature testing"
+- name: "AUMA TIGRON TR-E Electric Actuator"
+  manufacturer: "AUMA"
+  model: "TIGRON TR-E"
+  category: "Electric Actuator"
+  description: "Explosion-proof actuator for quarter-turn valves with integrated SIL2 safety package."
+  pfh_avg: 4.1e-08
+  pfd_avg: 2.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 36
+  torque_nm: 2000
+  enclosure: "Ex de IIC T4"
+- name: "Belimo PRBUP Fail-safe Damper Actuator"
+  manufacturer: "Belimo"
+  model: "PRBUP-MFT-T"
+  category: "Electric Actuator"
+  description: "Fail-safe actuator for smoke control dampers with safety-rated spring return."
+  pfh_avg: 5.2e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  supply_voltage: "24 VAC/DC"
+  rotation_angle_deg: 95
+- name: "HKS Dreh-Antrieb S400 Hydraulic Actuator"
+  manufacturer: "HKS"
+  model: "S400"
+  category: "Hydraulic Actuator"
+  description: "Scotch-yoke hydraulic actuator for ESD valves with SIL3 certification when redundant."
+  pfh_avg: 3.9e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  valve_type: "Quarter-turn"
+  temperature_range_c: "-40…80"
+- name: "SMC VP546-XF Solenoid Valve"
+  manufacturer: "SMC"
+  model: "VP546-XF"
+  category: "Solenoid Valve"
+  description: "Redundant 5-port pilot valve with high flow for safety instrumented pneumatics."
+  pfh_avg: 4.7e-08
+  pfd_avg: 2.4e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  flow_rate_l_min: 2000
+  port_size: '1/2"'
+- name: "Soldo Controls SKA Smart Limit Switch"
+  manufacturer: "Soldo Controls"
+  model: "SKA"
+  category: "Valve Accessory"
+  description: "Smart limit switch box with analog feedback and partial-stroke routine for safety valves."
+  pfh_avg: 5.0e-08
+  pfd_avg: 2.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  enclosure_rating: "IP67"
+  feedback: "4…20 mA"
+- name: "Emerson Fisher DVC6200 SIS"
+  manufacturer: "Emerson"
+  model: "DVC6200 SIS"
+  category: "Smart Positioner"
+  description: "Digital valve controller with TÜV-certified diagnostics for SIS applications."
+  pfh_avg: 3.6e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  valve_type: "Globe, rotary"
+  diagnostics: "Partial stroke testing, travel deviation"
+- name: "Velan MIV Automation Trip Valve"
+  manufacturer: "Velan"
+  model: "MIV-SIS"
+  category: "Motor Operated Valve"
+  description: "Safety instrumented gate valve with rapid close actuator and SIL2 documentation."
+  pfh_avg: 4.8e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  size_range_in: "2-24"
+  actuation: "Electric"
+- name: "Rotork CP Range Pneumatic Actuator"
+  manufacturer: "Rotork"
+  model: "CP96"
+  category: "Pneumatic Actuator"
+  description: "Scotch-yoke pneumatic actuator with SIL3 capability when redundant."
+  pfh_avg: 3.9e-08
+  pfd_avg: 1.8e-04
+  sys_cap: 3
+  proof_test_interval_months: 18
+  torque_nm: 4000
+  options: "Partial stroke, redundant solenoids"
+- name: "ASCO Series 327 Solenoid Valve"
+  manufacturer: "ASCO"
+  model: "327"
+  category: "Solenoid Valve"
+  description: "Direct acting solenoid valve with stainless steel body and SIL 3 approvals."
+  pfh_avg: 3.5e-08
+  pfd_avg: 1.6e-04
+  sys_cap: 3
+  proof_test_interval_months: 12
+  port_size: '1/4"'
+  pressure_range_bar: "0-10"
+- name: "Bürkert Type 7011 Pilot Valve"
+  manufacturer: "Bürkert"
+  model: "Type 7011"
+  category: "Pilot Valve"
+  description: "Compact pilot valve used in redundant actuator manifolds with SIL2 data."
+  pfh_avg: 5.1e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  medium: "Air, inert gas"
+  seal_material: "FKM"
+- name: "IMI Norgren Herion Series 26363"
+  manufacturer: "IMI Norgren"
+  model: "26363"
+  category: "Solenoid Valve"
+  description: "High-flow safety shut-off valve with redundant coil options for SIS."
+  pfh_avg: 4.0e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  flow_rate_l_min: 1800
+  certification: "IEC 61508 SIL2"
+- name: "Metso Neles NDX Valve Controller"
+  manufacturer: "Metso"
+  model: "NDX"
+  category: "Smart Positioner"
+  description: "Digital valve controller with advanced diagnostics and SIL verification package."
+  pfh_avg: 3.8e-08
+  pfd_avg: 1.8e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  diagnostics: "Dynamic signature, friction monitoring"
+  communication: "HART, FOUNDATION Fieldbus"
+- name: "SAMSON 3730-6 Positioner"
+  manufacturer: "SAMSON"
+  model: "3730-6"
+  category: "Smart Positioner"
+  description: "Electropneumatic positioner with safety partial stroke test for shutdown valves."
+  pfh_avg: 3.9e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  enclosure: "IP66/67"
+  communication: "HART"
+- name: "GE Masoneilan SVI II ESD"
+  manufacturer: "Baker Hughes"
+  model: "SVI II ESD"
+  category: "Emergency Shutdown Controller"
+  description: "Digital partial stroke test device for ESD valves with SIL3 data."
+  pfh_avg: 3.6e-08
+  pfd_avg: 1.7e-04
+  sys_cap: 3
+  proof_test_interval_months: 12
+  supply_air_bar: "1.4-7"
+  diagnostics: "ESD monitoring, signature capture"
+- name: "Auma SARV-Q Electric Actuator"
+  manufacturer: "AUMA"
+  model: "SARV-Q"
+  category: "Electric Actuator"
+  description: "Quarter-turn actuator with fail-safe module certified for SIL2 safety loops."
+  pfh_avg: 4.5e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  torque_nm: 600
+  fail_safe: "Mechanical spring"
+- name: "Flowserve Valtek Mark One SIL Kit"
+  manufacturer: "Flowserve"
+  model: "Mark One SIL"
+  category: "Control Valve"
+  description: "Valve package with redundant air set and SIL documentation for shutdown duty."
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  valve_type: "Globe"
+  trim: "Quick change"
+- name: "Habonim Compact Actuator HCD"
+  manufacturer: "Habonim"
+  model: "HCD"
+  category: "Pneumatic Actuator"
+  description: "Compact double-acting actuator with SIL2 rating and partial stroke option."
+  pfh_avg: 4.3e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  materials: "Anodized aluminum"
+  option: "Spring return"
+- name: "Parker Lucifer 204 Series"
+  manufacturer: "Parker Hannifin"
+  model: "204"
+  category: "Solenoid Valve"
+  description: "Two-way solenoid valve for emergency shutoff with SIL capability data package."
+  pfh_avg: 4.6e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  pressure_range_bar: "0-16"
+  port_size: '3/8"'
+- name: "Maxon GPX Safety Servo Drive"
+  manufacturer: "Maxon"
+  model: "GPX Safety"
+  category: "Servo Drive"
+  description: "Certified servo drive with redundant feedback inputs for SIL3 motion tasks."
+  pfh_avg: 3.2e-08
+  pfd_avg: 1.5e-04
+  sys_cap: 3
+  proof_test_interval_months: 12
+  supply_voltage_vdc: "12-48"
+  features: "Safe torque off, redundant encoders"
+- name: "Müller co-ax MK 15 Normally Closed Valve"
+  manufacturer: "Müller co-ax"
+  model: "MK 15 NC"
+  category: "Poppet Valve"
+  description: "Compact coaxial valve for shutdown duties with SIL2 safety data."
+  
+  pfh_avg: 5.0e-08
+  pfd_avg: 2.6e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  pressure_range_bar: "0-64"
+  notes: "Stainless steel body with fast closing time for fuel gas isolation. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Müller co-ax MK 25 Normally Open Valve"
+  manufacturer: "Müller co-ax"
+  model: "KAT022596 MK 25 NO 1E"
+  category: "Poppet Valve"
+  description: "High-flow coaxial valve with fail-open configuration and SIL capability report."
+  
+  pfh_avg: 4.9e-08
+  pfd_avg: 2.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  pressure_range_bar: "0-40"
+  notes: "Includes redundant coil block and position monitoring. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Müller co-ax MK 25 Normally Closed Valve"
+  manufacturer: "Müller co-ax"
+  model: "KAT022598 MK 25 NC 1E"
+  category: "Poppet Valve"
+  description: "Fail-closed coaxial valve for ESD service with TÜV SIL2 assessment."
+  
+  pfh_avg: 5.1e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  pressure_range_bar: "0-64"
+  notes: "Designed for aggressive media with fast actuation speed. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "GEMÜ 8500 Pilot Valve"
+  manufacturer: "GEMÜ"
+  model: "88550237 / 850032 7M G214 21C1"
+  category: "Pilot Valve"
+  description: "Fail-safe pilot valve for pneumatic actuators with integrated redundancy options."
+  
+  pfh_avg: 4.4e-08
+  pfd_avg: 2.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  supply_voltage_vdc: "24"
+  notes: "Approved for 1oo2 solenoid manifolds in ESD applications. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"

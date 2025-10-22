@@ -1,0 +1,367 @@
+components:
+ - name: SIMATIC S7-1500F CPU 1511F-1 PN
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-1500F
+
+ - name: ET 200S F-AI 4x4-20mA
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200S
+   channels: 4
+   signal_type: AI
+   range: 4-20mA
+
+ - name: ET 200MP F-DQ 8x24VDC 2A PPM
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 8
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: SIMATIC S7-1500F CPU 1513F-1 PN
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-1500F
+
+ - name: SIMATIC S7-1500F CPU 1516F-3 PN/DP
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-1500F
+
+ - name: SIMATIC ET 200SP CPU 1510SP F
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200SP
+
+ - name: SIMATIC S7-1200F CPU 1214FC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-1200F
+
+ - name: ET 200SP F-DI 8x24VDC HF
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200SP F-DI 16x24VDC HF
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 16
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200MP F-DI 16x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 16
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200MP F-DI 8x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: S7-1200 SM1226 F-DI 8x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-1200
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200S F-DI 8x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200S
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200pro F-DI 8x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200pro
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200AL F-DI 8xM12 24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200AL
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200eco PN F-DI 8x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200eco PN
+   channels: 8
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200iSP F-DI 8x24VDC Ex i
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: ET 200iSP
+   channels: 8
+   signal_type: DI
+   voltage: 24
+   ex_i: true
+   zone: 2
+
+ - name: S7-300F SM 326 F-DI 16x24VDC
+   pfh_avg: 1e-9
+   pfd_avg: 2e-5
+   sys_cap: 3
+   family: S7-300F / ET 200M
+   channels: 16
+   signal_type: DI
+   voltage: 24
+
+ - name: ET 200SP F-DQ 8x24VDC 0.5A PP HF
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 8
+   signal_type: DQ
+   voltage: 24
+   current_A: 0.5
+
+ - name: ET 200SP F-DQ 4x24VDC 2A HF
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 4
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+
+ - name: S7-1200 SM1226 F-DQ 4x24VDC 2A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: S7-1200
+   channels: 4
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: ET 200S F-DQ 4x24VDC 2A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200S
+   channels: 4
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: ET 200pro F-DQ 8x24VDC 2A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200pro
+   channels: 8
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: ET 200AL F-DQ 4xM12 2A 24VDC
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200AL
+   channels: 4
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: ET 200eco PN F-DQ 3x24VDC 2A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200eco PN
+   channels: 3
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: S7-300F SM 326 F-DQ 8x24VDC 2A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: S7-300F / ET 200M
+   channels: 8
+   signal_type: DQ
+   voltage: 24
+   current_A: 2
+
+ - name: ET 200MP F-RQ 4xRelais 24…230VAC 5A
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 4
+   signal_type: RQ
+   voltage: 24
+   current_A: 5
+
+ - name: ET 200SP F-RQ 4xRelais 24…230VAC 5A HF
+   pfh_avg: 2e-9
+   pfd_avg: 6e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 4
+   signal_type: RQ
+   voltage: 24
+   current_A: 5
+
+ - name: ET 200SP F-AI 4x0-10V HF
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 4
+   signal_type: AI
+   range: 0-10V
+
+ - name: ET 200SP F-AI 2x4-20mA HART HF
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 2
+   signal_type: AI
+   range: 4-20mA
+   hart: true
+
+ - name: ET 200SP F-RTD 4xPt100/Pt1000 HF
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 4
+   signal_type: RTD
+   rtd_types: [Pt100, Pt1000, Ni100]
+
+ - name: ET 200SP F-TC 4xThermocouple HF
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200SP
+   channels: 4
+   signal_type: TC
+   tc_types: [J, K, T, E, N, R, S, B]
+
+ - name: ET 200MP F-AI 4x4-20mA PPM
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 4
+   signal_type: AI
+   range: 4-20mA
+
+ - name: ET 200MP F-AI 8x0-10V PPM
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 8
+   signal_type: AI
+   range: 0-10V
+
+ - name: ET 200MP F-RTD 4xPt100/Pt1000
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 4
+   signal_type: RTD
+   rtd_types: [Pt100, Pt1000]
+
+ - name: ET 200MP F-TC 4xThermocouple
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200MP
+   channels: 4
+   signal_type: TC
+   tc_types: [J, K, T, E, N, R, S, B]
+
+ - name: ET 200iSP F-AI 2x4-20mA Ex i
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200iSP
+   channels: 2
+   signal_type: AI
+   range: 4-20mA
+   ex_i: true
+   zone: 2
+
+ - name: ET 200iSP F-RTD 4xPt100/Pt1000 Ex i
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200iSP
+   channels: 4
+   signal_type: RTD
+   rtd_types: [Pt100, Pt1000]
+   ex_i: true
+   zone: 2
+
+ - name: ET 200iSP F-TC 4xThermocouple Ex i
+   pfh_avg: 1e-9
+   pfd_avg: 5e-5
+   sys_cap: 3
+   family: ET 200iSP
+   channels: 4
+   signal_type: TC
+   tc_types: [J, K, T, E, N]
+   ex_i: true
+   zone: 2
+
+
+ - name: ET 200S F-RTD 4xPt1000
+   pfh_avg: 1e-9
+   pfd_avg: 4e-5
+   sys_cap: 3
+   family: ET 200S
+   channels: 4
+   signal_type: RTD
+   rtd_types: [Pt1000]

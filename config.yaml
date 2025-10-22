@@ -1,0 +1,90 @@
+ce_matrix:
+  # Relative path to the Cause & Effect Matrix Excel file
+  path: "docs/PSI129_Cosmos_SAS060400 - Rev07 - MeOH 500 C&E Matrix.xlsx"
+
+  # Name of the worksheet within the Excel file that contains the SiFu data
+  sheet: "Cause-And-Effect-Matrix"
+
+  # Structure of spreadsheet: Order of relevant columns...
+  col_number_state: 1 #'A'
+  col_number_sifu_name: 4 #'D'
+  col_number_sil_value: 6 #'F'
+  col_number_criteria_safety_action: 13 #'M'
+  col_number_demand_mode: 19 #'S'
+  col_number_safety_action: 20 #'T'
+
+  # Row index (1-based) where actual SiFu entries start (below header
+  row_number_start: 4 
+
+  # Keyword used to identify active SiFus in the status column
+  sifu_state_active: "complete" 
+
+  # Terms to be replaced by actuators defined in spreadsheet "Definitions"
+  terms_vs_actuators: 
+    Safety Shutdown: "YSZ-H1.IN.SV.2.04, YSZ-H1.IN.SV.2.05, YSZ-H1.IN.SV.5.01, YSZ-H1.IN.SV.5.02, YSZ-H1.IN.SV.5.03, YSZ-H1.IN.SV.5.11, YSZ-H1.IN.SV.5.15, YSZ-H1.IN.SV.5.14, YSZ-H1.IN.SV.5.16, YSZ-H1.IN.SV.7.01"
+    Emergency Shutdown: "YSZ-H1.IN.SV.2.04, YSZ-H1.IN.SV.2.05, YSZ-H1.IN.SV.5.01, YSZ-H1.IN.SV.5.02, YSZ-H1.IN.SV.5.03, YSZ-H1.IN.SV.5.11, YSZ-H1.IN.SV.5.15, YSZ-H1.IN.SV.5.14, YSZ-H1.IN.SV.5.16, YSZ-H1.IN.SV.7.01"
+    Disconnect electrical power: "12K3"
+    Disconnect electrical ignition sources: "45K6"
+
+
+patterns:
+  # Pattern of PID designations:
+  # Format example: "YZ-FX.F.01.34"
+  # [A-Z]{1,3}Z-  string starts with 1 to 3 capital letters, followed by a capital Z and a dash (-)
+  # [A-Z0-9]+\.  capital letters or numbers (length intentionally undefined) followed by a dot
+  # [0-9]{1,2}  1 to 2 numbers at the end
+  pid_designation: "[A-Z]{1,3}Z-[A-Z0-9]+\\.+[A-Z0-9]+\\.+[A-Z0-9]+\\.+[0-9]{1,2}+\\.+[0-9]{1,2}"
+
+  # Pattern of contactor designations: *K*
+  # Format example: "12K3"
+  contactor_designation: "\\b\\w*K\\w*\\b" 
+
+  # Pattern of PDM designations:
+  # Format example: "009.003.7890"
+  # [0-9]{3}+\.  string starts with 3 numbers, followed by a dot
+  # [0-9]{3}+\.  once again three numbers, followed by a dot
+  # [0-9]{4}  four numbers at the end of the string
+  pdm_designation: "[0-9]{3}+\\.+[0-9]{3}+\\.+[0-9]{4}"
+
+ee_overview:
+  # Relative path to the E/E overview Excel file
+  path: "docs/ELMO_Interfaces_MeOH500_240209_local.xlsx" 
+  
+  # Structure of spreadsheet: Order of relevant columns...
+  col_number_pid_code: 2 #'B'
+  col_number_pdm_code: 3 #'C'
+
+  # Row index (1-based) where actual data starts in each sheet
+  row_number_start: 3
+  
+  # Mapping of PID patterns to corresponding worksheet names
+  # Used to determine which sheet to search based on PID format
+  modules_vs_sheets:
+    "\\b\\w{2}Z-H1.\\w*.\\w*.\\w*.\\w*\\b": "Aktoren Sensoren H2MO"
+    "\\b\\w{2}Z-FX.\\w*.\\w*.\\w*.\\w*\\b": "Aktoren Sensoren FCMO 500kW"
+    "\\b\\w{2}Z-FI.\\w*.\\w*.\\w*.\\w*\\b": "Aktoren Sensoren Interfacearea"
+  
+  # Pattern substitution for FCMO PID codes
+  # Example: "Z-F1." → "Z-FX."
+  pattern_PID_fcmos: 
+    "Z-F[0-9]{1}+\\.": "Z-FX."
+
+   # List of worksheet names to be scanned for PID/PDM mapping
+  sheets:
+    - "Aktoren Sensoren H2MO"
+    - "Aktoren Sensoren FCMO 500kW"
+    - "Aktoren Sensoren Interfacearea"
+
+fusa:
+  # Relative path to the FuSa CSV file containing component reliability data
+  path: "docs/FusaData.csv"
+
+  # Column name in the CSV file that identifies components (usually by PDM or BMK code)
+  col_name_comp_id: "comp_id"
+  
+  # mapping of column names to component property:
+  # Column Name --> Component property as defined in Component class
+  col_names_vs_comp_properties:
+    pfd_avg: "pfd_avg"
+    pfh_avg: "pfh_avg"
+    sys_capa: "sys_cap"

@@ -1,0 +1,1172 @@
+components:
+- name: FTZ-H1.IN.F.2.04
+  pfd_avg: 0.00077
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0306
+- name: FTZ-H1.SL.F.1.02
+  pfd_avg: 0.00097
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 009.003.0267
+- name: FTZ-H1.IN.F.2.02
+  pfd_avg: 0.00077
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0306
+- name: FTZ-H1.IN.F.2.05
+  pfd_avg: 0.00077
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0306
+- name: PTZ-H1.IN.P.7.01
+  pfd_avg: 0.00045
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0288
+- name: PTZ-H1.IN.P.7.02
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: GSZ-FI.FC.O.1.01
+  pfd_avg: 0.00066
+  pfh_avg: 7.0e-08
+  sys_cap: 2
+  pdm_code: 003.020.0169
+- name: GSZ-FI.S2.O.1.05
+  pfd_avg: 0.00018
+  pfh_avg: 4.6e-08
+  sys_cap: 2
+  pdm_code: 003.020.0129
+- name: PTZ-F3.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F3.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: PTZ-F4.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F4.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: GSZ-FI.FC.O.1.02
+  pfd_avg: 0.00066
+  pfh_avg: 7.0e-08
+  sys_cap: 2
+  pdm_code: 003.020.0169
+- name: GSZ-FI.S2.O.1.06
+  pfd_avg: 0.00018
+  pfh_avg: 4.6e-08
+  sys_cap: 2
+  pdm_code: 003.020.0129
+- name: PTZ-F2.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F2.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: PTZ-F5.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F5.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: GSZ-FI.FC.O.1.03
+  pfd_avg: 0.00066
+  pfh_avg: 7.0e-08
+  sys_cap: 2
+  pdm_code: 003.020.0169
+- name: GSZ-FI.S2.O.1.07
+  pfd_avg: 0.00018
+  pfh_avg: 4.6e-08
+  sys_cap: 2
+  pdm_code: 003.020.0129
+- name: PTZ-F1.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F1.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: PTZ-F6.IN.P.2.04
+  pfd_avg: 0.0005
+  pfh_avg: 9.9e-08
+  sys_cap: 2
+  pdm_code: 009.003.0287
+- name: PTZ-F6.S2.P.1.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: PTZ-H1.IN.P.5.03
+  pfd_avg: 0.00028
+  pfh_avg: 3.4e-08
+  sys_cap: 2
+  pdm_code: 009.003.0145
+- name: PTZ-H1.SL.P.1.03
+  pfd_avg: 0.00032
+  pfh_avg: 6.0e-08
+  sys_cap: 2
+  pdm_code: 009.003.0231
+- name: PTZ-H1.IN.P.5.13
+  pfd_avg: 0.00017
+  pfh_avg: 3.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0300
+- name: LSZ-FI.MS.L.4.01
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: LSZ-FI.MS.L.4.02
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: LSZ-H1.MS.L.4.01
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: LSZ-H1.MS.L.4.02
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: LSZ-H1.MS.L.4.03
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: LSZ-H1.MS.L.4.04
+  pfd_avg: 0.00018
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0027
+- name: PTZ-SY.IN.P.4.01
+  pfd_avg: 0.00056
+  pfh_avg: 7.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0286
+- name: ATZ-SY.FC.G.2.01
+  pfd_avg: 0.00029
+  pfh_avg: 1.0e-08
+  sys_cap: 2
+  pdm_code: 009.003.0312
+- name: ATZ-SY.RB.G.6.01
+  pfd_avg: 0.00091
+  pfh_avg: 1.6e-08
+  sys_cap: 2
+  pdm_code: 009.000.0132
+- name: ATZ-FI.MS.G.0.01
+  pfd_avg: 0.001
+  pfh_avg: 7.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0221
+- name: ATZ-FI.MS.G.0.02
+  pfd_avg: 0.001
+  pfh_avg: 7.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0221
+- name: ATZ-H1.MS.G.0.01
+  pfd_avg: 0.00042
+  pfh_avg: 3.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0223
+- name: ATZ-H1.MS.G.0.02
+  pfd_avg: 0.001
+  pfh_avg: 7.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0221
+- name: FSZ-SY.RB.F.6.01
+  pfd_avg: -1.0
+  pfh_avg: -1.0
+  sys_cap: -1
+  pdm_code: ''
+- name: BSZ-H1.MS.B.0.01
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: BSZ-H1.MS.B.0.02
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: BSZ-H1.MS.B.0.03
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: BSZ-H1.MS.B.0.04
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: STZ-SY.FC.S.2.01
+  pfd_avg: 0.00088
+  pfh_avg: 1.3e-08
+  sys_cap: 2
+  pdm_code: 009.003.0311
+- name: BSZ-FI.MS.B.0.01
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: BSZ-FI.MS.B.0.02
+  pfd_avg: 0.00021
+  pfh_avg: 8.8e-08
+  sys_cap: 2
+  pdm_code: 009.003.0160
+- name: FTZ-SY.IN.F.0.01
+  pfd_avg: 0.00097
+  pfh_avg: 2.4e-08
+  sys_cap: 2
+  pdm_code: 009.003.0307
+- name: PDZ-H1.MS.P.0.01
+  pfd_avg: 0.00025
+  pfh_avg: 8.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0313
+- name: LSZ-H1.IN.L.4.02
+  pfd_avg: 0.00092
+  pfh_avg: 9.2e-08
+  sys_cap: 2
+  pdm_code: 009.003.0219
+- name: TTZ-H1.FC.T.2.03
+  pfd_avg: 2.0e-05
+  pfh_avg: 8.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0261
+- name: TTZ-H1.FC.T.1.01
+  pfd_avg: 0.00014
+  pfh_avg: 2.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0263
+- name: TTZ-H1.RB.T.6.09
+  pfd_avg: 0.00045
+  pfh_avg: 1.1e-08
+  sys_cap: 2
+  pdm_code: 009.003.0257
+- name: TTZ-H1.RB.T.6.10
+  pfd_avg: 0.00016
+  pfh_avg: 4.1e-08
+  sys_cap: 2
+  pdm_code: 009.003.0253
+- name: TTZ-H1.RB.T.6.02
+  pfd_avg: 0.00056
+  pfh_avg: 3.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0258
+- name: TTZ-H1.RB.T.1.31
+  pfd_avg: 0.00075
+  pfh_avg: 9.4e-08
+  sys_cap: 2
+  pdm_code: 009.003.0262
+- name: TTZ-H1.S1.T.1.04
+  pfd_avg: 0.0002
+  pfh_avg: 9.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0255
+- name: TTZ-H1.S2.T.1.04
+  pfd_avg: 0.0002
+  pfh_avg: 9.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0255
+- name: TTZ-FI.MS.T.6.08
+  pfd_avg: 0.00014
+  pfh_avg: 2.7e-08
+  sys_cap: 2
+  pdm_code: 009.003.0263
+- name: TTZ-F1.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F2.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F3.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F4.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F5.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F6.FC.T.1.02
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F1.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F2.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F3.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F4.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F5.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-F6.S2.T.1.01
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: TTZ-H1.SL.T.1.06
+  pfd_avg: 2.0e-05
+  pfh_avg: 6.0e-09
+  sys_cap: 2
+  pdm_code: 009.003.0151
+- name: PTZ-H1.LT.P.3.06
+  pfd_avg: 0.00073
+  pfh_avg: 3.6e-08
+  sys_cap: 2
+  pdm_code: 009.003.0088
+- name: TTZ-H1.RB.T.6.03
+  pfd_avg: 0.00086
+  pfh_avg: 5.1e-08
+  sys_cap: 2
+  pdm_code: 009.003.0291
+- name: "Siemens SITRANS P320 Pressure Transmitter"
+  manufacturer: "Siemens"
+  model: "SITRANS P320"
+  category: "Pressure Transmitter"
+  description: "Smart pressure transmitter with extended diagnostics for SIL2/3 loops."
+  
+  pfh_avg: 2.8e-08
+  pfd_avg: 1.2e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Suitable for high-demand process pressure applications."
+- name: "Endress+Hauser Cerabar S PMP71"
+  manufacturer: "Endress+Hauser"
+  model: "Cerabar S PMP71"
+  category: "Pressure Transmitter"
+  description: "Capacitive pressure transmitter with strong safety diagnostics."
+  
+  pfh_avg: 3.2e-08
+  pfd_avg: 1.8e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Has diagnostic coverage for sensor and electronics failures."
+- name: "VEGA VEGAFLEX 81 Guided Wave Radar"
+  manufacturer: "VEGA"
+  model: "VEGAFLEX 81"
+  category: "Level Sensor"
+  description: "Guided wave radar for continuous level measurement in liquids."
+  
+  pfh_avg: 4.5e-08
+  pfd_avg: 2.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Often used as part of safety shutdown level control."
+- name: "Siemens SITRANS TS500 RTD"
+  manufacturer: "Siemens"
+  model: "SITRANS TS500"
+  category: "Temperature Sensor"
+  description: "Modular RTD sensor assembly with strong mechanical protection."
+  
+  pfh_avg: 5.1e-08
+  pfd_avg: 3.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Pair with AI modules certified for SIL loops."
+- name: "Honeywell STT850 SmartLine"
+  manufacturer: "Honeywell"
+  model: "STT850"
+  category: "Temperature Transmitter"
+  description: "Dual-compartment SIL2 temperature transmitter for thermocouples and RTDs."
+  
+  pfh_avg: 3.6e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes continuous self-diagnostics for sensor break detection."
+- name: "ABB FCB400 Coriolis Flowmeter"
+  manufacturer: "ABB"
+  model: "FCB400"
+  category: "Flow Sensor"
+  description: "Compact Coriolis flowmeter with full SIL2 compliance."
+  
+  pfh_avg: 3.0e-08
+  pfd_avg: 1.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 36
+  notes: "Diagnostics include drive gain monitoring and tube integrity checks."
+- name: "Emerson Rosemount 5408 Radar"
+  manufacturer: "Emerson"
+  model: "Rosemount 5408"
+  category: "Level Transmitter"
+  description: "Non-contact radar transmitter certified for overfill prevention (SIL2)."
+  
+  pfh_avg: 4.1e-08
+  pfd_avg: 2.6e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Offers proof-test assistant and guided procedures."
+- name: "Pepperl+Fuchs VDM28 Distance Sensor"
+  manufacturer: "Pepperl+Fuchs"
+  model: "VDM28"
+  category: "Distance Sensor"
+  description: "Laser distance sensor with SIL2 certification for machine safety."
+  
+  pfh_avg: 2.2e-08
+  pfd_avg: 1.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Suitable for positioning and collision avoidance tasks."
+- name: "SICK LFP Inox Level Switch"
+  manufacturer: "SICK"
+  model: "LFP Inox"
+  category: "Level Switch"
+  description: "Tuning fork level switch for hygienic applications with SIL2 approval."
+  
+  pfh_avg: 5.0e-08
+  pfd_avg: 3.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Use for low-demand safety shutoff loops."
+- name: "WIKA A-10 Pressure Transmitter"
+  manufacturer: "WIKA"
+  model: "A-10"
+  category: "Pressure Transmitter"
+  description: "Compact transmitter suited for simple SIL1 safety functions."
+  
+  pfh_avg: 6.4e-08
+  pfd_avg: 4.1e-04
+  sys_cap: 1
+  proof_test_interval_months: 24
+  notes: "For redundant architectures, combine with a SIL2 logic solver."
+- name: "Honeywell STT750 Temperature Transmitter"
+  manufacturer: "Honeywell"
+  model: "STT750"
+  category: "Temperature Transmitter"
+  description: "Smart temperature transmitter with universal sensor inputs and TÜV certified SIL support."
+  pfh_avg: 2.9e-08
+  pfd_avg: 1.4e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  measurement_range: "-200…800 °C"
+  communication: "HART 7"
+- name: "ABB 266HSH Pressure Transmitter"
+  manufacturer: "ABB"
+  model: "266HSH"
+  category: "Pressure Transmitter"
+  description: "High-overload differential pressure transmitter with inbuilt diagnostics."
+  pfh_avg: 3.1e-08
+  pfd_avg: 1.7e-04
+  sys_cap: 3
+  proof_test_interval_months: 30
+  process_connection: "1/2 NPT"
+  housing: "316L stainless steel"
+- name: "Yokogawa EJX530A DP Transmitter"
+  manufacturer: "Yokogawa"
+  model: "EJX530A"
+  category: "Differential Pressure Transmitter"
+  description: "Multivariable transmitter for flow and level with advanced self-diagnostics."
+  pfh_avg: 2.6e-08
+  pfd_avg: 1.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 36
+  turndown: "200:1"
+  output: "4…20 mA / HART"
+- name: "WIKA T32.xS Temperature Transmitter"
+  manufacturer: "WIKA"
+  model: "T32.xS"
+  category: "Temperature Transmitter"
+  description: "Head-mount transmitter with dual sensor redundancy and NAMUR NE107 diagnostics."
+  pfh_avg: 3.7e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  sensor_types: "RTD, thermocouple"
+  enclosure_rating: "IP66"
+- name: "Balluff BTL7 Micropulse Linear Transducer"
+  manufacturer: "Balluff"
+  model: "BTL7"
+  category: "Position Sensor"
+  description: "Magnetostrictive linear position sensor for hydraulic cylinders with redundant electronics."
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  stroke_length_mm: 750
+  output_signal: "Start/Stop, analog"
+- name: "Pepperl+Fuchs ML100-55/102/115 Photoelectric Sensor"
+  manufacturer: "Pepperl+Fuchs"
+  model: "ML100-55/102/115"
+  category: "Photoelectric Sensor"
+  description: "Compact photoelectric switch with background suppression for machine safeguarding."
+  pfh_avg: 6.8e-08
+  pfd_avg: 3.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  sensing_range_mm: 200
+  protection_rating: "IP67"
+- name: "ifm Efector PX5244 Pressure Sensor"
+  manufacturer: "ifm electronic"
+  model: "PX5244"
+  category: "Pressure Sensor"
+  description: "IO-Link process pressure sensor with stainless steel wetted parts and safety-certified firmware."
+  pfh_avg: 4.9e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  pressure_range: "0…25 bar"
+  electrical_connection: "M12, 4-pin"
+- name: "SICK FTMg Thermal Flowmeter"
+  manufacturer: "SICK"
+  model: "FTMg"
+  category: "Flow Sensor"
+  description: "Compact thermal mass flowmeter with integrated diagnostics for compressed air monitoring."
+  pfh_avg: 5.3e-08
+  pfd_avg: 2.6e-04
+  sys_cap: "SIL 1/2"
+  proof_test_interval_months: 12
+  media: "Compressed air"
+  interface: "IO-Link"
+- name: "Emerson Rosemount 2140 Level Detector"
+  manufacturer: "Emerson"
+  model: "Rosemount 2140"
+  category: "Level Switch"
+  description: "Vibrating fork level detector with built-in proof testing for safety instrumented systems."
+  pfh_avg: 3.4e-08
+  pfd_avg: 1.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  process_temperature_max_c: 280
+  approvals: "ATEX, IECEx"
+- name: "VEGA VEGABAR 82 Ceramic Pressure Sensor"
+  manufacturer: "VEGA"
+  model: "VEGABAR 82"
+  category: "Pressure Sensor"
+  description: "Ceramic cell gauge pressure sensor with extended diagnostics for SIL-ready loops."
+  pfh_avg: 3.0e-08
+  pfd_avg: 1.6e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  diaphragm_material: "CERTEC®"
+  process_connection: "Threaded G1"
+- name: "Turck CMVT Analog Vibration Sensor"
+  manufacturer: "Turck"
+  model: "CMVT"
+  category: "Vibration Sensor"
+  description: "Condition monitoring vibration transmitter with configurable alarms and SIL capability."
+  pfh_avg: 5.9e-08
+  pfd_avg: 2.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  measurement_range: "0…50 mm/s"
+  supply_voltage: "18…30 VDC"
+- name: "Krohne OPTISWITCH 6500C Capacitive Level Switch"
+  manufacturer: "Krohne"
+  model: "OPTISWITCH 6500C"
+  category: "Level Switch"
+  description: "Capacitive level switch for powders and bulk solids with SIL compliant diagnostics."
+  pfh_avg: 4.7e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  process_temperature_max_c: 200
+  housing_material: "Aluminium"
+- name: "Yokogawa EJX530A Differential Pressure"
+  manufacturer: "Yokogawa"
+  model: "EJX530A"
+  category: "Differential Pressure Transmitter"
+  description: "DPharp digital pressure transmitter certified up to SIL3 when redundant."
+  
+  pfh_avg: 2.4e-08
+  pfd_avg: 1.1e-04
+  sys_cap: 3
+  proof_test_interval_months: 48
+  notes: "Features dual-compartment housing and advanced self-diagnostics."
+- name: "KROHNE OPTIWAVE 6500"
+  manufacturer: "KROHNE"
+  model: "OPTIWAVE 6500"
+  category: "Level Radar"
+  description: "80 GHz FMCW radar for powders and bulk solids with SIL2 approval."
+  
+  pfh_avg: 4.9e-08
+  pfd_avg: 3.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Handles narrow silos and dust with horn or lens antennas."
+- name: "WIKA T32.xS Temperature Transmitter"
+  manufacturer: "WIKA"
+  model: "T32.xS"
+  category: "Temperature Transmitter"
+  description: "Head-mounted transmitter with TÜV SIL2 certification and HART."
+  
+  pfh_avg: 3.3e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 30
+  notes: "Configurable damping and sensor break detection per IEC 61508."
+- name: "Endress+Hauser Liquiphant FTL51B"
+  manufacturer: "Endress+Hauser"
+  model: "Liquiphant FTL51B"
+  category: "Level Switch"
+  description: "Vibronic point level switch with permanent proof-test monitoring."
+  
+  pfh_avg: 5.2e-08
+  pfd_avg: 2.4e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Suited for overfill prevention in SIL2/3 tanks per WHG."
+- name: "Phoenix Contact PSRmotion SS1"
+  manufacturer: "Phoenix Contact"
+  model: "PSRmotion SS1"
+  category: "Speed Monitor"
+  description: "Safety relay for standstill detection with encoder inputs."
+  
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.3e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Certified per IEC 61508 and EN ISO 13849 for drive monitoring."
+- name: "Pepperl+Fuchs LGC-MH Fiber Optic Sensor"
+  manufacturer: "Pepperl+Fuchs"
+  model: "LGC-MH"
+  category: "Light Curtain Sensor"
+  description: "Fiber-based area sensor used in burner flame monitoring."
+  
+  pfh_avg: 6.0e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Supports redundant receivers for 1oo2 voting architectures."
+- name: "Emerson Rosemount 3051S"
+  manufacturer: "Emerson"
+  model: "3051S"
+  category: "Pressure Transmitter"
+  description: "Scalable smart transmitter with 15-year stability and SIL2 certification."
+  
+  pfh_avg: 2.7e-08
+  pfd_avg: 1.5e-04
+  sys_cap: 2
+  proof_test_interval_months: 60
+  notes: "Equipped with advanced diagnostics and local operator interface."
+- name: "ifm PN7 Pressure Switch"
+  manufacturer: "ifm electronic"
+  model: "PN7"
+  category: "Pressure Switch"
+  description: "Electronic pressure switch with IO-Link and SIL2 capability."
+  
+  pfh_avg: 5.5e-08
+  pfd_avg: 2.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Typical for machine safety hydraulics and pneumatic circuits."
+- name: "Schneider Electric Triconex 3703A AI"
+  manufacturer: "Schneider Electric"
+  model: "Triconex 3703A AI"
+  category: "Analog Input"
+  description: "Triple modular redundant analog input channel for safety instrumented systems."
+  
+  pfh_avg: 1.8e-08
+  pfd_avg: 9.0e-05
+  sys_cap: 3
+  proof_test_interval_months: 48
+  notes: "Deploy with Triconex main processors for high availability."
+- name: "Yokogawa ProSafe-RS AI Module"
+  manufacturer: "Yokogawa"
+  model: "S2AIT4D"
+  category: "Analog Input"
+  description: "Redundant analog input card with diagnostic voting for SIL3 loops."
+  
+  pfh_avg: 2.1e-08
+  pfd_avg: 1.1e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Supports HART pass-through and hot swap maintenance."
+- name: "VEGA VEGABAR 82"
+  manufacturer: "VEGA"
+  model: "VEGABAR 82"
+  category: "Pressure Transmitter"
+  description: "Modular pressure transmitter with ceramic cell and SIL2 certification."
+  
+  pfh_avg: 3.4e-08
+  pfd_avg: 1.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 36
+  notes: "Suitable for temperature extremes and corrosive media."
+- name: "SMAR LD400 HART"
+  manufacturer: "SMAR"
+  model: "LD400"
+  category: "Pressure Transmitter"
+  description: "Smart differential pressure device with SIL2/3 data."
+  
+  pfh_avg: 4.8e-08
+  pfd_avg: 2.5e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Includes intelligent diagnostics for plugged impulse lines."
+- name: "Bently Nevada 3500/42M"
+  manufacturer: "Bently Nevada"
+  model: "3500/42M"
+  category: "Vibration Monitor"
+  description: "Proximity and seismic monitoring module with SIL2 certification."
+  
+  pfh_avg: 3.1e-08
+  pfd_avg: 1.6e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Commonly used for rotating machinery shutdown protection."
+- name: "HIMA HIMatrix F35 Analog Input"
+  manufacturer: "HIMA"
+  model: "F35 AI"
+  category: "Analog Input"
+  description: "Compact safety controller AI module certified to SIL3."
+  
+  pfh_avg: 2.0e-08
+  pfd_avg: 1.0e-04
+  sys_cap: 3
+  proof_test_interval_months: 36
+  notes: "Supports hot swapping and extensive line diagnostics."
+- name: "Danfoss MBS 5100"
+  manufacturer: "Danfoss"
+  model: "MBS 5100"
+  category: "Pressure Transmitter"
+  description: "Compact transmitter for industrial hydraulics with SIL2 rating."
+  
+  pfh_avg: 6.3e-08
+  pfd_avg: 3.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Resists vibration and cavitation in mobile machinery."
+- name: "Teledyne OLCT100-XP Catalytic Gas Detector"
+  manufacturer: "Teledyne Oldham"
+  model: "OLCT100-XP-043-1"
+  category: "Gas Detector"
+  description: "Explosion-proof fixed gas detector with 4-20 mA/HART output for SIL2 loops."
+  
+  pfh_avg: 3.6e-08
+  pfd_avg: 1.6e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Certified per IEC 61508 with catalytic bead sensing element. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Teledyne OLCT100-XP Infrared Gas Detector"
+  manufacturer: "Teledyne Oldham"
+  model: "OLCT100-XP-003-1"
+  category: "Gas Detector"
+  description: "Infrared point detector for hydrocarbon vapors featuring SIL2 diagnostics."
+  
+  pfh_avg: 3.3e-08
+  pfd_avg: 1.4e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Dual-source IR optics with automatic optical path supervision. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Dräger Polytron 8200 CAT Combustible"
+  manufacturer: "Dräger"
+  model: "Polytron 8200 8344448"
+  category: "Gas Detector"
+  description: "Catalytic bead combustible gas detector with SIL2 diagnostics and HART."
+  
+  pfh_avg: 3.9e-08
+  pfd_avg: 1.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Supports Dräger REGARD controllers with event logging. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Dräger Polytron SE Ex with Polytron 8000"
+  manufacturer: "Dräger"
+  model: "Polytron 8200 344448"
+  category: "Gas Detector"
+  description: "Flameproof catalytic sensor head paired with Polytron 8000 transmitter for SIL service."
+  
+  pfh_avg: 3.7e-08
+  pfd_avg: 1.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Features replaceable smart sensor cartridges and event log. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Spectrex SharpEye 40/40D-M Optical Flame Detector"
+  manufacturer: "Spectrex"
+  model: "40/40-D-M-6-31-SCY-7"
+  category: "Flame Detector"
+  description: "Multi-spectrum IR flame detector with SIL2 data and harsh-area approvals."
+  
+  pfh_avg: 2.9e-08
+  pfd_avg: 1.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Offers heated window and self-test for offshore platforms. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Endress+Hauser Proline Promass E 500"
+  manufacturer: "Endress+Hauser"
+  model: "8E5B08-AAIBABDAGAAABASAD2SHA2+D9EBJAJBLALGZ"
+  category: "Coriolis Flowmeter"
+  description: "Remote-mount Coriolis flowmeter transmitter pair with SIL2/3 certificate."
+  
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.4e-04
+  sys_cap: 3
+  proof_test_interval_months: 24
+  notes: "Has HistoROM data storage and optional heartbeat verification. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Höntzsch VA40 Vortex Flow Sensor"
+  manufacturer: "Höntzsch"
+  model: "VA40/21,3-500GE"
+  category: "Flow Sensor"
+  description: "Insertion flow sensor with SIL2 data for gas measurement up to 40 m/s."
+  
+  pfh_avg: 4.8e-08
+  pfd_avg: 2.7e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Rated for -20 to 120 °C with ATEX ZG7 approval. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Yokogawa Rotamass Prime Coriolis"
+  manufacturer: "Yokogawa"
+  model: "RCUP80S-80BD40-030A-KF21-4-JB1/BG/PS/P6/MC2/Y005"
+  category: "Coriolis Flowmeter"
+  description: "Dual bent tube Coriolis flowmeter with SIL2 safety manual and digital outputs."
+  
+  pfh_avg: 4.0e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Features multi-variable measurement and built-in verification. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "VEGA VEGASWING 61 Level Switch"
+  manufacturer: "VEGA"
+  model: "VEGASWING 61"
+  category: "Level Switch"
+  description: "Vibrating level switch for liquids with SIL2 approval."
+  
+  pfh_avg: 5.2e-08
+  pfd_avg: 3.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Suitable for overfill prevention with failsafe relay output. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Rechner KAS-40 Capacitive Level Sensor"
+  manufacturer: "Rechner Sensors"
+  model: "KAS-40-39/23-N-D50-PTFE-Z02-1-Leak-1G"
+  category: "Level Sensor"
+  description: "Capacitive level probe with PTFE coating and SIL capability data."
+  
+  pfh_avg: 5.5e-08
+  pfd_avg: 3.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Designed for leak detection in aggressive chemical tanks. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "WIKA IS-3 SIL Pressure Transmitter"
+  manufacturer: "WIKA"
+  model: "IS-3-0-2111-2SZ-SBIHAZZ-GTM2ZZZ-UAZZ"
+  category: "Pressure Transmitter"
+  description: "Intrinsic safety pressure transmitter with SIL2/PL d compliance."
+  
+  pfh_avg: 3.5e-08
+  pfd_avg: 1.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes 4-20 mA/HART output and ship approvals. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "WIKA IS-3 Flameproof Pressure Transmitter"
+  manufacturer: "WIKA"
+  model: "IS-3-0-2111-2SZ-SBHHAZZ-GTM2ZZZ-UAZZ"
+  category: "Pressure Transmitter"
+  description: "Flameproof variant of the IS-3 transmitter with extended diagnostics."
+  
+  pfh_avg: 3.4e-08
+  pfd_avg: 1.8e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Supports Ex d hazardous areas with coated wetted parts. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Labom Compact Pressure Transmitter CB6021"
+  manufacturer: "Labom"
+  model: "CB6021-B1058-H1-K1010-T120-W2602-W2652"
+  category: "Pressure Transmitter"
+  description: "Compact hygienic pressure transmitter with SIL2 declaration."
+  
+  pfh_avg: 4.1e-08
+  pfd_avg: 2.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Tri-clamp process connection with 10 bar range. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Labom Compact Pressure Transmitter CB6011"
+  manufacturer: "Labom"
+  model: "CB6011-B1058-H1-K1002-T120-W2602-W2652"
+  category: "Pressure Transmitter"
+  description: "Compact pressure transmitter with HART and SIL2 report."
+  
+  pfh_avg: 4.0e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Stainless steel wetted parts and IP67 housing. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Labom Compact Pressure Transmitter CB6011 Hastelloy"
+  manufacturer: "Labom"
+  model: "CB6011-B1057-H1-K1002-T120-W2602-W2652"
+  category: "Pressure Transmitter"
+  description: "Hastelloy wetted-part variant of the SIL2 Labom Compact transmitter."
+  
+  pfh_avg: 4.2e-08
+  pfd_avg: 2.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Ideal for corrosive media with hygienic clamp seal. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Labom Compact Pressure Transmitter CB6011 High Range"
+  manufacturer: "Labom"
+  model: "CB6011-B1056-H1-K1002-J304-T120-W2602-W2652"
+  category: "Pressure Transmitter"
+  description: "High-pressure version of the Labom Compact with SIL2 data sheet."
+  
+  pfh_avg: 4.3e-08
+  pfd_avg: 2.4e-04
+  sys_cap: 2
+  proof_test_interval_months: 18
+  notes: "Features stainless steel body and 400 bar rating. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Aplisens APR-2000ALW Differential Pressure"
+  manufacturer: "Aplisens"
+  model: "APR-2000ALW/Safety/MR/Exia/-25...25mbar/GP"
+  category: "Differential Pressure"
+  description: "Differential pressure transmitter for low ranges with SIL2 certificate."
+  
+  pfh_avg: 3.9e-08
+  pfd_avg: 2.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Suitable for gas filter monitoring and custody transfer. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "VEGA VEGABAR 81 Pressure Transmitter"
+  manufacturer: "VEGA"
+  model: "VEGABAR 81"
+  category: "Pressure Transmitter"
+  description: "SIL2 capable ceramic cell pressure transmitter for extreme media."
+  
+  pfh_avg: 3.8e-08
+  pfd_avg: 2.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Features adjustable remote seals and SIL conformity certificate. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Det-Tronics SmokeWatch U5015"
+  manufacturer: "Det-Tronics"
+  model: "U5015A4M12A"
+  category: "Smoke Detector"
+  description: "Air intake smoke detector certified for SIL2/PLd fire detection."
+  
+  pfh_avg: 2.7e-08
+  pfd_avg: 1.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 12
+  notes: "Integrated aspirating system for turbine enclosures. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 100 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 100-3-10000-2-4-1-3-2-4"
+  category: "Temperature Sensor"
+  description: "Pt100 sensor with mineral-insulated probe and SIL capability statement."
+  
+  pfh_avg: 5.0e-08
+  pfd_avg: 2.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes M14x1.5 thread for secure process mounting. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 45 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 45-3-10000-2-4-1-3-2-4"
+  category: "Temperature Sensor"
+  description: "Short insertion Pt100 sensor with SIL documentation for compressors."
+  
+  pfh_avg: 5.0e-08
+  pfd_avg: 2.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Mineral insulated cable with IP67 junction box. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 75 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 75-3-10000-2-4-1-3-2-4"
+  category: "Temperature Sensor"
+  description: "Medium insertion Pt100 sensor for rotating machinery with SIL proof test."
+  
+  pfh_avg: 5.0e-08
+  pfd_avg: 2.9e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Supplied with compression fitting for flexible mounting. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 78 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 78-2-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "Two-wire Pt100 sensor with long sheath for bearing monitoring."
+  
+  pfh_avg: 5.1e-08
+  pfd_avg: 3.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes quick-disconnect plug for fast replacement. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 150 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 150-1-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "Long sheath Pt100 probe with SIL2 data for furnaces."
+  
+  pfh_avg: 5.2e-08
+  pfd_avg: 3.1e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "High-temperature mineral insulated cable rated to 500 °C. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 350 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 350-1-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "Extended length Pt100 sensor with SIL2 declaration for kilns."
+  
+  pfh_avg: 5.3e-08
+  pfd_avg: 3.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Stainless steel sheath with vibration resistant head. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 450 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 450-1-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "Extra long Pt100 probe for exhaust stacks with SIL qualification."
+  
+  pfh_avg: 5.3e-08
+  pfd_avg: 3.2e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes terminal head with screw terminals and IP67 rating. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 750 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 750-1-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "Long reach Pt100 sensor with SIL2 support for large furnaces."
+  
+  pfh_avg: 5.4e-08
+  pfd_avg: 3.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Mineral insulated cable rated to 600 °C continuous. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple 1000 mm"
+  manufacturer: "Senmatic"
+  model: "PMK 1000-1-10000-2-4-1-3-1-4"
+  category: "Temperature Sensor"
+  description: "One metre Pt100 sensor with SIL2 certificate for tall vessels."
+  
+  pfh_avg: 5.4e-08
+  pfd_avg: 3.3e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Includes adjustable gland for depth positioning. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PMK Thermocouple Spare"
+  manufacturer: "Senmatic"
+  model: "1066-1123"
+  category: "Temperature Sensor"
+  description: "Replacement sensor insert with SIL documentation for PMK assemblies."
+  
+  pfh_avg: 5.1e-08
+  pfd_avg: 3.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Delivered with calibration certificate and engraving. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
+  data_source: "Pending verification from manufacturer safety manual."
+- name: "Senmatic PTE Four-Wire RTD"
+  manufacturer: "Senmatic"
+  model: "PTE 601110000241323"
+  category: "Temperature Sensor"
+  description: "Four-wire Pt100 RTD with SIL supporting documentation for redundancy chains."
+  
+  pfh_avg: 5.1e-08
+  pfd_avg: 3.0e-04
+  sys_cap: 2
+  proof_test_interval_months: 24
+  notes: "Delivers high accuracy for automotive climatic chambers. PFH/PFD values are placeholders until verified against official safety documentation."
+  data_quality: "unverified"
