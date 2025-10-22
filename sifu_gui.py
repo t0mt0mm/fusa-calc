@@ -11,13 +11,15 @@ SIFU GUI (PyQt5) — UI/UX rework per preferences
 import os
 import sys
 import re
+import uuid
+import base64
 from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView
 )
-from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence
+from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage
 from datetime import datetime
 import yaml
 import numpy as np
@@ -1779,6 +1781,7 @@ class MainWindow(QMainWindow):
                 "source": "df"
             })
             self.rows_meta.append(meta)
+            self._ensure_row_uid(meta)
 
             header = f"{meta['sifu_name']} \nRequired {meta['sil_required']} \n{meta['demand_mode_ required'] if 'demand_mode_ required' in meta else meta['demand_mode_required']}"
             # Fix whitespace key if any
@@ -2061,6 +2064,7 @@ class MainWindow(QMainWindow):
         # --- Zielzeile ans Ende anfügen und Basis-Widgets anlegen
         new_meta = RowMeta(src_meta.copy())
         new_meta["sifu_name"] = f"{new_meta.get('sifu_name','SIFU')} (copy)"
+        new_meta.pop("_uid", None)
         self._append_sifu_row(new_meta)
         new_row = self.table.rowCount() - 1
         dst_widgets = self.sifu_widgets.get(new_row)
@@ -2145,6 +2149,90 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Export failed", str(e))
 
+    def _ensure_row_uid(self, meta: RowMeta) -> str:
+        uid = meta.get("_uid")
+        if not uid:
+            uid = f"sifu-{uuid.uuid4().hex}"
+            meta["_uid"] = uid
+        return uid
+
+    def _row_index_from_uid(self, uid: str) -> int:
+        for idx, meta in enumerate(self.rows_meta):
+            if self._ensure_row_uid(meta) == uid:
+                return idx
+        return -1
+
+    def _capture_row_snapshot(self, row_idx: int) -> Optional[str]:
+        table = self.table
+        if not table or row_idx < 0 or row_idx >= table.rowCount():
+            return None
+        try:
+            model = table.model()
+            if model is None:
+                return None
+
+            first_index = model.index(row_idx, 0)
+            if first_index.isValid():
+                table.scrollTo(first_index, QAbstractItemView.PositionAtCenter)
+                QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents, 25)
+
+            viewport = table.viewport()
+            if viewport is None:
+                return None
+
+            union_rect: Optional[QtCore.QRect] = None
+            for col in range(table.columnCount()):
+                idx = model.index(row_idx, col)
+                if not idx.isValid():
+                    continue
+                rect = table.visualRect(idx)
+                if not rect.isValid() or rect.isNull():
+                    continue
+                union_rect = rect if union_rect is None else union_rect.united(rect)
+
+            if not union_rect or union_rect.isNull():
+                return None
+
+            union_rect.adjust(-2, -2, 2, 2)
+            union_rect = union_rect.intersected(viewport.rect())
+            if union_rect.isEmpty():
+                return None
+
+            viewport.update(union_rect)
+            QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents, 25)
+
+            pixmap = viewport.grab(union_rect)
+            if pixmap.isNull():
+                return None
+
+            data: bytes
+            dpr = pixmap.devicePixelRatio() or 1.0
+            if dpr != 1.0:
+                image = pixmap.toImage()
+                target_size = QtCore.QSize(max(1, int(image.width() / dpr)),
+                                           max(1, int(image.height() / dpr)))
+                image = image.scaled(target_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                buffer = QtCore.QBuffer()
+                buffer.open(QtCore.QIODevice.WriteOnly)
+                image.save(buffer, "PNG")
+                data = bytes(buffer.data())
+                buffer.close()
+            else:
+                buffer = QtCore.QBuffer()
+                buffer.open(QtCore.QIODevice.WriteOnly)
+                pixmap.save(buffer, "PNG")
+                data = bytes(buffer.data())
+                buffer.close()
+
+            if not data:
+                return None
+
+            encoded = base64.b64encode(data).decode("ascii")
+            return f"data:image/png;base64,{encoded}"
+        except Exception as exc:
+            print(f"[export] Failed to capture row {row_idx}: {exc}", file=sys.stderr)
+            return None
+
     def _build_html_report(self) -> str:
         '''Build a self-contained HTML report (print-friendly) with all SIFUs,
         their components, assumptions, DU/DD ratios and computed results.'''
@@ -2188,6 +2276,11 @@ class MainWindow(QMainWindow):
             req_rank = int(req_rank_raw)
             calc_rank = sil_rank(sil_calc)
             ok = (calc_rank >= req_rank) and (calc_rank > 0)
+            uid = self._ensure_row_uid(meta)
+            row_pos = self._row_index_from_uid(uid)
+            if row_pos < 0:
+                print(f"[export] No table row found for uid {uid}", file=sys.stderr)
+            snapshot = self._capture_row_snapshot(row_pos) if row_pos >= 0 else None
             payload["sifus"].append({
                 "meta": meta,
                 "sensors": sensors,
@@ -2199,6 +2292,8 @@ class MainWindow(QMainWindow):
                 "sil_calc": sil_calc,
                 "ok": ok,
                 "req_sil": req_sil_str,
+                "uid": uid,
+                "row_image": snapshot,
             })
 
         # Global assumptions and DU/DD ratios
@@ -2226,6 +2321,8 @@ class MainWindow(QMainWindow):
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
         .right { text-align:right; }
         .nowrap { white-space: nowrap; }
+        .row-image { margin: 12px 0 18px; text-align: center; }
+        .row-image img { max-width: 100%; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(15,23,42,0.08); background:#fff; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
@@ -2296,6 +2393,14 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Calculated SIL</th><td>{esc(s["sil_calc"])}, {status}</td></tr>')
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
+
+            screenshot = s.get("row_image")
+            if screenshot:
+                parts.append(
+                    '<div class="row-image">'
+                    f'<img src="{screenshot}" alt="GUI snapshot of {esc(meta.get("sifu_name", "SIFU"))}">'
+                    '</div>'
+                )
 
             def render_group(title, items):
                 parts.append(f'<h3>{esc(title)}</h3>')
@@ -2390,6 +2495,7 @@ class MainWindow(QMainWindow):
                 "source": "user"
             })
             self.rows_meta.append(meta)
+            self._ensure_row_uid(meta)
 
             header = f"{meta['sifu_name']} \nRequired: {meta['sil_required']}\n {meta['demand_mode_required']}"
             self.table.setVerticalHeaderItem(row_idx, QTableWidgetItem(header))
@@ -2811,6 +2917,7 @@ class MainWindow(QMainWindow):
         row_idx = self.table.rowCount()
         self.table.insertRow(row_idx)
         self.rows_meta.append(meta)
+        self._ensure_row_uid(meta)
 
         widgets = SifuRowWidgets()
         self.sifu_widgets[row_idx] = widgets
