@@ -15,7 +15,9 @@ import uuid
 import base64
 import json
 import hashlib
-from typing import Dict, Tuple, List, Optional, Union, Any
+import copy
+import weakref
+from typing import Dict, Tuple, List, Optional, Union, Any, ReferenceType
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -27,6 +29,12 @@ import yaml
 import numpy as np
 import html
 from pathlib import Path
+# ==========================
+
+
+def new_instance_id() -> str:
+    return uuid.uuid4().hex
+
 # ==========================
 # Tooltip helper (HTML)
 # ==========================
@@ -443,7 +451,15 @@ class ChipList(QListWidget):
                 insert_row = self.indexAt(event.pos()).row()
                 for it in items:
                     new_it = QListWidgetItem(it)
-                    new_it.setData(Qt.UserRole, it.data(Qt.UserRole))
+                    base_data = it.data(Qt.UserRole) or {}
+                    window = self.window()
+                    clone_func = getattr(window, "_clone_chip_data", None)
+                    if callable(clone_func):
+                        new_data = clone_func(base_data, preserve_id=False)
+                    else:
+                        new_data = copy.deepcopy(base_data)
+                        new_data["instance_id"] = new_instance_id()
+                    new_it.setData(Qt.UserRole, new_data)
                     if insert_row < 0:
                         self.addItem(new_it)
                     else:
@@ -463,7 +479,15 @@ class ChipList(QListWidget):
                 insert_row = self.indexAt(event.pos()).row()
                 for it in items:
                     new_it = QListWidgetItem(it)
-                    new_it.setData(Qt.UserRole, it.data(Qt.UserRole))
+                    base_data = it.data(Qt.UserRole) or {}
+                    window = self.window()
+                    clone_func = getattr(window, "_clone_chip_data", None)
+                    if callable(clone_func):
+                        new_data = clone_func(base_data, preserve_id=False)
+                    else:
+                        new_data = copy.deepcopy(base_data)
+                        new_data["instance_id"] = new_instance_id()
+                    new_it.setData(Qt.UserRole, new_data)
                     if insert_row < 0:
                         self.addItem(new_it)
                     else:
@@ -477,6 +501,19 @@ class ChipList(QListWidget):
         self.style().unpolish(self); self.style().polish(self)
         self.window().statusBar().showMessage("Moved component", 1500)
         self.window().recalculate_all()
+
+    def mousePressEvent(self, event):
+        is_shift = event.button() == Qt.LeftButton and bool(event.modifiers() & Qt.ShiftModifier)
+        super().mousePressEvent(event)
+        if not is_shift:
+            return
+        item = self.itemAt(event.pos())
+        if not item:
+            return
+        window = self.window()
+        handler = getattr(window, "_handle_shift_click", None)
+        if callable(handler):
+            handler(self, item)
 
     @staticmethod
     def _make_chip_label(text: str) -> QLabel:
@@ -527,10 +564,20 @@ class ActuatorList(ChipList):
                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
                 )
                 if reply == QMessageBox.Yes:
+                    members: List[dict] = []
+                    for payload in (t_data, s_data):
+                        member = copy.deepcopy(payload)
+                        if not isinstance(member.get('instance_id'), str):
+                            member['instance_id'] = new_instance_id()
+                        members.append(member)
+
                     grp_item = QListWidgetItem(f"{t_name} + {s_name}")
                     grp_item.setData(Qt.UserRole, {
-                        'group': True, 'architecture': '1oo2',
-                        'members': [t_data, s_data], 'kind': 'actuator'
+                        'group': True,
+                        'architecture': '1oo2',
+                        'members': members,
+                        'kind': 'actuator',
+                        'instance_id': new_instance_id(),
                     })
 
                     widget = QWidget()
@@ -621,10 +668,20 @@ class SensorList(ChipList):
                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
                 )
                 if reply == QMessageBox.Yes:
+                    members: List[dict] = []
+                    for payload in (t_data, s_data):
+                        member = copy.deepcopy(payload)
+                        if not isinstance(member.get('instance_id'), str):
+                            member['instance_id'] = new_instance_id()
+                        members.append(member)
+
                     grp_item = QListWidgetItem(f"{t_name} + {s_name}")
                     grp_item.setData(Qt.UserRole, {
-                        'group': True, 'architecture': '1oo2',
-                        'members': [t_data, s_data], 'kind': 'sensor'
+                        'group': True,
+                        'architecture': '1oo2',
+                        'members': members,
+                        'kind': 'sensor',
+                        'instance_id': new_instance_id(),
                     })
 
                     widget = QWidget()
@@ -1354,6 +1411,9 @@ class MainWindow(QMainWindow):
 
         # --- per-row metadata store ---
         self.rows_meta: List[RowMeta] = []
+        self._pending_link: Optional[Dict[str, Any]] = None
+        self._pending_link_widget_ref: Optional[ReferenceType[QtWidgets.QWidget]] = None
+        self._pending_link_item_ref: Optional[ReferenceType[QtWidgets.QWidget]] = None
 
         # --- toolbar ---
         #tb = QToolBar("Actions"); tb.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
@@ -1819,6 +1879,8 @@ class MainWindow(QMainWindow):
         QTableWidget::item:selected {{ background: #E0ECFF; }}
         QListWidget {{ background: {bg1}; border: 1px solid {border}; border-radius: 8px; padding: 6px; }}
         QListWidget[dragTarget="true"] {{ border-color:{primary}; background:#EEF5FF; }}
+        QListWidget[linkSource="true"] {{ border-color:{primary}; box-shadow:inset 0 0 0 1px {primary}; }}
+        QWidget[kind][linkOrigin="true"] {{ border-color:{primary}; background:#EEF5FF; }}
         QWidget[kind] {{
             background:{bg0}; border:1px solid #d9d9d9; border-radius:12px;
         }}
@@ -1854,6 +1916,7 @@ class MainWindow(QMainWindow):
                 "demand_mode_required": req_mode,
                 "source": "df"
             })
+            meta["connections"] = self._make_empty_connections()
             self.rows_meta.append(meta)
             self._ensure_row_uid(meta)
 
@@ -1999,6 +2062,11 @@ class MainWindow(QMainWindow):
         if pfd_fit is not None:
             data["pfd_fit"] = float(pfd_fit)
 
+        inst_id = data.get("instance_id")
+        if not isinstance(inst_id, str) or not inst_id:
+            inst_id = new_instance_id()
+        data["instance_id"] = inst_id
+
         item.setData(Qt.UserRole, data)
         item.setSizeHint(QtCore.QSize(170, 38))
         return item
@@ -2139,6 +2207,7 @@ class MainWindow(QMainWindow):
         new_meta = RowMeta(src_meta.copy())
         new_meta["sifu_name"] = f"{new_meta.get('sifu_name','SIFU')} (copy)"
         new_meta.pop("_uid", None)
+        new_meta["connections"] = self._make_empty_connections()
         self._append_sifu_row(new_meta)
         new_row = self.table.rowCount() - 1
         dst_widgets = self.sifu_widgets.get(new_row)
@@ -2228,6 +2297,7 @@ class MainWindow(QMainWindow):
         if not uid:
             uid = f"sifu-{uuid.uuid4().hex}"
             meta["_uid"] = uid
+        self._ensure_connections(meta)
         return uid
 
     def _row_index_from_uid(self, uid: str) -> int:
@@ -2235,6 +2305,279 @@ class MainWindow(QMainWindow):
             if self._ensure_row_uid(meta) == uid:
                 return idx
         return -1
+
+    def _make_empty_connections(self) -> Dict[str, Dict[str, List[str]]]:
+        return {"sensor_logic": {}, "logic_actuator": {}}
+
+    @staticmethod
+    def _normalize_connection_map(mapping: Any) -> Dict[str, List[str]]:
+        out: Dict[str, List[str]] = {}
+        if not isinstance(mapping, dict):
+            return out
+        for key, vals in mapping.items():
+            if not isinstance(key, str):
+                continue
+            if isinstance(vals, str):
+                out[key] = [vals]
+                continue
+            if isinstance(vals, (list, tuple, set)):
+                normalized = [str(v) for v in vals if isinstance(v, str) and v]
+                if normalized:
+                    out[key] = normalized
+        return out
+
+    def _ensure_connections(self, meta: RowMeta) -> Dict[str, Dict[str, List[str]]]:
+        raw = meta.get("connections")
+        sensor_logic = self._normalize_connection_map(raw.get("sensor_logic")) if isinstance(raw, dict) else {}
+        logic_actuator = self._normalize_connection_map(raw.get("logic_actuator")) if isinstance(raw, dict) else {}
+        normalized = {
+            "sensor_logic": sensor_logic,
+            "logic_actuator": logic_actuator,
+        }
+        meta["connections"] = normalized
+        return normalized
+
+    def _clone_chip_data(self, data: dict, preserve_id: bool = False) -> dict:
+        new_data = copy.deepcopy(data) if data else {}
+        if not preserve_id or not isinstance(new_data.get("instance_id"), str):
+            new_data["instance_id"] = new_instance_id()
+        if new_data.get("group") and isinstance(new_data.get("members"), list):
+            members: List[dict] = []
+            for member in new_data.get("members", []):
+                if not isinstance(member, dict):
+                    continue
+                member_copy = copy.deepcopy(member)
+                if not preserve_id or not isinstance(member_copy.get("instance_id"), str):
+                    member_copy["instance_id"] = new_instance_id()
+                members.append(member_copy)
+            new_data["members"] = members
+        return new_data
+
+    def _reset_pending_link(self) -> None:
+        widget = self._pending_link_widget_ref() if self._pending_link_widget_ref else None
+        if widget:
+            try:
+                widget.setProperty("linkSource", False)
+                widget.style().unpolish(widget)
+                widget.style().polish(widget)
+            except RuntimeError:
+                pass
+        chip_widget = self._pending_link_item_ref() if self._pending_link_item_ref else None
+        if chip_widget:
+            try:
+                chip_widget.setProperty("linkOrigin", False)
+                chip_widget.style().unpolish(chip_widget)
+                chip_widget.style().polish(chip_widget)
+            except RuntimeError:
+                pass
+        self._pending_link = None
+        self._pending_link_widget_ref = None
+        self._pending_link_item_ref = None
+
+    def _set_pending_link(self, row_idx: int, stage: str, instance_id: str,
+                          list_widget: QListWidget, item: QListWidgetItem) -> None:
+        self._reset_pending_link()
+        self._pending_link = {"row": row_idx, "stage": stage, "instance_id": instance_id}
+        try:
+            list_widget.setProperty("linkSource", True)
+            list_widget.style().unpolish(list_widget)
+            list_widget.style().polish(list_widget)
+        except RuntimeError:
+            pass
+        self._pending_link_widget_ref = weakref.ref(list_widget)
+        chip_widget = list_widget.itemWidget(item)
+        if chip_widget:
+            try:
+                chip_widget.setProperty("linkOrigin", True)
+                chip_widget.style().unpolish(chip_widget)
+                chip_widget.style().polish(chip_widget)
+            except RuntimeError:
+                pass
+            self._pending_link_item_ref = weakref.ref(chip_widget)
+        else:
+            self._pending_link_item_ref = None
+
+    def _row_index_for_list(self, list_widget: QListWidget) -> int:
+        for idx, widgets in self.sifu_widgets.items():
+            if widgets.in_list is list_widget or widgets.logic_list is list_widget or widgets.out_list is list_widget:
+                return idx
+        return -1
+
+    def _stage_for_list(self, list_widget: QListWidget) -> Optional[str]:
+        row_idx = self._row_index_for_list(list_widget)
+        if row_idx < 0:
+            return None
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets:
+            return None
+        if widgets.in_list is list_widget:
+            return "sensor"
+        if widgets.logic_list is list_widget:
+            return "logic"
+        if widgets.out_list is list_widget:
+            return "actuator"
+        return None
+
+    def _list_instance_ids(self, lw: QListWidget) -> List[str]:
+        ids: List[str] = []
+        for i in range(lw.count()):
+            item = lw.item(i)
+            if not item:
+                continue
+            data = item.data(Qt.UserRole) or {}
+            if data.get('group'):
+                continue
+            inst_id = data.get('instance_id')
+            if isinstance(inst_id, str) and inst_id:
+                ids.append(inst_id)
+        return ids
+
+    def _label_for_instance(self, row_idx: int, stage: str, instance_id: str) -> str:
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets:
+            return instance_id
+        mapping = {
+            "sensor": widgets.in_list,
+            "logic": widgets.logic_list,
+            "actuator": widgets.out_list,
+        }
+        lw = mapping.get(stage)
+        if not lw:
+            return instance_id
+        for i in range(lw.count()):
+            item = lw.item(i)
+            if not item:
+                continue
+            data = item.data(Qt.UserRole) or {}
+            if data.get('group'):
+                continue
+            if data.get('instance_id') == instance_id:
+                label = data.get('code') or data.get('name') or item.text()
+                return str(label)
+        return instance_id
+
+    def _prune_connections_for_row(self, row_idx: int) -> None:
+        if row_idx < 0 or row_idx >= len(self.rows_meta):
+            return
+        meta = self.rows_meta[row_idx]
+        connections = self._ensure_connections(meta)
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets:
+            meta["connections"] = self._make_empty_connections()
+            self._reset_pending_link()
+            return
+        sensor_ids = set(self._list_instance_ids(widgets.in_list))
+        logic_ids = set(self._list_instance_ids(widgets.logic_list))
+        actuator_ids = set(self._list_instance_ids(widgets.out_list))
+        changed = False
+        cleaned_sensor_logic: Dict[str, List[str]] = {}
+        for src, dests in connections.get("sensor_logic", {}).items():
+            if src not in sensor_ids:
+                changed = True
+                continue
+            filtered = [d for d in dests if d in logic_ids]
+            if filtered:
+                if filtered != dests:
+                    changed = True
+                cleaned_sensor_logic[src] = filtered
+            else:
+                changed = True
+        cleaned_logic_actuator: Dict[str, List[str]] = {}
+        for src, dests in connections.get("logic_actuator", {}).items():
+            if src not in logic_ids:
+                changed = True
+                continue
+            filtered = [d for d in dests if d in actuator_ids]
+            if filtered:
+                if filtered != dests:
+                    changed = True
+                cleaned_logic_actuator[src] = filtered
+            else:
+                changed = True
+        if changed:
+            meta["connections"] = {
+                "sensor_logic": cleaned_sensor_logic,
+                "logic_actuator": cleaned_logic_actuator,
+            }
+            self._reset_pending_link()
+
+    def _handle_shift_click(self, list_widget: QListWidget, item: QListWidgetItem) -> None:
+        row_idx = self._row_index_for_list(list_widget)
+        if row_idx < 0:
+            return
+        meta = self.rows_meta[row_idx]
+        data = item.data(Qt.UserRole) or {}
+        if data.get('group'):
+            self.statusBar().showMessage("Connections cannot be assigned to 1oo2 group placeholders. Select an individual component instead.", 3000)
+            return
+        inst_id = data.get('instance_id')
+        if not isinstance(inst_id, str) or not inst_id:
+            data = copy.deepcopy(data)
+            inst_id = new_instance_id()
+            data['instance_id'] = inst_id
+            item.setData(Qt.UserRole, data)
+        stage = self._stage_for_list(list_widget)
+        if stage is None:
+            return
+        connections = self._ensure_connections(meta)
+        if not self._pending_link or self._pending_link.get('row') != row_idx:
+            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
+            stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
+            if stage_name:
+                self.statusBar().showMessage(f"Selected {stage_name} component as source. Shift+click a compatible target to toggle a link.", 3500)
+            return
+
+        pending = self._pending_link
+        if pending.get('stage') == stage:
+            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
+            stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
+            if stage_name:
+                self.statusBar().showMessage(f"Source updated to {stage_name} component. Choose a target to link.", 3000)
+            return
+
+        transition_map = {
+            ("sensor", "logic"): "sensor_logic",
+            ("logic", "actuator"): "logic_actuator",
+        }
+        transition_key = transition_map.get((pending.get('stage'), stage))
+        if not transition_key:
+            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
+            self.statusBar().showMessage("Selected component as new source. Shift+click a downstream target to connect.", 3200)
+            return
+
+        src_id = pending.get('instance_id')
+        if not isinstance(src_id, str):
+            self._reset_pending_link()
+            return
+
+        dests = connections.setdefault(transition_key, {}).get(src_id, [])
+        dests = list(dests)
+        if inst_id in dests:
+            dests = [d for d in dests if d != inst_id]
+            if dests:
+                connections[transition_key][src_id] = dests
+            else:
+                connections[transition_key].pop(src_id, None)
+            verb = "Removed"
+        else:
+            dests.append(inst_id)
+            seen: set = set()
+            filtered: List[str] = []
+            for d in dests:
+                if d in seen:
+                    continue
+                seen.add(d)
+                if isinstance(d, str) and d:
+                    filtered.append(d)
+            connections[transition_key][src_id] = filtered
+            verb = "Linked"
+
+        self._reset_pending_link()
+        self._prune_connections_for_row(row_idx)
+        self.recalculate_row(row_idx)
+        src_label = self._label_for_instance(row_idx, pending.get('stage', ''), src_id)
+        dst_label = self._label_for_instance(row_idx, stage, inst_id)
+        self.statusBar().showMessage(f"{verb} connection: {src_label} → {dst_label}", 3200)
 
     def _capture_row_snapshot(self, row_idx: int) -> Optional[str]:
         table = self.table
@@ -2385,6 +2728,7 @@ class MainWindow(QMainWindow):
             row_pos = self._row_index_from_uid(uid)
             if row_pos < 0:
                 print(f"[export] No table row found for uid {uid}", file=sys.stderr)
+            connections = self._ensure_connections(meta)
             snapshot_signature_payload = {
                 "meta": {
                     "sifu_name": meta.get("sifu_name"),
@@ -2427,6 +2771,10 @@ class MainWindow(QMainWindow):
                 "req_sil": req_sil_str,
                 "uid": uid,
                 "row_image": snapshot,
+                "connections": {
+                    "sensor_logic": {src: list(dests) for src, dests in connections.get("sensor_logic", {}).items()},
+                    "logic_actuator": {src: list(dests) for src, dests in connections.get("logic_actuator", {}).items()},
+                },
             })
 
         # Global assumptions and DU/DD ratios
@@ -2469,7 +2817,8 @@ class MainWindow(QMainWindow):
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_svg(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
+        def build_architecture_svg(sensors: List[dict], logic: List[dict], actuators: List[dict],
+                                   connections: Optional[Dict[str, Dict[str, List[str]]]] = None) -> str:
             stage_defs = [
                 ("sensors", "Sensors", sensors or []),
                 ("logic", "Logic", logic or []),
@@ -2479,6 +2828,25 @@ class MainWindow(QMainWindow):
             columns = []
             groups: Dict[str, Dict[str, Any]] = {}
             max_nodes = 0
+            conn_map = connections if isinstance(connections, dict) else {}
+
+            def normalize_conn(mapping: Any) -> Dict[str, List[str]]:
+                out: Dict[str, List[str]] = {}
+                if not isinstance(mapping, dict):
+                    return out
+                for key, vals in mapping.items():
+                    if not isinstance(key, str):
+                        continue
+                    if isinstance(vals, str):
+                        out[key] = [vals]
+                    elif isinstance(vals, (list, tuple, set)):
+                        seq = [str(v) for v in vals if isinstance(v, str) and v]
+                        if seq:
+                            out[key] = seq
+                return out
+
+            sensor_logic_map = normalize_conn(conn_map.get("sensor_logic"))
+            logic_actuator_map = normalize_conn(conn_map.get("logic_actuator"))
 
             for col_idx, (key, title, items) in enumerate(stage_defs):
                 nodes: List[Dict[str, Any]] = []
@@ -2497,21 +2865,27 @@ class MainWindow(QMainWindow):
                             continue
                         for member_idx, member in enumerate(members):
                             label = member.get("code") or member.get("name") or f"Member {member_idx + 1}"
+                            inst_id = member.get("instance_id")
+                            connectable = isinstance(inst_id, str) and bool(inst_id)
                             node = {
                                 "label": label,
                                 "placeholder": False,
                                 "group": group_id,
-                                "connectable": True,
+                                "connectable": connectable,
+                                "instance_id": inst_id,
                             }
                             nodes.append(node)
                             groups[group_id]["nodes"].append(node)
                     else:
                         label = entry.get("code") or entry.get("name") or f"{title} {item_idx + 1}"
+                        inst_id = entry.get("instance_id")
+                        connectable = isinstance(inst_id, str) and bool(inst_id)
                         nodes.append({
                             "label": label,
                             "placeholder": False,
                             "group": None,
-                            "connectable": True,
+                            "connectable": connectable,
+                            "instance_id": inst_id,
                         })
 
                 if not nodes:
@@ -2520,6 +2894,7 @@ class MainWindow(QMainWindow):
                         "placeholder": True,
                         "group": None,
                         "connectable": False,
+                        "instance_id": None,
                     })
 
                 max_nodes = max(max_nodes, len(nodes))
@@ -2563,6 +2938,16 @@ class MainWindow(QMainWindow):
                     node["x_right"] = x + node_width
                     node["x_left"] = x
 
+            columns_by_key = {column["key"]: column for column in columns}
+            node_lookup: Dict[str, Dict[str, Dict[str, Any]]] = {}
+            for column in columns:
+                lookup: Dict[str, Dict[str, Any]] = {}
+                for node in column["nodes"]:
+                    inst_id = node.get("instance_id")
+                    if isinstance(inst_id, str) and inst_id:
+                        lookup[inst_id] = node
+                node_lookup[column["key"]] = lookup
+
             group_rects = []
             for group_id, group in groups.items():
                 nodes = group.get("nodes", [])
@@ -2582,24 +2967,49 @@ class MainWindow(QMainWindow):
                 })
 
             connectors = []
+            seen_pairs: set = set()
             control_offset = col_gap * 0.5
-            for col_idx in range(total_columns - 1):
-                src_nodes = [n for n in columns[col_idx]["nodes"] if n.get("connectable")]
-                dst_nodes = [n for n in columns[col_idx + 1]["nodes"] if n.get("connectable")]
+
+            def add_connector(src_node: Dict[str, Any], dst_node: Dict[str, Any]):
+                key = (src_node.get("instance_id"), dst_node.get("instance_id"))
+                if key in seen_pairs:
+                    return
+                seen_pairs.add(key)
+                connectors.append({
+                    "x1": src_node["x_right"],
+                    "y1": src_node["cy"],
+                    "x2": dst_node["x_left"],
+                    "y2": dst_node["cy"],
+                    "c1x": src_node["x_right"] + control_offset,
+                    "c1y": src_node["cy"],
+                    "c2x": dst_node["x_left"] - control_offset,
+                    "c2y": dst_node["cy"],
+                })
+
+            def connect_stage(src_key: str, dst_key: str, mapping: Dict[str, List[str]]):
+                column_src = columns_by_key.get(src_key)
+                column_dst = columns_by_key.get(dst_key)
+                if not column_src or not column_dst:
+                    return
+                src_nodes = [n for n in column_src["nodes"] if n.get("connectable")]
+                dst_nodes = [n for n in column_dst["nodes"] if n.get("connectable")]
                 if not src_nodes or not dst_nodes:
-                    continue
-                for src in src_nodes:
-                    for dst in dst_nodes:
-                        connectors.append({
-                            "x1": src["x_right"],
-                            "y1": src["cy"],
-                            "x2": dst["x_left"],
-                            "y2": dst["cy"],
-                            "c1x": src["x_right"] + control_offset,
-                            "c1y": src["cy"],
-                            "c2x": dst["x_left"] - control_offset,
-                            "c2y": dst["cy"],
-                        })
+                    return
+                src_lookup = node_lookup.get(src_key, {})
+                dst_lookup = node_lookup.get(dst_key, {})
+                for src_node in src_nodes:
+                    src_id = src_node.get("instance_id")
+                    targets = mapping.get(src_id) if mapping else None
+                    if targets:
+                        dst_candidates = [dst_lookup.get(tid) for tid in targets]
+                        dst_candidates = [dst for dst in dst_candidates if dst]
+                    else:
+                        dst_candidates = dst_nodes
+                    for dst_node in dst_candidates:
+                        add_connector(src_node, dst_node)
+
+            connect_stage("sensors", "logic", sensor_logic_map)
+            connect_stage("logic", "actuators", logic_actuator_map)
 
             svg_parts = [
                 f'<svg class="arch-svg" viewBox="0 0 {width:.0f} {height:.0f}" role="img" aria-label="Safety function architecture diagram">',
@@ -2721,7 +3131,7 @@ class MainWindow(QMainWindow):
                     '</figure>'
                 )
 
-            arch_svg = build_architecture_svg(s['sensors'], s['logic'], s['actuators'])
+            arch_svg = build_architecture_svg(s['sensors'], s['logic'], s['actuators'], s.get('connections'))
             if arch_svg:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
@@ -2794,6 +3204,11 @@ class MainWindow(QMainWindow):
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
+            connections = self._ensure_connections(meta)
+            serialized_connections = {
+                'sensor_logic': {src: list(dests) for src, dests in connections.get('sensor_logic', {}).items()},
+                'logic_actuator': {src: list(dests) for src, dests in connections.get('logic_actuator', {}).items()},
+            }
             out["sifus"].append({
                 "sifu_name": meta.get("sifu_name", f"Row {row_idx+1}"),
                 "sil_required": req_sil_str,
@@ -2803,6 +3218,7 @@ class MainWindow(QMainWindow):
                 "pfd_sum": float(pfd_sum), "pfh_sum": float(pfh_sum),
                 "sil_calculated": sil_calc,
                 "sil_required_met": sil_rank(sil_calc) >= req_rank and sil_rank(sil_calc) > 0,
+                "connections": serialized_connections,
             })
         return out
 
@@ -2820,6 +3236,14 @@ class MainWindow(QMainWindow):
                 "demand_mode_override": sifu_data.get("demand_mode_override", None),
                 "source": "user"
             })
+            payload_connections = sifu_data.get("connections", {})
+            if isinstance(payload_connections, dict):
+                meta["connections"] = {
+                    "sensor_logic": self._normalize_connection_map(payload_connections.get("sensor_logic")),
+                    "logic_actuator": self._normalize_connection_map(payload_connections.get("logic_actuator")),
+                }
+            else:
+                meta["connections"] = self._make_empty_connections()
             self.rows_meta.append(meta)
             self._ensure_row_uid(meta)
 
@@ -2839,13 +3263,13 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row_idx, 3, widgets.result)
 
             for sensor in sifu_data.get("sensors", []):
-                item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor")
+                item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor", extra_fields=sensor)
                 widgets.in_list.addItem(item)
                 widgets.in_list.attach_chip(item)
 
             for logic in sifu_data.get("logic", []):
                 name = logic.get("code", logic.get("name", "Logic"))
-                item = self._make_item(name, logic.get("pfd_avg", 0.0), logic.get("pfh_avg", 0.0), logic.get("sys_cap", ""), kind="logic")
+                item = self._make_item(name, logic.get("pfd_avg", 0.0), logic.get("pfh_avg", 0.0), logic.get("sys_cap", ""), kind="logic", extra_fields=logic)
                 widgets.logic_list.addItem(item)
                 widgets.logic_list.attach_chip(item)
 
@@ -2853,10 +3277,18 @@ class MainWindow(QMainWindow):
                 if act.get("architecture") == "1oo2":
                     m1, m2 = act.get("members", [{}, {}])
                     t_name = m1.get("code", "?"); s_name = m2.get("code", "?")
+                    members: List[dict] = []
+                    for payload in (m1, m2):
+                        payload = copy.deepcopy(payload)
+                        if not isinstance(payload.get('instance_id'), str) or not payload.get('instance_id'):
+                            payload['instance_id'] = new_instance_id()
+                        members.append(payload)
                     grp_item = QListWidgetItem(f"{t_name} + {s_name}")
-                    grp_item.setData(Qt.UserRole, {'group': True, 'architecture': '1oo2', 'members': [m1, m2], 'kind': 'actuator'})
+                    grp_item.setData(Qt.UserRole, {'group': True, 'architecture': '1oo2', 'members': members, 'kind': 'actuator', 'instance_id': act.get('instance_id', new_instance_id())})
                     # Tooltip
-                    grp_item.setToolTip(self._tooltip_for_1oo2(m1, m2, "actuator"))
+                    tooltip_m1 = members[0] if members else {}
+                    tooltip_m2 = members[1] if len(members) > 1 else {}
+                    grp_item.setToolTip(self._tooltip_for_1oo2(tooltip_m1, tooltip_m2, "actuator"))
                     widget = QWidget(); widget.setProperty("kind", "actuator")
                     lay = QHBoxLayout(widget); lay.setContentsMargins(8,4,8,4); lay.setSpacing(8)
                     badge = QLabel("1oo2"); badge.setStyleSheet("QLabel{font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; border:1px solid #ddd;}")
@@ -2866,7 +3298,7 @@ class MainWindow(QMainWindow):
                     grp_item.setSizeHint(widget.sizeHint())
                     widgets.out_list.addItem(grp_item); widgets.out_list.setItemWidget(grp_item, widget)
                 else:
-                    item = self._make_item(act.get("code", "?"), act.get("pfd_avg", 0.0), act.get("pfh_avg", 0.0), act.get("sys_cap", ""), act.get("pdm_code", ""), kind="actuator")
+                    item = self._make_item(act.get("code", "?"), act.get("pfd_avg", 0.0), act.get("pfh_avg", 0.0), act.get("sys_cap", ""), act.get("pdm_code", ""), kind="actuator", extra_fields=act)
                     widgets.out_list.addItem(item)
                     widgets.out_list.attach_chip(item)
 
@@ -2881,26 +3313,63 @@ class MainWindow(QMainWindow):
     def _collect_list_items(self, lw: QListWidget) -> List[dict]:
         items: List[dict] = []
         for i in range(lw.count()):
-            d = lw.item(i).data(Qt.UserRole) or {}
+            item = lw.item(i)
+            if not item:
+                continue
+            d = item.data(Qt.UserRole) or {}
             if d.get('group') and d.get('architecture') == '1oo2':
-                m1, m2 = d.get('members', [{}, {}])
-                pfd_grp = self._group_pfd_1oo2_grouped(m1, m2, 'actuator')
-                pfh_grp = self._group_pfh_1oo2_grouped(m1, m2, 'actuator')
+                normalized_members: List[dict] = []
+                members_payload: List[dict] = []
+                for member in d.get('members', []):
+                    if not isinstance(member, dict):
+                        continue
+                    member_copy = copy.deepcopy(member)
+                    member_id = member_copy.get('instance_id')
+                    if not isinstance(member_id, str) or not member_id:
+                        member_id = new_instance_id()
+                        member_copy['instance_id'] = member_id
+                    normalized_members.append(member_copy)
+                    members_payload.append({
+                        'code': member_copy.get('code'),
+                        'name': member_copy.get('name'),
+                        'pfd_avg': float(member_copy.get('pfd', member_copy.get('pfd_avg', 0.0)) or 0.0),
+                        'pfh_avg': float(member_copy.get('pfh', member_copy.get('pfh_avg', 0.0)) or 0.0),
+                        'sys_cap': member_copy.get('sys_cap', member_copy.get('syscap', '')),
+                        'pdm_code': member_copy.get('pdm_code'),
+                        'instance_id': member_id,
+                    })
+                if normalized_members != d.get('members'):
+                    new_payload = copy.deepcopy(d)
+                    new_payload['members'] = normalized_members
+                    item.setData(Qt.UserRole, new_payload)
+                    d = new_payload
+                member_a = normalized_members[0] if normalized_members else {}
+                member_b = normalized_members[1] if len(normalized_members) > 1 else {}
+                pfd_grp = self._group_pfd_1oo2_grouped(member_a, member_b, 'actuator')
+                pfh_grp = self._group_pfh_1oo2_grouped(member_a, member_b, 'actuator')
                 items.append({
                     'architecture': '1oo2',
-                    'members': [
-                        {'code': m1.get('code'), 'pfd_avg': float(m1.get('pfd', 0.0)), 'pfh_avg': float(m1.get('pfh', 0.0)), 'sys_cap': m1.get('syscap')},
-                        {'code': m2.get('code'), 'pfd_avg': float(m2.get('pfd', 0.0)), 'pfh_avg': float(m2.get('pfh', 0.0)), 'sys_cap': m2.get('syscap')},
-                    ],
-                    'pfd_avg': float(pfd_grp), 'pfh_avg': float(pfh_grp),
+                    'members': members_payload,
+                    'pfd_avg': float(pfd_grp),
+                    'pfh_avg': float(pfh_grp),
+                    'instance_id': d.get('instance_id'),
                 })
             else:
+                inst_id = d.get('instance_id')
+                if not isinstance(inst_id, str) or not inst_id:
+                    inst_id = new_instance_id()
+                    d = copy.deepcopy(d)
+                    d['instance_id'] = inst_id
+                    item.setData(Qt.UserRole, d)
                 items.append({
                     'code': d.get('code') or d.get('name'),
+                    'name': d.get('name'),
                     'pfd_avg': float(d.get('pfd', 0.0)),
                     'pfh_avg': float(d.get('pfh', 0.0)),
-                    'sys_cap': d.get('syscap'),
-                    'pdm_code': d.get('pdm_code', '')
+                    'sys_cap': d.get('syscap', d.get('sys_cap', '')),
+                    'pdm_code': d.get('pdm_code', ''),
+                    'kind': d.get('kind'),
+                    'instance_id': inst_id,
                 })
         return items
 
@@ -3000,6 +3469,7 @@ class MainWindow(QMainWindow):
         if row_idx < 0 or row_idx >= len(self.rows_meta): return
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return  # can happen after remove
+        self._prune_connections_for_row(row_idx)
 
         pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
         mode = self._effective_demand_mode(row_idx)
@@ -3328,6 +3798,8 @@ class MainWindow(QMainWindow):
     def _append_sifu_row(self, meta: RowMeta):
         row_idx = self.table.rowCount()
         self.table.insertRow(row_idx)
+        if "connections" not in meta:
+            meta["connections"] = self._make_empty_connections()
         self.rows_meta.append(meta)
         self._ensure_row_uid(meta)
 
