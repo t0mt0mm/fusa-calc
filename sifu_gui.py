@@ -2525,8 +2525,8 @@ class MainWindow(QMainWindow):
         .arch-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
-        .lane-cards { display:flex; flex-direction:column; gap:10px; }
-        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; border-left:4px solid transparent; }
+        .lane-cards { display:flex; flex-direction:column; gap:6px; }
+        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:6px 10px; background:#f9fafb; border-left:4px solid transparent; }
         .lane-card.group { background:#eef2ff; border-color:#c7d2fe; }
         .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; border-left-color:transparent; }
         .lane--sensors .lane-card { border-left-color:#0EA5E9; }
@@ -2538,8 +2538,8 @@ class MainWindow(QMainWindow):
         .lane-metrics span { white-space:nowrap; }
         .lane-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:11px; margin-right:6px; }
         .lane-pill.arch { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
-        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
-        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:8px; background:#fff; border-left:3px solid transparent; }
+        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; }
+        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:6px; background:#fff; border-left:3px solid transparent; }
         .lane--sensors .lane-member { border-left-color:#0EA5E9; }
         .lane--logic .lane-member { border-left-color:#22C55E; }
         .lane--actuators .lane-member { border-left-color:#A855F7; }
