@@ -2457,8 +2457,192 @@ class MainWindow(QMainWindow):
         .row-image { margin: 12px 0 18px; text-align: center; }
         .row-image img { max-width: 100%; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(15,23,42,0.08); background:#fff; }
         .row-image figcaption { margin-top: 6px; font-size: 12px; color:#4b5563; }
+        .architecture { margin: 18px 0 24px; }
+        .arch-svg { width: 100%; max-width: 780px; display: block; margin: 0 auto; }
+        .arch-stage-label { font-size: 13px; font-weight: 600; fill: #1f2937; }
+        .arch-conn { fill: none; stroke: #94a3b8; stroke-width: 1.3; opacity: 0.8; }
+        .arch-node { fill: #f8fafc; stroke: #cbd5f5; stroke-width: 1; rx: 9; ry: 9; }
+        .arch-node.placeholder { fill: #f3f4f6; stroke-dasharray: 4 3; opacity: 0.8; }
+        .arch-node-label { font-size: 12px; fill: #1f2937; }
+        .arch-group { fill: rgba(59,130,246,0.08); stroke: #3b82f6; stroke-width: 1; stroke-dasharray: 6 4; rx: 12; ry: 12; }
+        .arch-group-label { font-size: 11px; font-weight: 600; fill: #1d4ed8; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
+
+        def build_architecture_svg(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
+            stage_defs = [
+                ("sensors", "Sensors", sensors or []),
+                ("logic", "Logic", logic or []),
+                ("actuators", "Actuators", actuators or []),
+            ]
+
+            columns = []
+            groups: Dict[str, Dict[str, Any]] = {}
+            max_nodes = 0
+
+            for col_idx, (key, title, items) in enumerate(stage_defs):
+                nodes: List[Dict[str, Any]] = []
+                arch_counts: Dict[str, int] = {}
+
+                for item_idx, entry in enumerate(items):
+                    arch = entry.get("architecture")
+                    if arch:
+                        arch_counts[arch] = arch_counts.get(arch, 0) + 1
+
+                    if arch == "1oo2" and entry.get("members"):
+                        group_id = f"{key}-grp-{item_idx}"
+                        groups[group_id] = {"column": col_idx, "label": arch, "nodes": []}
+                        members = entry.get("members", [])
+                        if not members:
+                            continue
+                        for member_idx, member in enumerate(members):
+                            label = member.get("code") or member.get("name") or f"Member {member_idx + 1}"
+                            node = {
+                                "label": label,
+                                "placeholder": False,
+                                "group": group_id,
+                                "connectable": True,
+                            }
+                            nodes.append(node)
+                            groups[group_id]["nodes"].append(node)
+                    else:
+                        label = entry.get("code") or entry.get("name") or f"{title} {item_idx + 1}"
+                        nodes.append({
+                            "label": label,
+                            "placeholder": False,
+                            "group": None,
+                            "connectable": True,
+                        })
+
+                if not nodes:
+                    nodes.append({
+                        "label": "No items",
+                        "placeholder": True,
+                        "group": None,
+                        "connectable": False,
+                    })
+
+                max_nodes = max(max_nodes, len(nodes))
+
+                title_suffix = ""
+                if arch_counts:
+                    parts = []
+                    for arch, count in sorted(arch_counts.items()):
+                        parts.append(f"{arch}×{count}" if count > 1 else arch)
+                    title_suffix = f" ({', '.join(parts)})"
+
+                columns.append({
+                    "key": key,
+                    "title": title + title_suffix,
+                    "nodes": nodes,
+                })
+
+            if not columns:
+                return ""
+
+            node_width = 168.0
+            node_height = 44.0
+            slot = 74.0
+            margin_top = 54.0
+            margin_bottom = 48.0
+            margin_left = 60.0
+            col_gap = 150.0
+            total_columns = len(columns)
+            max_nodes = max(1, max_nodes)
+            width = margin_left * 2 + total_columns * node_width + (total_columns - 1) * col_gap
+            height = margin_top + (max_nodes - 1) * slot + node_height + margin_bottom
+
+            for col_idx, column in enumerate(columns):
+                x = margin_left + col_idx * (node_width + col_gap)
+                for node_idx, node in enumerate(column["nodes"]):
+                    y = margin_top + node_idx * slot
+                    node["x"] = x
+                    node["y"] = y
+                    node["cx"] = x + node_width / 2.0
+                    node["cy"] = y + node_height / 2.0
+                    node["x_right"] = x + node_width
+                    node["x_left"] = x
+
+            group_rects = []
+            for group_id, group in groups.items():
+                nodes = group.get("nodes", [])
+                if not nodes:
+                    continue
+                ys = [node["y"] for node in nodes]
+                top = min(ys) - 12.0
+                bottom = max(ys) + node_height + 12.0
+                column_idx = group["column"]
+                x = margin_left + column_idx * (node_width + col_gap) - 12.0
+                group_rects.append({
+                    "x": x,
+                    "y": top,
+                    "width": node_width + 24.0,
+                    "height": bottom - top,
+                    "label": group.get("label", ""),
+                })
+
+            connectors = []
+            control_offset = col_gap * 0.5
+            for col_idx in range(total_columns - 1):
+                src_nodes = [n for n in columns[col_idx]["nodes"] if n.get("connectable")]
+                dst_nodes = [n for n in columns[col_idx + 1]["nodes"] if n.get("connectable")]
+                if not src_nodes or not dst_nodes:
+                    continue
+                for src in src_nodes:
+                    for dst in dst_nodes:
+                        connectors.append({
+                            "x1": src["x_right"],
+                            "y1": src["cy"],
+                            "x2": dst["x_left"],
+                            "y2": dst["cy"],
+                            "c1x": src["x_right"] + control_offset,
+                            "c1y": src["cy"],
+                            "c2x": dst["x_left"] - control_offset,
+                            "c2y": dst["cy"],
+                        })
+
+            svg_parts = [
+                f'<svg class="arch-svg" viewBox="0 0 {width:.0f} {height:.0f}" role="img" aria-label="Safety function architecture diagram">',
+                '<title>Safety function architecture</title>',
+            ]
+
+            header_y = margin_top - 18.0
+            for column in columns:
+                nodes = column["nodes"]
+                if not nodes:
+                    continue
+                header_x = nodes[0]["cx"]
+                svg_parts.append(
+                    f'<text class="arch-stage-label" x="{header_x:.1f}" y="{header_y:.1f}" text-anchor="middle">{esc(column["title"])}</text>'
+                )
+
+            for conn in connectors:
+                svg_parts.append(
+                    f'<path class="arch-conn" d="M{conn["x1"]:.1f},{conn["y1"]:.1f} C{conn["c1x"]:.1f},{conn["c1y"]:.1f} {conn["c2x"]:.1f},{conn["c2y"]:.1f} {conn["x2"]:.1f},{conn["y2"]:.1f}" />'
+                )
+
+            for rect in group_rects:
+                svg_parts.append(
+                    f'<rect class="arch-group" x="{rect["x"]:.1f}" y="{rect["y"]:.1f}" width="{rect["width"]:.1f}" height="{rect["height"]:.1f}" />'
+                )
+                if rect.get("label"):
+                    label_y = rect["y"] - 6.0
+                    svg_parts.append(
+                        f'<text class="arch-group-label" x="{rect["x"] + rect["width"] / 2.0:.1f}" y="{label_y:.1f}" text-anchor="middle">{esc(rect["label"])} group</text>'
+                    )
+
+            for column in columns:
+                for node in column["nodes"]:
+                    rect_class = "arch-node placeholder" if node.get("placeholder") else "arch-node"
+                    svg_parts.append(
+                        f'<rect class="{rect_class}" x="{node["x"]:.1f}" y="{node["y"]:.1f}" width="{node_width:.1f}" height="{node_height:.1f}" />'
+                    )
+                    svg_parts.append(
+                        f'<text class="arch-node-label" x="{node["cx"]:.1f}" y="{node["cy"]:.1f}" text-anchor="middle" dominant-baseline="middle">{esc(node["label"])}</text>'
+                    )
+
+            svg_parts.append('</svg>')
+            return '\n'.join(svg_parts)
 
         # Build HTML
         parts = []
@@ -2536,6 +2720,13 @@ class MainWindow(QMainWindow):
                     f'<figcaption>GUI table row captured during export</figcaption>'
                     '</figure>'
                 )
+
+            arch_svg = build_architecture_svg(s['sensors'], s['logic'], s['actuators'])
+            if arch_svg:
+                parts.append('<div class="architecture">')
+                parts.append('<h3>Architecture overview</h3>')
+                parts.append(arch_svg)
+                parts.append('</div>')
 
             def render_group(title, items):
                 parts.append(f'<h3>{esc(title)}</h3>')
