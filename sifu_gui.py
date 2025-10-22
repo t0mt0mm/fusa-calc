@@ -13,6 +13,8 @@ import sys
 import re
 import uuid
 import base64
+import json
+import hashlib
 from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
@@ -2168,12 +2170,21 @@ class MainWindow(QMainWindow):
             return None
         try:
             model = table.model()
+            selection_model = table.selectionModel()
+            previous_selection: List[QtCore.QModelIndex] = []
+            previous_current = table.currentIndex()
+            if selection_model is not None:
+                previous_selection = selection_model.selectedRows()
             if model is None:
                 return None
 
             first_index = model.index(row_idx, 0)
+            if selection_model is not None:
+                table.selectRow(row_idx)
+
             if first_index.isValid():
                 table.scrollTo(first_index, QAbstractItemView.PositionAtCenter)
+                table.setCurrentIndex(first_index)
                 QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents, 25)
 
             viewport = table.viewport()
@@ -2232,6 +2243,17 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             print(f"[export] Failed to capture row {row_idx}: {exc}", file=sys.stderr)
             return None
+        finally:
+            if selection_model is not None:
+                restore_blocker = QtCore.QSignalBlocker(selection_model)
+                selection_model.clearSelection()
+                for idx in previous_selection:
+                    selection_model.select(idx, QtCore.QItemSelectionModel.Select | QtCore.QItemSelectionModel.Rows)
+                del restore_blocker
+            if previous_current.isValid():
+                table.setCurrentIndex(previous_current)
+            else:
+                table.setCurrentIndex(QtCore.QModelIndex())
 
     def _build_html_report(self) -> str:
         '''Build a self-contained HTML report (print-friendly) with all SIFUs,
@@ -2261,6 +2283,17 @@ class MainWindow(QMainWindow):
             except Exception:
                 return "–"
 
+        def _normalize_for_signature(obj):
+            if isinstance(obj, (str, int, float)) or obj is None:
+                return obj
+            if isinstance(obj, np.generic):
+                return obj.item()
+            if isinstance(obj, (list, tuple)):
+                return [_normalize_for_signature(x) for x in obj]
+            if isinstance(obj, dict):
+                return {k: _normalize_for_signature(v) for k, v in obj.items()}
+            return str(obj)
+
         # Collect all data using existing helpers
         payload = {"sifus": []}
         for row_idx in range(len(self.rows_meta)):
@@ -2280,7 +2313,35 @@ class MainWindow(QMainWindow):
             row_pos = self._row_index_from_uid(uid)
             if row_pos < 0:
                 print(f"[export] No table row found for uid {uid}", file=sys.stderr)
-            snapshot = self._capture_row_snapshot(row_pos) if row_pos >= 0 else None
+            snapshot_signature_payload = {
+                "meta": {
+                    "sifu_name": meta.get("sifu_name"),
+                    "sil_required": meta.get("sil_required"),
+                    "demand_mode_required": meta.get("demand_mode_required"),
+                    "demand_mode_override": meta.get("demand_mode_override"),
+                },
+                "sensors": sensors,
+                "logic": logic,
+                "actuators": outputs,
+                "pfd_sum": float(pfd_sum),
+                "pfh_sum": float(pfh_sum),
+                "mode": mode,
+            }
+            signature = hashlib.sha1(
+                json.dumps(_normalize_for_signature(snapshot_signature_payload), sort_keys=True).encode("utf-8")
+            ).hexdigest()
+            cached_sig = meta.get("_row_snapshot_sig")
+            cached_snapshot = meta.get("_row_snapshot_cache") if isinstance(meta.get("_row_snapshot_cache"), str) else None
+            if cached_sig == signature and cached_snapshot:
+                snapshot = cached_snapshot
+            else:
+                snapshot = self._capture_row_snapshot(row_pos) if row_pos >= 0 else None
+                if snapshot:
+                    meta["_row_snapshot_cache"] = snapshot
+                    meta["_row_snapshot_sig"] = signature
+                elif cached_snapshot:
+                    snapshot = cached_snapshot
+                    meta["_row_snapshot_sig"] = signature
             payload["sifus"].append({
                 "meta": meta,
                 "sensors": sensors,
@@ -2323,6 +2384,7 @@ class MainWindow(QMainWindow):
         .nowrap { white-space: nowrap; }
         .row-image { margin: 12px 0 18px; text-align: center; }
         .row-image img { max-width: 100%; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(15,23,42,0.08); background:#fff; }
+        .row-image figcaption { margin-top: 6px; font-size: 12px; color:#4b5563; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
@@ -2397,9 +2459,10 @@ class MainWindow(QMainWindow):
             screenshot = s.get("row_image")
             if screenshot:
                 parts.append(
-                    '<div class="row-image">'
+                    '<figure class="row-image">'
                     f'<img src="{screenshot}" alt="GUI snapshot of {esc(meta.get("sifu_name", "SIFU"))}">'
-                    '</div>'
+                    f'<figcaption>GUI table row captured during export</figcaption>'
+                    '</figure>'
                 )
 
             def render_group(title, items):
