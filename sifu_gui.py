@@ -21,7 +21,7 @@ from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView
+    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView
 )
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage
 from datetime import datetime
@@ -358,6 +358,7 @@ class ChipList(QListWidget):
         self.customContextMenuRequested.connect(self._open_ctx)
         self._placeholder = placeholder
         self.allowed_kind = allowed_kind  # "sensor" \ "logic" \ "actuator"
+        self.setToolTip("Toggle Link mode or hold Shift and click to connect components across the safety chain.")
 
     # ----- Item presentation helper -----
     def attach_chip(self, item: QListWidgetItem) -> None:
@@ -503,15 +504,28 @@ class ChipList(QListWidget):
         self.window().recalculate_all()
 
     def mousePressEvent(self, event):
-        is_shift = event.button() == Qt.LeftButton and bool(event.modifiers() & Qt.ShiftModifier)
+        window = self.window()
+        link_mode_active = bool(getattr(window, "_link_mode_enabled", False)) if window else False
+        is_link_click = event.button() == Qt.LeftButton and (
+            bool(event.modifiers() & Qt.ShiftModifier) or link_mode_active
+        )
         super().mousePressEvent(event)
-        if not is_shift:
+        if not is_link_click:
             return
         item = self.itemAt(event.pos())
         if not item:
+            if link_mode_active and window:
+                pending = getattr(window, "_pending_link", None)
+                if pending:
+                    reset = getattr(window, "_reset_pending_link", None)
+                    if callable(reset):
+                        reset()
+                        try:
+                            window.statusBar().showMessage("Link selection cleared.", 2000)
+                        except Exception:
+                            pass
             return
-        window = self.window()
-        handler = getattr(window, "_handle_shift_click", None)
+        handler = getattr(window, "_handle_link_click", None)
         if callable(handler):
             handler(self, item)
 
@@ -1414,6 +1428,8 @@ class MainWindow(QMainWindow):
         self._pending_link: Optional[Dict[str, Any]] = None
         self._pending_link_widget_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
         self._pending_link_item_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
+        self._pending_link_target_refs: List[weakref.ReferenceType[QListWidget]] = []
+        self._link_mode_enabled: bool = False
 
         # --- toolbar ---
         #tb = QToolBar("Actions"); tb.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
@@ -1439,6 +1455,17 @@ class MainWindow(QMainWindow):
         toggle_actuator.setChecked(True)
         toggle_actuator.triggered.connect(lambda checked: self.act_lib.setVisible(checked))
         view_menu.addAction(toggle_actuator)
+
+        self.link_mode_action = QAction("Link mode", self)
+        self.link_mode_action.setCheckable(True)
+        self.link_mode_action.setShortcut("Ctrl+L")
+        self.link_mode_action.setIcon(self.style().standardIcon(QStyle.SP_CommandLink))
+        self.link_mode_action.setToolTip("Toggle interactive link mode. Click a source component and then a downstream target to connect them (Ctrl+L). Hold Shift for one-off links.")
+        self.link_mode_action.setStatusTip("Link sensors to logic and logic to actuators by clicking components while link mode is active.")
+        self.link_mode_action.toggled.connect(self._set_link_mode_enabled)
+        view_menu.addSeparator()
+        view_menu.addAction(self.link_mode_action)
+        self.addAction(self.link_mode_action)
     
 
         # New Project
@@ -1554,6 +1581,33 @@ class MainWindow(QMainWindow):
 
         central_layout.addLayout(filter_row)
 
+        self.link_hint_frame = QFrame()
+        self.link_hint_frame.setObjectName("LinkHintFrame")
+        self.link_hint_frame.setProperty("active", False)
+        hint_layout = QHBoxLayout(self.link_hint_frame)
+        hint_layout.setContentsMargins(12, 8, 12, 8)
+        hint_layout.setSpacing(10)
+
+        self.link_hint_icon = QLabel("🔗")
+        self.link_hint_icon.setObjectName("LinkHintIcon")
+        self.link_hint_icon.setAlignment(Qt.AlignCenter)
+        self.link_hint_icon.setProperty("active", False)
+        hint_layout.addWidget(self.link_hint_icon)
+
+        self.link_mode_button = QToolButton()
+        self.link_mode_button.setObjectName("LinkModeButton")
+        self.link_mode_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.link_mode_button.setDefaultAction(self.link_mode_action)
+        hint_layout.addWidget(self.link_mode_button)
+
+        self.link_hint_label = QLabel("Link mode is off. Enable it or hold Shift while clicking to connect sensors, logic and actuators.")
+        self.link_hint_label.setWordWrap(True)
+        self.link_hint_label.setObjectName("LinkHintLabel")
+        self.link_hint_label.setProperty("active", False)
+        hint_layout.addWidget(self.link_hint_label, 1)
+
+        central_layout.addWidget(self.link_hint_frame)
+
         self.table = QTableWidget(0, 4, central)
         self.table.setHorizontalHeaderLabels(["Sensor / Input", "Logic", "Output / Actuator", "Result"])
 
@@ -1592,6 +1646,10 @@ class MainWindow(QMainWindow):
         self._filter_clear_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self.sifu_filter)
         self._filter_clear_shortcut.setContext(Qt.WidgetShortcut)
         self._filter_clear_shortcut.activated.connect(self.sifu_filter.clear)
+
+        self._link_mode_escape = QShortcut(QKeySequence(Qt.Key_Escape), self)
+        self._link_mode_escape.setContext(Qt.ApplicationShortcut)
+        self._link_mode_escape.activated.connect(self._handle_link_mode_escape)
 
         # --- docks: libraries ---
         self.logic_lib  = ComponentLibraryDock("Logic Library",  "logic",   os.path.join(os.getcwd(), "logic_library.yaml"),    self)
@@ -1677,7 +1735,8 @@ class MainWindow(QMainWindow):
         QtCore.QTimer.singleShot(0, self._finalize_layout)
 
         # Make sure a status bar exists
-        self.statusBar().showMessage("Ready", 1500)
+        self._set_link_mode_enabled(False)
+        self.statusBar().showMessage("Ready – enable Link mode or hold Shift to connect components.", 5000)
 
     def _open_table_ctx_menu(self, pos: QtCore.QPoint):
         # Position -> Tabellenindex
@@ -1844,6 +1903,44 @@ class MainWindow(QMainWindow):
             font-weight:600;
         }}
 
+        QFrame#LinkHintFrame {{
+            background:{bg1};
+            border:1px dashed {border};
+            border-radius:10px;
+        }}
+        QFrame#LinkHintFrame[active="true"] {{
+            border-color:{primary};
+            background:#eef5ff;
+        }}
+        QLabel#LinkHintIcon {{
+            font-size:18px;
+            min-width:22px;
+        }}
+        QLabel#LinkHintIcon[active="true"] {{
+            color:{primary};
+        }}
+        QLabel#LinkHintLabel {{
+            color:#4b5563;
+        }}
+        QLabel#LinkHintLabel[active="true"] {{
+            color:{primary};
+        }}
+        QToolButton#LinkModeButton {{
+            border:1px solid {border};
+            border-radius:8px;
+            padding:6px 12px;
+            background:{bg0};
+        }}
+        QToolButton#LinkModeButton:hover {{
+            border-color:{primary};
+            color:{primary};
+        }}
+        QToolButton#LinkModeButton:checked {{
+            border-color:{primary};
+            background:#e0ecff;
+            color:{primary};
+        }}
+
         /* Dock Header */
         #DockHeader {{
             background: {bg1}; border-bottom:1px solid {border};
@@ -1879,6 +1976,8 @@ class MainWindow(QMainWindow):
         QTableWidget::item:selected {{ background: #E0ECFF; }}
         QListWidget {{ background: {bg1}; border: 1px solid {border}; border-radius: 8px; padding: 6px; }}
         QListWidget[dragTarget="true"] {{ border-color:{primary}; background:#EEF5FF; }}
+        QListWidget[linkMode="true"] {{ border-color:{primary}; background:#F4F8FF; }}
+        QListWidget[linkTarget="true"] {{ border-style:dashed; border-color:{primary}; }}
         QListWidget[linkSource="true"] {{ border-color:{primary}; box-shadow:inset 0 0 0 1px {primary}; }}
         QWidget[kind][linkOrigin="true"] {{ border-color:{primary}; background:#EEF5FF; }}
         QWidget[kind] {{
@@ -1927,6 +2026,7 @@ class MainWindow(QMainWindow):
 
             widgets = SifuRowWidgets()
             self.sifu_widgets[row_idx] = widgets
+            self._apply_link_mode_to_row_widgets(widgets)
 
             widgets.result.combo.setCurrentText(meta['demand_mode_required'])
             widgets.result.override_changed.connect(lambda val, r=row_idx: self._on_row_override_changed(r, val))
@@ -2373,6 +2473,16 @@ class MainWindow(QMainWindow):
         self._pending_link = None
         self._pending_link_widget_ref = None
         self._pending_link_item_ref = None
+        for ref in self._pending_link_target_refs:
+            target = ref() if ref else None
+            if target:
+                try:
+                    target.setProperty("linkTarget", False)
+                    target.style().unpolish(target)
+                    target.style().polish(target)
+                except RuntimeError:
+                    pass
+        self._pending_link_target_refs = []
 
     def _set_pending_link(self, row_idx: int, stage: str, instance_id: str,
                           list_widget: QListWidget, item: QListWidgetItem) -> None:
@@ -2396,6 +2506,85 @@ class MainWindow(QMainWindow):
             self._pending_link_item_ref = weakref.ref(chip_widget)
         else:
             self._pending_link_item_ref = None
+        self._pending_link_target_refs = []
+        widgets = self.sifu_widgets.get(row_idx)
+        if widgets:
+            downstream: List[QListWidget] = []
+            if stage == "sensor":
+                downstream.append(widgets.logic_list)
+            elif stage == "logic":
+                downstream.append(widgets.out_list)
+            if downstream:
+                for lw in downstream:
+                    if not lw:
+                        continue
+                    try:
+                        lw.setProperty("linkTarget", True)
+                        lw.style().unpolish(lw)
+                        lw.style().polish(lw)
+                        self._pending_link_target_refs.append(weakref.ref(lw))
+                    except RuntimeError:
+                        pass
+
+    def is_link_mode_active(self) -> bool:
+        return bool(self._link_mode_enabled)
+
+    def _apply_link_mode_to_row_widgets(self, widgets: SifuRowWidgets) -> None:
+        enabled = self._link_mode_enabled
+        for lw in (widgets.in_list, widgets.logic_list, widgets.out_list):
+            lw.setProperty("linkMode", enabled)
+            lw.style().unpolish(lw)
+            lw.style().polish(lw)
+
+    def _set_link_mode_enabled(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        was_enabled = self._link_mode_enabled
+        self._link_mode_enabled = enabled
+        if not enabled:
+            self._reset_pending_link()
+        action = getattr(self, "link_mode_action", None)
+        if isinstance(action, QAction) and action.isChecked() != enabled:
+            action.blockSignals(True)
+            action.setChecked(enabled)
+            action.blockSignals(False)
+        button = getattr(self, "link_mode_button", None)
+        if isinstance(button, QToolButton) and button.isChecked() != enabled:
+            button.blockSignals(True)
+            button.setChecked(enabled)
+            button.blockSignals(False)
+        hint_frame = getattr(self, "link_hint_frame", None)
+        hint_label = getattr(self, "link_hint_label", None)
+        hint_icon = getattr(self, "link_hint_icon", None)
+        if hint_frame:
+            hint_frame.setProperty("active", enabled)
+            hint_frame.style().unpolish(hint_frame)
+            hint_frame.style().polish(hint_frame)
+        if hint_label:
+            hint_label.setProperty("active", enabled)
+            text_on = "Link mode active: click a source component, then a downstream target to toggle the connection. Click empty space or press Esc to finish."
+            text_off = "Link mode is off. Enable it or hold Shift while clicking to connect sensors, logic and actuators."
+            hint_label.setText(text_on if enabled else text_off)
+            hint_label.style().unpolish(hint_label)
+            hint_label.style().polish(hint_label)
+        if hint_icon:
+            hint_icon.setProperty("active", enabled)
+            hint_icon.style().unpolish(hint_icon)
+            hint_icon.style().polish(hint_icon)
+        for widgets in self.sifu_widgets.values():
+            self._apply_link_mode_to_row_widgets(widgets)
+        if enabled and not was_enabled:
+            self.statusBar().showMessage("Link mode active. Click a source component, then a downstream target to connect them.", 5000)
+        elif not enabled and was_enabled:
+            self.statusBar().showMessage("Link mode disabled. Hold Shift or re-enable Link mode to adjust connections.", 4000)
+
+    def _handle_link_mode_escape(self) -> None:
+        if self.sifu_filter.hasFocus():
+            return
+        if self._link_mode_enabled:
+            self._set_link_mode_enabled(False)
+        elif self._pending_link:
+            self._reset_pending_link()
+            self.statusBar().showMessage("Link selection cleared.", 2000)
 
     def _row_index_for_list(self, list_widget: QListWidget) -> int:
         for idx, widgets in self.sifu_widgets.items():
@@ -2501,7 +2690,7 @@ class MainWindow(QMainWindow):
             }
             self._reset_pending_link()
 
-    def _handle_shift_click(self, list_widget: QListWidget, item: QListWidgetItem) -> None:
+    def _handle_link_click(self, list_widget: QListWidget, item: QListWidgetItem) -> None:
         row_idx = self._row_index_for_list(list_widget)
         if row_idx < 0:
             return
@@ -2524,7 +2713,7 @@ class MainWindow(QMainWindow):
             self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
             stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
             if stage_name:
-                self.statusBar().showMessage(f"Selected {stage_name} component as source. Shift+click a compatible target to toggle a link.", 3500)
+                self.statusBar().showMessage(f"Selected {stage_name} component as source. Choose a downstream target to toggle a link.", 3500)
             return
 
         pending = self._pending_link
@@ -2532,7 +2721,7 @@ class MainWindow(QMainWindow):
             self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
             stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
             if stage_name:
-                self.statusBar().showMessage(f"Source updated to {stage_name} component. Choose a target to link.", 3000)
+                self.statusBar().showMessage(f"Source updated to {stage_name} component. Choose a downstream target to link.", 3000)
             return
 
         transition_map = {
@@ -2542,7 +2731,7 @@ class MainWindow(QMainWindow):
         transition_key = transition_map.get((pending.get('stage'), stage))
         if not transition_key:
             self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
-            self.statusBar().showMessage("Selected component as new source. Shift+click a downstream target to connect.", 3200)
+            self.statusBar().showMessage("Selected component as new source. Pick a downstream target to connect.", 3200)
             return
 
         src_id = pending.get('instance_id')
@@ -3252,6 +3441,7 @@ class MainWindow(QMainWindow):
 
             widgets = SifuRowWidgets()
             self.sifu_widgets[row_idx] = widgets
+            self._apply_link_mode_to_row_widgets(widgets)
 
             effective = self._effective_demand_mode(row_idx)
             widgets.result.combo.setCurrentText(effective)
@@ -3805,6 +3995,7 @@ class MainWindow(QMainWindow):
 
         widgets = SifuRowWidgets()
         self.sifu_widgets[row_idx] = widgets
+        self._apply_link_mode_to_row_widgets(widgets)
 
         header = f"{meta['sifu_name']} \nRequired: {meta['sil_required']}\n {meta['demand_mode_required']}"
         self.table.setVerticalHeaderItem(row_idx, QTableWidgetItem(header))
@@ -3993,6 +4184,9 @@ class EnhancedMainWindow(MainWindow):
         self.act_config.setIcon(self.style().standardIcon(self.style().SP_FileDialogDetailedView))
         self.act_config.triggered.connect(self._open_config_dialog)
         m_tools.addAction(self.act_config)
+        if hasattr(self, 'link_mode_action'):
+            m_tools.addSeparator()
+            m_tools.addAction(self.link_mode_action)
 
         # Help
         m_help = mb.addMenu('&Help')
