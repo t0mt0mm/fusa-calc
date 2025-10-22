@@ -16,7 +16,6 @@ import base64
 import json
 import hashlib
 import copy
-import weakref
 from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
@@ -358,7 +357,7 @@ class ChipList(QListWidget):
         self.customContextMenuRequested.connect(self._open_ctx)
         self._placeholder = placeholder
         self.allowed_kind = allowed_kind  # "sensor" \ "logic" \ "actuator"
-        self.setToolTip("Toggle Link mode or hold Shift and click to connect components across the safety chain.")
+        self.setToolTip("Drag components here or between lanes. Single selection; drop from libraries to add items.")
 
     # ----- Item presentation helper -----
     def attach_chip(self, item: QListWidgetItem) -> None:
@@ -504,30 +503,7 @@ class ChipList(QListWidget):
         self.window().recalculate_all()
 
     def mousePressEvent(self, event):
-        window = self.window()
-        link_mode_active = bool(getattr(window, "_link_mode_enabled", False)) if window else False
-        is_link_click = event.button() == Qt.LeftButton and (
-            bool(event.modifiers() & Qt.ShiftModifier) or link_mode_active
-        )
         super().mousePressEvent(event)
-        if not is_link_click:
-            return
-        item = self.itemAt(event.pos())
-        if not item:
-            if link_mode_active and window:
-                pending = getattr(window, "_pending_link", None)
-                if pending:
-                    reset = getattr(window, "_reset_pending_link", None)
-                    if callable(reset):
-                        reset()
-                        try:
-                            window.statusBar().showMessage("Link selection cleared.", 2000)
-                        except Exception:
-                            pass
-            return
-        handler = getattr(window, "_handle_link_click", None)
-        if callable(handler):
-            handler(self, item)
 
     @staticmethod
     def _make_chip_label(text: str) -> QLabel:
@@ -1425,11 +1401,6 @@ class MainWindow(QMainWindow):
 
         # --- per-row metadata store ---
         self.rows_meta: List[RowMeta] = []
-        self._pending_link: Optional[Dict[str, Any]] = None
-        self._pending_link_widget_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
-        self._pending_link_item_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
-        self._pending_link_target_refs: List[weakref.ReferenceType[QListWidget]] = []
-        self._link_mode_enabled: bool = False
 
         # --- toolbar ---
         #tb = QToolBar("Actions"); tb.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
@@ -1455,18 +1426,6 @@ class MainWindow(QMainWindow):
         toggle_actuator.setChecked(True)
         toggle_actuator.triggered.connect(lambda checked: self.act_lib.setVisible(checked))
         view_menu.addAction(toggle_actuator)
-
-        self.link_mode_action = QAction("Link mode", self)
-        self.link_mode_action.setCheckable(True)
-        self.link_mode_action.setShortcut("Ctrl+L")
-        self.link_mode_action.setIcon(self.style().standardIcon(QStyle.SP_CommandLink))
-        self.link_mode_action.setToolTip("Toggle interactive link mode. Click a source component and then a downstream target to connect them (Ctrl+L). Hold Shift for one-off links.")
-        self.link_mode_action.setStatusTip("Link sensors to logic and logic to actuators by clicking components while link mode is active.")
-        self.link_mode_action.toggled.connect(self._set_link_mode_enabled)
-        view_menu.addSeparator()
-        view_menu.addAction(self.link_mode_action)
-        self.addAction(self.link_mode_action)
-    
 
         # New Project
         act_new = QAction("New Project", self)
@@ -1581,33 +1540,6 @@ class MainWindow(QMainWindow):
 
         central_layout.addLayout(filter_row)
 
-        self.link_hint_frame = QFrame()
-        self.link_hint_frame.setObjectName("LinkHintFrame")
-        self.link_hint_frame.setProperty("active", False)
-        hint_layout = QHBoxLayout(self.link_hint_frame)
-        hint_layout.setContentsMargins(12, 8, 12, 8)
-        hint_layout.setSpacing(10)
-
-        self.link_hint_icon = QLabel("🔗")
-        self.link_hint_icon.setObjectName("LinkHintIcon")
-        self.link_hint_icon.setAlignment(Qt.AlignCenter)
-        self.link_hint_icon.setProperty("active", False)
-        hint_layout.addWidget(self.link_hint_icon)
-
-        self.link_mode_button = QToolButton()
-        self.link_mode_button.setObjectName("LinkModeButton")
-        self.link_mode_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.link_mode_button.setDefaultAction(self.link_mode_action)
-        hint_layout.addWidget(self.link_mode_button)
-
-        self.link_hint_label = QLabel("Link mode is off. Enable it or hold Shift while clicking to connect sensors, logic and actuators.")
-        self.link_hint_label.setWordWrap(True)
-        self.link_hint_label.setObjectName("LinkHintLabel")
-        self.link_hint_label.setProperty("active", False)
-        hint_layout.addWidget(self.link_hint_label, 1)
-
-        central_layout.addWidget(self.link_hint_frame)
-
         self.table = QTableWidget(0, 4, central)
         self.table.setHorizontalHeaderLabels(["Sensor / Input", "Logic", "Output / Actuator", "Result"])
 
@@ -1646,10 +1578,6 @@ class MainWindow(QMainWindow):
         self._filter_clear_shortcut = QShortcut(QKeySequence(Qt.Key_Escape), self.sifu_filter)
         self._filter_clear_shortcut.setContext(Qt.WidgetShortcut)
         self._filter_clear_shortcut.activated.connect(self.sifu_filter.clear)
-
-        self._link_mode_escape = QShortcut(QKeySequence(Qt.Key_Escape), self)
-        self._link_mode_escape.setContext(Qt.ApplicationShortcut)
-        self._link_mode_escape.activated.connect(self._handle_link_mode_escape)
 
         # --- docks: libraries ---
         self.logic_lib  = ComponentLibraryDock("Logic Library",  "logic",   os.path.join(os.getcwd(), "logic_library.yaml"),    self)
@@ -1735,8 +1663,7 @@ class MainWindow(QMainWindow):
         QtCore.QTimer.singleShot(0, self._finalize_layout)
 
         # Make sure a status bar exists
-        self._set_link_mode_enabled(False)
-        self.statusBar().showMessage("Ready – enable Link mode or hold Shift to connect components.", 5000)
+        self.statusBar().showMessage("Ready", 3000)
 
     def _open_table_ctx_menu(self, pos: QtCore.QPoint):
         # Position -> Tabellenindex
@@ -1903,44 +1830,6 @@ class MainWindow(QMainWindow):
             font-weight:600;
         }}
 
-        QFrame#LinkHintFrame {{
-            background:{bg1};
-            border:1px dashed {border};
-            border-radius:10px;
-        }}
-        QFrame#LinkHintFrame[active="true"] {{
-            border-color:{primary};
-            background:#eef5ff;
-        }}
-        QLabel#LinkHintIcon {{
-            font-size:18px;
-            min-width:22px;
-        }}
-        QLabel#LinkHintIcon[active="true"] {{
-            color:{primary};
-        }}
-        QLabel#LinkHintLabel {{
-            color:#4b5563;
-        }}
-        QLabel#LinkHintLabel[active="true"] {{
-            color:{primary};
-        }}
-        QToolButton#LinkModeButton {{
-            border:1px solid {border};
-            border-radius:8px;
-            padding:6px 12px;
-            background:{bg0};
-        }}
-        QToolButton#LinkModeButton:hover {{
-            border-color:{primary};
-            color:{primary};
-        }}
-        QToolButton#LinkModeButton:checked {{
-            border-color:{primary};
-            background:#e0ecff;
-            color:{primary};
-        }}
-
         /* Dock Header */
         #DockHeader {{
             background: {bg1}; border-bottom:1px solid {border};
@@ -1976,10 +1865,6 @@ class MainWindow(QMainWindow):
         QTableWidget::item:selected {{ background: #E0ECFF; }}
         QListWidget {{ background: {bg1}; border: 1px solid {border}; border-radius: 8px; padding: 6px; }}
         QListWidget[dragTarget="true"] {{ border-color:{primary}; background:#EEF5FF; }}
-        QListWidget[linkMode="true"] {{ border-color:{primary}; background:#F4F8FF; }}
-        QListWidget[linkTarget="true"] {{ border-style:dashed; border-color:{primary}; }}
-        QListWidget[linkSource="true"] {{ border-color:{primary}; box-shadow:inset 0 0 0 1px {primary}; }}
-        QWidget[kind][linkOrigin="true"] {{ border-color:{primary}; background:#EEF5FF; }}
         QWidget[kind] {{
             background:{bg0}; border:1px solid #d9d9d9; border-radius:12px;
         }}
@@ -2015,7 +1900,6 @@ class MainWindow(QMainWindow):
                 "demand_mode_required": req_mode,
                 "source": "df"
             })
-            meta["connections"] = self._make_empty_connections()
             self.rows_meta.append(meta)
             self._ensure_row_uid(meta)
 
@@ -2026,7 +1910,6 @@ class MainWindow(QMainWindow):
 
             widgets = SifuRowWidgets()
             self.sifu_widgets[row_idx] = widgets
-            self._apply_link_mode_to_row_widgets(widgets)
 
             widgets.result.combo.setCurrentText(meta['demand_mode_required'])
             widgets.result.override_changed.connect(lambda val, r=row_idx: self._on_row_override_changed(r, val))
@@ -2307,7 +2190,6 @@ class MainWindow(QMainWindow):
         new_meta = RowMeta(src_meta.copy())
         new_meta["sifu_name"] = f"{new_meta.get('sifu_name','SIFU')} (copy)"
         new_meta.pop("_uid", None)
-        new_meta["connections"] = self._make_empty_connections()
         self._append_sifu_row(new_meta)
         new_row = self.table.rowCount() - 1
         dst_widgets = self.sifu_widgets.get(new_row)
@@ -2397,7 +2279,6 @@ class MainWindow(QMainWindow):
         if not uid:
             uid = f"sifu-{uuid.uuid4().hex}"
             meta["_uid"] = uid
-        self._ensure_connections(meta)
         return uid
 
     def _row_index_from_uid(self, uid: str) -> int:
@@ -2405,37 +2286,6 @@ class MainWindow(QMainWindow):
             if self._ensure_row_uid(meta) == uid:
                 return idx
         return -1
-
-    def _make_empty_connections(self) -> Dict[str, Dict[str, List[str]]]:
-        return {"sensor_logic": {}, "logic_actuator": {}}
-
-    @staticmethod
-    def _normalize_connection_map(mapping: Any) -> Dict[str, List[str]]:
-        out: Dict[str, List[str]] = {}
-        if not isinstance(mapping, dict):
-            return out
-        for key, vals in mapping.items():
-            if not isinstance(key, str):
-                continue
-            if isinstance(vals, str):
-                out[key] = [vals]
-                continue
-            if isinstance(vals, (list, tuple, set)):
-                normalized = [str(v) for v in vals if isinstance(v, str) and v]
-                if normalized:
-                    out[key] = normalized
-        return out
-
-    def _ensure_connections(self, meta: RowMeta) -> Dict[str, Dict[str, List[str]]]:
-        raw = meta.get("connections")
-        sensor_logic = self._normalize_connection_map(raw.get("sensor_logic")) if isinstance(raw, dict) else {}
-        logic_actuator = self._normalize_connection_map(raw.get("logic_actuator")) if isinstance(raw, dict) else {}
-        normalized = {
-            "sensor_logic": sensor_logic,
-            "logic_actuator": logic_actuator,
-        }
-        meta["connections"] = normalized
-        return normalized
 
     def _clone_chip_data(self, data: dict, preserve_id: bool = False) -> dict:
         new_data = copy.deepcopy(data) if data else {}
@@ -2452,321 +2302,6 @@ class MainWindow(QMainWindow):
                 members.append(member_copy)
             new_data["members"] = members
         return new_data
-
-    def _reset_pending_link(self) -> None:
-        widget = self._pending_link_widget_ref() if self._pending_link_widget_ref else None
-        if widget:
-            try:
-                widget.setProperty("linkSource", False)
-                widget.style().unpolish(widget)
-                widget.style().polish(widget)
-            except RuntimeError:
-                pass
-        chip_widget = self._pending_link_item_ref() if self._pending_link_item_ref else None
-        if chip_widget:
-            try:
-                chip_widget.setProperty("linkOrigin", False)
-                chip_widget.style().unpolish(chip_widget)
-                chip_widget.style().polish(chip_widget)
-            except RuntimeError:
-                pass
-        self._pending_link = None
-        self._pending_link_widget_ref = None
-        self._pending_link_item_ref = None
-        for ref in self._pending_link_target_refs:
-            target = ref() if ref else None
-            if target:
-                try:
-                    target.setProperty("linkTarget", False)
-                    target.style().unpolish(target)
-                    target.style().polish(target)
-                except RuntimeError:
-                    pass
-        self._pending_link_target_refs = []
-
-    def _set_pending_link(self, row_idx: int, stage: str, instance_id: str,
-                          list_widget: QListWidget, item: QListWidgetItem) -> None:
-        self._reset_pending_link()
-        self._pending_link = {"row": row_idx, "stage": stage, "instance_id": instance_id}
-        try:
-            list_widget.setProperty("linkSource", True)
-            list_widget.style().unpolish(list_widget)
-            list_widget.style().polish(list_widget)
-        except RuntimeError:
-            pass
-        self._pending_link_widget_ref = weakref.ref(list_widget)
-        chip_widget = list_widget.itemWidget(item)
-        if chip_widget:
-            try:
-                chip_widget.setProperty("linkOrigin", True)
-                chip_widget.style().unpolish(chip_widget)
-                chip_widget.style().polish(chip_widget)
-            except RuntimeError:
-                pass
-            self._pending_link_item_ref = weakref.ref(chip_widget)
-        else:
-            self._pending_link_item_ref = None
-        self._pending_link_target_refs = []
-        widgets = self.sifu_widgets.get(row_idx)
-        if widgets:
-            downstream: List[QListWidget] = []
-            if stage == "sensor":
-                downstream.append(widgets.logic_list)
-            elif stage == "logic":
-                downstream.append(widgets.out_list)
-            if downstream:
-                for lw in downstream:
-                    if not lw:
-                        continue
-                    try:
-                        lw.setProperty("linkTarget", True)
-                        lw.style().unpolish(lw)
-                        lw.style().polish(lw)
-                        self._pending_link_target_refs.append(weakref.ref(lw))
-                    except RuntimeError:
-                        pass
-
-    def is_link_mode_active(self) -> bool:
-        return bool(self._link_mode_enabled)
-
-    def _apply_link_mode_to_row_widgets(self, widgets: SifuRowWidgets) -> None:
-        enabled = self._link_mode_enabled
-        for lw in (widgets.in_list, widgets.logic_list, widgets.out_list):
-            lw.setProperty("linkMode", enabled)
-            lw.style().unpolish(lw)
-            lw.style().polish(lw)
-
-    def _set_link_mode_enabled(self, enabled: bool) -> None:
-        enabled = bool(enabled)
-        was_enabled = self._link_mode_enabled
-        self._link_mode_enabled = enabled
-        if not enabled:
-            self._reset_pending_link()
-        action = getattr(self, "link_mode_action", None)
-        if isinstance(action, QAction) and action.isChecked() != enabled:
-            action.blockSignals(True)
-            action.setChecked(enabled)
-            action.blockSignals(False)
-        button = getattr(self, "link_mode_button", None)
-        if isinstance(button, QToolButton) and button.isChecked() != enabled:
-            button.blockSignals(True)
-            button.setChecked(enabled)
-            button.blockSignals(False)
-        hint_frame = getattr(self, "link_hint_frame", None)
-        hint_label = getattr(self, "link_hint_label", None)
-        hint_icon = getattr(self, "link_hint_icon", None)
-        if hint_frame:
-            hint_frame.setProperty("active", enabled)
-            hint_frame.style().unpolish(hint_frame)
-            hint_frame.style().polish(hint_frame)
-        if hint_label:
-            hint_label.setProperty("active", enabled)
-            text_on = "Link mode active: click a source component, then a downstream target to toggle the connection. Click empty space or press Esc to finish."
-            text_off = "Link mode is off. Enable it or hold Shift while clicking to connect sensors, logic and actuators."
-            hint_label.setText(text_on if enabled else text_off)
-            hint_label.style().unpolish(hint_label)
-            hint_label.style().polish(hint_label)
-        if hint_icon:
-            hint_icon.setProperty("active", enabled)
-            hint_icon.style().unpolish(hint_icon)
-            hint_icon.style().polish(hint_icon)
-        for widgets in self.sifu_widgets.values():
-            self._apply_link_mode_to_row_widgets(widgets)
-        if enabled and not was_enabled:
-            self.statusBar().showMessage("Link mode active. Click a source component, then a downstream target to connect them.", 5000)
-        elif not enabled and was_enabled:
-            self.statusBar().showMessage("Link mode disabled. Hold Shift or re-enable Link mode to adjust connections.", 4000)
-
-    def _handle_link_mode_escape(self) -> None:
-        if self.sifu_filter.hasFocus():
-            return
-        if self._link_mode_enabled:
-            self._set_link_mode_enabled(False)
-        elif self._pending_link:
-            self._reset_pending_link()
-            self.statusBar().showMessage("Link selection cleared.", 2000)
-
-    def _row_index_for_list(self, list_widget: QListWidget) -> int:
-        for idx, widgets in self.sifu_widgets.items():
-            if widgets.in_list is list_widget or widgets.logic_list is list_widget or widgets.out_list is list_widget:
-                return idx
-        return -1
-
-    def _stage_for_list(self, list_widget: QListWidget) -> Optional[str]:
-        row_idx = self._row_index_for_list(list_widget)
-        if row_idx < 0:
-            return None
-        widgets = self.sifu_widgets.get(row_idx)
-        if not widgets:
-            return None
-        if widgets.in_list is list_widget:
-            return "sensor"
-        if widgets.logic_list is list_widget:
-            return "logic"
-        if widgets.out_list is list_widget:
-            return "actuator"
-        return None
-
-    def _list_instance_ids(self, lw: QListWidget) -> List[str]:
-        ids: List[str] = []
-        for i in range(lw.count()):
-            item = lw.item(i)
-            if not item:
-                continue
-            data = item.data(Qt.UserRole) or {}
-            if data.get('group'):
-                continue
-            inst_id = data.get('instance_id')
-            if isinstance(inst_id, str) and inst_id:
-                ids.append(inst_id)
-        return ids
-
-    def _label_for_instance(self, row_idx: int, stage: str, instance_id: str) -> str:
-        widgets = self.sifu_widgets.get(row_idx)
-        if not widgets:
-            return instance_id
-        mapping = {
-            "sensor": widgets.in_list,
-            "logic": widgets.logic_list,
-            "actuator": widgets.out_list,
-        }
-        lw = mapping.get(stage)
-        if not lw:
-            return instance_id
-        for i in range(lw.count()):
-            item = lw.item(i)
-            if not item:
-                continue
-            data = item.data(Qt.UserRole) or {}
-            if data.get('group'):
-                continue
-            if data.get('instance_id') == instance_id:
-                label = data.get('code') or data.get('name') or item.text()
-                return str(label)
-        return instance_id
-
-    def _prune_connections_for_row(self, row_idx: int) -> None:
-        if row_idx < 0 or row_idx >= len(self.rows_meta):
-            return
-        meta = self.rows_meta[row_idx]
-        connections = self._ensure_connections(meta)
-        widgets = self.sifu_widgets.get(row_idx)
-        if not widgets:
-            meta["connections"] = self._make_empty_connections()
-            self._reset_pending_link()
-            return
-        sensor_ids = set(self._list_instance_ids(widgets.in_list))
-        logic_ids = set(self._list_instance_ids(widgets.logic_list))
-        actuator_ids = set(self._list_instance_ids(widgets.out_list))
-        changed = False
-        cleaned_sensor_logic: Dict[str, List[str]] = {}
-        for src, dests in connections.get("sensor_logic", {}).items():
-            if src not in sensor_ids:
-                changed = True
-                continue
-            filtered = [d for d in dests if d in logic_ids]
-            if filtered:
-                if filtered != dests:
-                    changed = True
-                cleaned_sensor_logic[src] = filtered
-            else:
-                changed = True
-        cleaned_logic_actuator: Dict[str, List[str]] = {}
-        for src, dests in connections.get("logic_actuator", {}).items():
-            if src not in logic_ids:
-                changed = True
-                continue
-            filtered = [d for d in dests if d in actuator_ids]
-            if filtered:
-                if filtered != dests:
-                    changed = True
-                cleaned_logic_actuator[src] = filtered
-            else:
-                changed = True
-        if changed:
-            meta["connections"] = {
-                "sensor_logic": cleaned_sensor_logic,
-                "logic_actuator": cleaned_logic_actuator,
-            }
-            self._reset_pending_link()
-
-    def _handle_link_click(self, list_widget: QListWidget, item: QListWidgetItem) -> None:
-        row_idx = self._row_index_for_list(list_widget)
-        if row_idx < 0:
-            return
-        meta = self.rows_meta[row_idx]
-        data = item.data(Qt.UserRole) or {}
-        if data.get('group'):
-            self.statusBar().showMessage("Connections cannot be assigned to 1oo2 group placeholders. Select an individual component instead.", 3000)
-            return
-        inst_id = data.get('instance_id')
-        if not isinstance(inst_id, str) or not inst_id:
-            data = copy.deepcopy(data)
-            inst_id = new_instance_id()
-            data['instance_id'] = inst_id
-            item.setData(Qt.UserRole, data)
-        stage = self._stage_for_list(list_widget)
-        if stage is None:
-            return
-        connections = self._ensure_connections(meta)
-        if not self._pending_link or self._pending_link.get('row') != row_idx:
-            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
-            stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
-            if stage_name:
-                self.statusBar().showMessage(f"Selected {stage_name} component as source. Choose a downstream target to toggle a link.", 3500)
-            return
-
-        pending = self._pending_link
-        if pending.get('stage') == stage:
-            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
-            stage_name = {"sensor": "sensor", "logic": "logic", "actuator": "actuator"}.get(stage, "")
-            if stage_name:
-                self.statusBar().showMessage(f"Source updated to {stage_name} component. Choose a downstream target to link.", 3000)
-            return
-
-        transition_map = {
-            ("sensor", "logic"): "sensor_logic",
-            ("logic", "actuator"): "logic_actuator",
-        }
-        transition_key = transition_map.get((pending.get('stage'), stage))
-        if not transition_key:
-            self._set_pending_link(row_idx, stage, inst_id, list_widget, item)
-            self.statusBar().showMessage("Selected component as new source. Pick a downstream target to connect.", 3200)
-            return
-
-        src_id = pending.get('instance_id')
-        if not isinstance(src_id, str):
-            self._reset_pending_link()
-            return
-
-        dests = connections.setdefault(transition_key, {}).get(src_id, [])
-        dests = list(dests)
-        if inst_id in dests:
-            dests = [d for d in dests if d != inst_id]
-            if dests:
-                connections[transition_key][src_id] = dests
-            else:
-                connections[transition_key].pop(src_id, None)
-            verb = "Removed"
-        else:
-            dests.append(inst_id)
-            seen: set = set()
-            filtered: List[str] = []
-            for d in dests:
-                if d in seen:
-                    continue
-                seen.add(d)
-                if isinstance(d, str) and d:
-                    filtered.append(d)
-            connections[transition_key][src_id] = filtered
-            verb = "Linked"
-
-        self._reset_pending_link()
-        self._prune_connections_for_row(row_idx)
-        self.recalculate_row(row_idx)
-        src_label = self._label_for_instance(row_idx, pending.get('stage', ''), src_id)
-        dst_label = self._label_for_instance(row_idx, stage, inst_id)
-        self.statusBar().showMessage(f"{verb} connection: {src_label} → {dst_label}", 3200)
 
     def _capture_row_snapshot(self, row_idx: int) -> Optional[str]:
         table = self.table
@@ -2917,7 +2452,6 @@ class MainWindow(QMainWindow):
             row_pos = self._row_index_from_uid(uid)
             if row_pos < 0:
                 print(f"[export] No table row found for uid {uid}", file=sys.stderr)
-            connections = self._ensure_connections(meta)
             snapshot_signature_payload = {
                 "meta": {
                     "sifu_name": meta.get("sifu_name"),
@@ -2960,10 +2494,6 @@ class MainWindow(QMainWindow):
                 "req_sil": req_sil_str,
                 "uid": uid,
                 "row_image": snapshot,
-                "connections": {
-                    "sensor_logic": {src: list(dests) for src, dests in connections.get("sensor_logic", {}).items()},
-                    "logic_actuator": {src: list(dests) for src, dests in connections.get("logic_actuator", {}).items()},
-                },
             })
 
         # Global assumptions and DU/DD ratios
@@ -2996,78 +2526,39 @@ class MainWindow(QMainWindow):
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
         .lane-cards { display:flex; flex-direction:column; gap:10px; }
-        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; }
+        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; border-left:4px solid transparent; }
         .lane-card.group { background:#eef2ff; border-color:#c7d2fe; }
-        .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; }
+        .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; border-left-color:transparent; }
+        .lane--sensors .lane-card { border-left-color:#0EA5E9; }
+        .lane--logic .lane-card { border-left-color:#22C55E; }
+        .lane--actuators .lane-card { border-left-color:#A855F7; }
         .lane-title { font-size: 14px; font-weight:600; color:#111827; margin:0 0 6px; }
         .lane-subtitle { font-size:12px; color:#6b7280; margin-bottom:8px; }
         .lane-metrics { display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:#374151; margin-bottom:8px; }
         .lane-metrics span { white-space:nowrap; }
         .lane-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:11px; margin-right:6px; }
         .lane-pill.arch { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
-        .lane-conn { font-size:12px; color:#4b5563; margin-top:6px; }
-        .lane-conn strong { color:#1f2937; font-weight:600; }
-        .lane-conn .targets { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-        .lane-conn .targets span { background:#e0f2fe; color:#0c4a6e; border-radius:10px; padding:2px 8px; font-size:11px; }
         .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
-        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:8px; background:#fff; }
+        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:8px; background:#fff; border-left:3px solid transparent; }
+        .lane--sensors .lane-member { border-left-color:#0EA5E9; }
+        .lane--logic .lane-member { border-left-color:#22C55E; }
+        .lane--actuators .lane-member { border-left-color:#A855F7; }
         .lane-member h4 { font-size:12px; margin:0 0 4px; color:#1f2937; }
-        .lane-member .lane-conn { margin-top:4px; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict],
-                                     connections: Optional[Dict[str, Dict[str, List[str]]]] = None) -> str:
+        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
             stage_defs = [
                 ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
                 ("actuators", "Outputs / Actuators", actuators or []),
             ]
 
-            conn_map = connections if isinstance(connections, dict) else {}
-
-            def normalize_conn(mapping: Any) -> Dict[str, List[str]]:
-                normalized: Dict[str, List[str]] = {}
-                if not isinstance(mapping, dict):
-                    return normalized
-                for key, value in mapping.items():
-                    if not isinstance(key, str):
-                        continue
-                    if isinstance(value, str) and value:
-                        normalized[key] = [value]
-                    elif isinstance(value, (list, tuple, set)):
-                        collected = [str(v) for v in value if isinstance(v, str) and v]
-                        if collected:
-                            normalized[key] = collected
-                return normalized
-
-            sensor_logic_map = normalize_conn(conn_map.get("sensor_logic"))
-            logic_actuator_map = normalize_conn(conn_map.get("logic_actuator"))
-            has_sensor_links = bool(sensor_logic_map)
-            has_logic_links = bool(logic_actuator_map)
-
-            from collections import defaultdict
-
-            reverse_sensor_links: Dict[str, List[str]] = defaultdict(list)
-            for src, dests in sensor_logic_map.items():
-                for dest in dests:
-                    if src not in reverse_sensor_links[dest]:
-                        reverse_sensor_links[dest].append(src)
-
-            reverse_logic_links: Dict[str, List[str]] = defaultdict(list)
-            for src, dests in logic_actuator_map.items():
-                for dest in dests:
-                    if src not in reverse_logic_links[dest]:
-                        reverse_logic_links[dest].append(src)
-
             stage_payload: List[Tuple[str, str, List[Dict[str, Any]]]] = []
-            stage_lookup: Dict[str, Dict[str, str]] = {}
 
             for stage_key, stage_title, entries in stage_defs:
                 cards: List[Dict[str, Any]] = []
-                lookup: Dict[str, str] = {}
-
                 for idx, entry in enumerate(entries):
                     architecture = entry.get("architecture")
                     instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
@@ -3082,25 +2573,17 @@ class MainWindow(QMainWindow):
                         for m_idx, member in enumerate(entry.get("members", [])):
                             if not isinstance(member, dict):
                                 continue
-                            member_id = member.get("instance_id") if isinstance(member.get("instance_id"), str) else None
-                            member_label = member.get("code") or member.get("name") or f"Member {m_idx + 1}"
-                            lookup_key = member_id or f"{stage_key}-member-{idx}-{m_idx}"
-                            lookup[lookup_key] = member_label
                             members_payload.append({
-                                "label": member_label,
-                                "instance_id": member_id,
+                                "label": member.get("code") or member.get("name") or f"Member {m_idx + 1}",
                                 "pfd": member.get("pfd_avg", member.get("pfd")),
                                 "pfh": member.get("pfh_avg", member.get("pfh")),
                                 "sil": member.get("sys_cap", member.get("syscap", "")),
                                 "pdm": member.get("pdm_code", ""),
                             })
-                        if instance_id:
-                            lookup[instance_id] = label
                         cards.append({
                             "type": "group",
                             "label": label,
                             "architecture": architecture,
-                            "instance_id": instance_id,
                             "pfd": pfd_val,
                             "pfh": pfh_val,
                             "sil": sil_val,
@@ -3108,13 +2591,10 @@ class MainWindow(QMainWindow):
                             "members": members_payload,
                         })
                     else:
-                        if instance_id:
-                            lookup[instance_id] = label
                         cards.append({
                             "type": "single",
                             "label": label,
                             "architecture": architecture,
-                            "instance_id": instance_id,
                             "pfd": pfd_val,
                             "pfh": pfh_val,
                             "sil": sil_val,
@@ -3122,7 +2602,6 @@ class MainWindow(QMainWindow):
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
-                stage_lookup[stage_key] = lookup
 
             if all(not cards for _, _, cards in stage_payload):
                 return ""
@@ -3141,109 +2620,26 @@ class MainWindow(QMainWindow):
                     return ""
                 return '<div class="lane-metrics">' + ''.join(bits) + '</div>'
 
-            def render_conn_section(title: str, ids, lookup: Dict[str, str], explicit: bool, fallback_note: Optional[str]) -> str:
-                section: List[str] = [f'<div class="lane-conn"><strong>{esc(title)}:</strong>']
-                chips: List[str] = []
-                if ids:
-                    seen: set = set()
-                    for conn_id in ids:
-                        if conn_id in seen:
-                            continue
-                        seen.add(conn_id)
-                        label = lookup.get(conn_id)
-                        if label:
-                            chips.append(f'<span>{esc(label)}</span>')
-                if chips:
-                    section.append('<div class="targets">' + ''.join(chips) + '</div>')
-                elif explicit:
-                    section.append('<div class="lane-note">No explicit links</div>')
-                elif fallback_note:
-                    section.append(f'<div class="lane-note">{esc(fallback_note)}</div>')
-                else:
-                    return ''
-                section.append('</div>')
-                return ''.join(section)
-
-            def connection_blocks(stage_key: str, inst_id: Optional[str]) -> str:
-                if not inst_id:
-                    return ""
-                parts: List[str] = []
-                if stage_key == "sensors":
-                    ids = sensor_logic_map.get(inst_id)
-                    section = render_conn_section(
-                        "To logic",
-                        ids,
-                        stage_lookup.get("logic", {}),
-                        has_sensor_links,
-                        "Implicit: all logic components" if stage_lookup.get("logic") else None,
-                    )
-                    if section:
-                        parts.append(section)
-                elif stage_key == "logic":
-                    inbound = reverse_sensor_links.get(inst_id)
-                    section_in = render_conn_section(
-                        "From sensors",
-                        inbound,
-                        stage_lookup.get("sensors", {}),
-                        has_sensor_links,
-                        "Implicit: all sensors" if stage_lookup.get("sensors") else None,
-                    )
-                    if section_in:
-                        parts.append(section_in)
-                    outbound = logic_actuator_map.get(inst_id)
-                    section_out = render_conn_section(
-                        "To actuators",
-                        outbound,
-                        stage_lookup.get("actuators", {}),
-                        has_logic_links,
-                        "Implicit: all actuators" if stage_lookup.get("actuators") else None,
-                    )
-                    if section_out:
-                        parts.append(section_out)
-                elif stage_key == "actuators":
-                    inbound = reverse_logic_links.get(inst_id)
-                    section = render_conn_section(
-                        "From logic",
-                        inbound,
-                        stage_lookup.get("logic", {}),
-                        has_logic_links,
-                        "Implicit: all logic components" if stage_lookup.get("logic") else None,
-                    )
-                    if section:
-                        parts.append(section)
-                return ''.join(parts)
-
             html_parts: List[str] = ['<div class="arch-lanes">']
             for stage_key, stage_title, cards in stage_payload:
-                html_parts.append('<div class="lane">')
+                html_parts.append(f'<div class="lane lane--{stage_key}">')
                 html_parts.append(f'<div class="lane-header">{esc(stage_title)}</div>')
                 html_parts.append('<div class="lane-cards">')
                 if not cards:
                     html_parts.append('<div class="lane-card empty">No components listed</div>')
                 for card in cards:
-                    arch_badge = ''
+                    classes = ["lane-card"]
+                    if card["type"] == "group":
+                        classes.append("group")
+                    class_attr = " ".join(classes)
+                    html_parts.append(f'<div class="{class_attr}">')
+                    html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
                     if card.get("architecture"):
-                        arch_badge = f'<span class="lane-pill arch">{esc(card["architecture"])}</span>'
-                    if card["type"] == "single":
-                        html_parts.append('<div class="lane-card">')
-                        html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
-                        if arch_badge:
-                            html_parts.append(arch_badge)
-                        metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
-                        if metrics_html:
-                            html_parts.append(metrics_html)
-                        conn_html = connection_blocks(stage_key, card.get("instance_id"))
-                        if conn_html:
-                            html_parts.append(conn_html)
-                        html_parts.append('</div>')
-                    else:
-                        html_parts.append('<div class="lane-card group">')
-                        html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
-                        if arch_badge:
-                            html_parts.append(arch_badge)
-                        metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
-                        if metrics_html:
-                            html_parts.append(metrics_html)
+                        html_parts.append(f'<span class="lane-pill arch">{esc(card["architecture"])}</span>')
+                    metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
+                    if metrics_html:
+                        html_parts.append(metrics_html)
+                    if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
                             html_parts.append('<div class="lane-members">')
@@ -3253,17 +2649,13 @@ class MainWindow(QMainWindow):
                                 member_metrics = render_metrics(member.get("pfd"), member.get("pfh"), member.get("sil"), member.get("pdm"))
                                 if member_metrics:
                                     html_parts.append(member_metrics)
-                                member_conn = connection_blocks(stage_key, member.get("instance_id"))
-                                if member_conn:
-                                    html_parts.append(member_conn)
+                                else:
+                                    html_parts.append('<div class="lane-note">No reliability data</div>')
                                 html_parts.append('</div>')
                             html_parts.append('</div>')
                         else:
                             html_parts.append('<div class="lane-note">Group members unavailable</div>')
-                        group_conn = connection_blocks(stage_key, card.get("instance_id"))
-                        if group_conn:
-                            html_parts.append(group_conn)
-                        html_parts.append('</div>')
+                    html_parts.append('</div>')
                 html_parts.append('</div>')
                 html_parts.append('</div>')
             html_parts.append('</div>')
@@ -3337,7 +2729,7 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'], s.get('connections'))
+            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'])
             if arch_html:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
@@ -3410,11 +2802,6 @@ class MainWindow(QMainWindow):
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
-            connections = self._ensure_connections(meta)
-            serialized_connections = {
-                'sensor_logic': {src: list(dests) for src, dests in connections.get('sensor_logic', {}).items()},
-                'logic_actuator': {src: list(dests) for src, dests in connections.get('logic_actuator', {}).items()},
-            }
             out["sifus"].append({
                 "sifu_name": meta.get("sifu_name", f"Row {row_idx+1}"),
                 "sil_required": req_sil_str,
@@ -3424,7 +2811,6 @@ class MainWindow(QMainWindow):
                 "pfd_sum": float(pfd_sum), "pfh_sum": float(pfh_sum),
                 "sil_calculated": sil_calc,
                 "sil_required_met": sil_rank(sil_calc) >= req_rank and sil_rank(sil_calc) > 0,
-                "connections": serialized_connections,
             })
         return out
 
@@ -3442,14 +2828,6 @@ class MainWindow(QMainWindow):
                 "demand_mode_override": sifu_data.get("demand_mode_override", None),
                 "source": "user"
             })
-            payload_connections = sifu_data.get("connections", {})
-            if isinstance(payload_connections, dict):
-                meta["connections"] = {
-                    "sensor_logic": self._normalize_connection_map(payload_connections.get("sensor_logic")),
-                    "logic_actuator": self._normalize_connection_map(payload_connections.get("logic_actuator")),
-                }
-            else:
-                meta["connections"] = self._make_empty_connections()
             self.rows_meta.append(meta)
             self._ensure_row_uid(meta)
 
@@ -3458,7 +2836,6 @@ class MainWindow(QMainWindow):
 
             widgets = SifuRowWidgets()
             self.sifu_widgets[row_idx] = widgets
-            self._apply_link_mode_to_row_widgets(widgets)
 
             effective = self._effective_demand_mode(row_idx)
             widgets.result.combo.setCurrentText(effective)
@@ -3676,8 +3053,6 @@ class MainWindow(QMainWindow):
         if row_idx < 0 or row_idx >= len(self.rows_meta): return
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return  # can happen after remove
-        self._prune_connections_for_row(row_idx)
-
         pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
         mode = self._effective_demand_mode(row_idx)
         is_high = "high" in mode.lower()
@@ -4005,14 +3380,11 @@ class MainWindow(QMainWindow):
     def _append_sifu_row(self, meta: RowMeta):
         row_idx = self.table.rowCount()
         self.table.insertRow(row_idx)
-        if "connections" not in meta:
-            meta["connections"] = self._make_empty_connections()
         self.rows_meta.append(meta)
         self._ensure_row_uid(meta)
 
         widgets = SifuRowWidgets()
         self.sifu_widgets[row_idx] = widgets
-        self._apply_link_mode_to_row_widgets(widgets)
 
         header = f"{meta['sifu_name']} \nRequired: {meta['sil_required']}\n {meta['demand_mode_required']}"
         self.table.setVerticalHeaderItem(row_idx, QTableWidgetItem(header))
@@ -4201,10 +3573,6 @@ class EnhancedMainWindow(MainWindow):
         self.act_config.setIcon(self.style().standardIcon(self.style().SP_FileDialogDetailedView))
         self.act_config.triggered.connect(self._open_config_dialog)
         m_tools.addAction(self.act_config)
-        if hasattr(self, 'link_mode_action'):
-            m_tools.addSeparator()
-            m_tools.addAction(self.link_mode_action)
-
         # Help
         m_help = mb.addMenu('&Help')
         self.act_shortcuts = QAction('Keyboard Shortcuts', self)
