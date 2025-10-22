@@ -2991,257 +2991,283 @@ class MainWindow(QMainWindow):
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
         .right { text-align:right; }
         .nowrap { white-space: nowrap; }
-        .row-image { margin: 12px 0 18px; text-align: center; }
-        .row-image img { max-width: 100%; border:1px solid #d1d5db; border-radius:8px; box-shadow:0 4px 12px rgba(15,23,42,0.08); background:#fff; }
-        .row-image figcaption { margin-top: 6px; font-size: 12px; color:#4b5563; }
         .architecture { margin: 18px 0 24px; }
-        .arch-svg { width: 100%; max-width: 780px; display: block; margin: 0 auto; }
-        .arch-stage-label { font-size: 13px; font-weight: 600; fill: #1f2937; }
-        .arch-conn { fill: none; stroke: #94a3b8; stroke-width: 1.3; opacity: 0.8; }
-        .arch-node { fill: #f8fafc; stroke: #cbd5f5; stroke-width: 1; rx: 9; ry: 9; }
-        .arch-node.placeholder { fill: #f3f4f6; stroke-dasharray: 4 3; opacity: 0.8; }
-        .arch-node-label { font-size: 12px; fill: #1f2937; }
-        .arch-group { fill: rgba(59,130,246,0.08); stroke: #3b82f6; stroke-width: 1; stroke-dasharray: 6 4; rx: 12; ry: 12; }
-        .arch-group-label { font-size: 11px; font-weight: 600; fill: #1d4ed8; }
+        .arch-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+        .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
+        .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
+        .lane-cards { display:flex; flex-direction:column; gap:10px; }
+        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; }
+        .lane-card.group { background:#eef2ff; border-color:#c7d2fe; }
+        .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; }
+        .lane-title { font-size: 14px; font-weight:600; color:#111827; margin:0 0 6px; }
+        .lane-subtitle { font-size:12px; color:#6b7280; margin-bottom:8px; }
+        .lane-metrics { display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:#374151; margin-bottom:8px; }
+        .lane-metrics span { white-space:nowrap; }
+        .lane-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:11px; margin-right:6px; }
+        .lane-pill.arch { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
+        .lane-conn { font-size:12px; color:#4b5563; margin-top:6px; }
+        .lane-conn strong { color:#1f2937; font-weight:600; }
+        .lane-conn .targets { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
+        .lane-conn .targets span { background:#e0f2fe; color:#0c4a6e; border-radius:10px; padding:2px 8px; font-size:11px; }
+        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:8px; }
+        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:8px; background:#fff; }
+        .lane-member h4 { font-size:12px; margin:0 0 4px; color:#1f2937; }
+        .lane-member .lane-conn { margin-top:4px; }
+        .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_svg(sensors: List[dict], logic: List[dict], actuators: List[dict],
-                                   connections: Optional[Dict[str, Dict[str, List[str]]]] = None) -> str:
+        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict],
+                                     connections: Optional[Dict[str, Dict[str, List[str]]]] = None) -> str:
             stage_defs = [
-                ("sensors", "Sensors", sensors or []),
+                ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
-                ("actuators", "Actuators", actuators or []),
+                ("actuators", "Outputs / Actuators", actuators or []),
             ]
 
-            columns = []
-            groups: Dict[str, Dict[str, Any]] = {}
-            max_nodes = 0
             conn_map = connections if isinstance(connections, dict) else {}
 
             def normalize_conn(mapping: Any) -> Dict[str, List[str]]:
-                out: Dict[str, List[str]] = {}
+                normalized: Dict[str, List[str]] = {}
                 if not isinstance(mapping, dict):
-                    return out
-                for key, vals in mapping.items():
+                    return normalized
+                for key, value in mapping.items():
                     if not isinstance(key, str):
                         continue
-                    if isinstance(vals, str):
-                        out[key] = [vals]
-                    elif isinstance(vals, (list, tuple, set)):
-                        seq = [str(v) for v in vals if isinstance(v, str) and v]
-                        if seq:
-                            out[key] = seq
-                return out
+                    if isinstance(value, str) and value:
+                        normalized[key] = [value]
+                    elif isinstance(value, (list, tuple, set)):
+                        collected = [str(v) for v in value if isinstance(v, str) and v]
+                        if collected:
+                            normalized[key] = collected
+                return normalized
 
             sensor_logic_map = normalize_conn(conn_map.get("sensor_logic"))
             logic_actuator_map = normalize_conn(conn_map.get("logic_actuator"))
+            has_sensor_links = bool(sensor_logic_map)
+            has_logic_links = bool(logic_actuator_map)
 
-            for col_idx, (key, title, items) in enumerate(stage_defs):
-                nodes: List[Dict[str, Any]] = []
-                arch_counts: Dict[str, int] = {}
+            from collections import defaultdict
 
-                for item_idx, entry in enumerate(items):
-                    arch = entry.get("architecture")
-                    if arch:
-                        arch_counts[arch] = arch_counts.get(arch, 0) + 1
+            reverse_sensor_links: Dict[str, List[str]] = defaultdict(list)
+            for src, dests in sensor_logic_map.items():
+                for dest in dests:
+                    if src not in reverse_sensor_links[dest]:
+                        reverse_sensor_links[dest].append(src)
 
-                    if arch == "1oo2" and entry.get("members"):
-                        group_id = f"{key}-grp-{item_idx}"
-                        groups[group_id] = {"column": col_idx, "label": arch, "nodes": []}
-                        members = entry.get("members", [])
-                        if not members:
-                            continue
-                        for member_idx, member in enumerate(members):
-                            label = member.get("code") or member.get("name") or f"Member {member_idx + 1}"
-                            inst_id = member.get("instance_id")
-                            connectable = isinstance(inst_id, str) and bool(inst_id)
-                            node = {
-                                "label": label,
-                                "placeholder": False,
-                                "group": group_id,
-                                "connectable": connectable,
-                                "instance_id": inst_id,
-                            }
-                            nodes.append(node)
-                            groups[group_id]["nodes"].append(node)
-                    else:
-                        label = entry.get("code") or entry.get("name") or f"{title} {item_idx + 1}"
-                        inst_id = entry.get("instance_id")
-                        connectable = isinstance(inst_id, str) and bool(inst_id)
-                        nodes.append({
+            reverse_logic_links: Dict[str, List[str]] = defaultdict(list)
+            for src, dests in logic_actuator_map.items():
+                for dest in dests:
+                    if src not in reverse_logic_links[dest]:
+                        reverse_logic_links[dest].append(src)
+
+            stage_payload: List[Tuple[str, str, List[Dict[str, Any]]]] = []
+            stage_lookup: Dict[str, Dict[str, str]] = {}
+
+            for stage_key, stage_title, entries in stage_defs:
+                cards: List[Dict[str, Any]] = []
+                lookup: Dict[str, str] = {}
+
+                for idx, entry in enumerate(entries):
+                    architecture = entry.get("architecture")
+                    instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
+                    label = entry.get("code") or entry.get("name") or f"{stage_title} {idx + 1}"
+                    pfd_val = entry.get("pfd_avg", entry.get("pfd"))
+                    pfh_val = entry.get("pfh_avg", entry.get("pfh"))
+                    sil_val = entry.get("sys_cap", entry.get("syscap", ""))
+                    pdm_val = entry.get("pdm_code", "")
+
+                    if architecture == "1oo2" and entry.get("members"):
+                        members_payload: List[Dict[str, Any]] = []
+                        for m_idx, member in enumerate(entry.get("members", [])):
+                            if not isinstance(member, dict):
+                                continue
+                            member_id = member.get("instance_id") if isinstance(member.get("instance_id"), str) else None
+                            member_label = member.get("code") or member.get("name") or f"Member {m_idx + 1}"
+                            lookup_key = member_id or f"{stage_key}-member-{idx}-{m_idx}"
+                            lookup[lookup_key] = member_label
+                            members_payload.append({
+                                "label": member_label,
+                                "instance_id": member_id,
+                                "pfd": member.get("pfd_avg", member.get("pfd")),
+                                "pfh": member.get("pfh_avg", member.get("pfh")),
+                                "sil": member.get("sys_cap", member.get("syscap", "")),
+                                "pdm": member.get("pdm_code", ""),
+                            })
+                        if instance_id:
+                            lookup[instance_id] = label
+                        cards.append({
+                            "type": "group",
                             "label": label,
-                            "placeholder": False,
-                            "group": None,
-                            "connectable": connectable,
-                            "instance_id": inst_id,
+                            "architecture": architecture,
+                            "instance_id": instance_id,
+                            "pfd": pfd_val,
+                            "pfh": pfh_val,
+                            "sil": sil_val,
+                            "pdm": pdm_val,
+                            "members": members_payload,
+                        })
+                    else:
+                        if instance_id:
+                            lookup[instance_id] = label
+                        cards.append({
+                            "type": "single",
+                            "label": label,
+                            "architecture": architecture,
+                            "instance_id": instance_id,
+                            "pfd": pfd_val,
+                            "pfh": pfh_val,
+                            "sil": sil_val,
+                            "pdm": pdm_val,
                         })
 
-                if not nodes:
-                    nodes.append({
-                        "label": "No items",
-                        "placeholder": True,
-                        "group": None,
-                        "connectable": False,
-                        "instance_id": None,
-                    })
+                stage_payload.append((stage_key, stage_title, cards))
+                stage_lookup[stage_key] = lookup
 
-                max_nodes = max(max_nodes, len(nodes))
-
-                title_suffix = ""
-                if arch_counts:
-                    parts = []
-                    for arch, count in sorted(arch_counts.items()):
-                        parts.append(f"{arch}×{count}" if count > 1 else arch)
-                    title_suffix = f" ({', '.join(parts)})"
-
-                columns.append({
-                    "key": key,
-                    "title": title + title_suffix,
-                    "nodes": nodes,
-                })
-
-            if not columns:
+            if all(not cards for _, _, cards in stage_payload):
                 return ""
 
-            node_width = 168.0
-            node_height = 44.0
-            slot = 74.0
-            margin_top = 54.0
-            margin_bottom = 48.0
-            margin_left = 60.0
-            col_gap = 150.0
-            total_columns = len(columns)
-            max_nodes = max(1, max_nodes)
-            width = margin_left * 2 + total_columns * node_width + (total_columns - 1) * col_gap
-            height = margin_top + (max_nodes - 1) * slot + node_height + margin_bottom
+            def render_metrics(pfd, pfh, sil, pdm) -> str:
+                bits: List[str] = []
+                if pfd not in (None, ""):
+                    bits.append(f"<span>PFDavg {fmt_pfd(pfd)}</span>")
+                if pfh not in (None, ""):
+                    bits.append(f"<span>PFHavg {fmt_pfh(pfh)}</span>")
+                if sil:
+                    bits.append(f"<span>SIL {esc(sil)}</span>")
+                if pdm:
+                    bits.append(f"<span>PDM {esc(pdm)}</span>")
+                if not bits:
+                    return ""
+                return '<div class="lane-metrics">' + ''.join(bits) + '</div>'
 
-            for col_idx, column in enumerate(columns):
-                x = margin_left + col_idx * (node_width + col_gap)
-                for node_idx, node in enumerate(column["nodes"]):
-                    y = margin_top + node_idx * slot
-                    node["x"] = x
-                    node["y"] = y
-                    node["cx"] = x + node_width / 2.0
-                    node["cy"] = y + node_height / 2.0
-                    node["x_right"] = x + node_width
-                    node["x_left"] = x
+            def render_conn_section(title: str, ids, lookup: Dict[str, str], explicit: bool, fallback_note: Optional[str]) -> str:
+                section: List[str] = [f'<div class="lane-conn"><strong>{esc(title)}:</strong>']
+                chips: List[str] = []
+                if ids:
+                    seen: set = set()
+                    for conn_id in ids:
+                        if conn_id in seen:
+                            continue
+                        seen.add(conn_id)
+                        label = lookup.get(conn_id)
+                        if label:
+                            chips.append(f'<span>{esc(label)}</span>')
+                if chips:
+                    section.append('<div class="targets">' + ''.join(chips) + '</div>')
+                elif explicit:
+                    section.append('<div class="lane-note">No explicit links</div>')
+                elif fallback_note:
+                    section.append(f'<div class="lane-note">{esc(fallback_note)}</div>')
+                else:
+                    return ''
+                section.append('</div>')
+                return ''.join(section)
 
-            columns_by_key = {column["key"]: column for column in columns}
-            node_lookup: Dict[str, Dict[str, Dict[str, Any]]] = {}
-            for column in columns:
-                lookup: Dict[str, Dict[str, Any]] = {}
-                for node in column["nodes"]:
-                    inst_id = node.get("instance_id")
-                    if isinstance(inst_id, str) and inst_id:
-                        lookup[inst_id] = node
-                node_lookup[column["key"]] = lookup
+            def connection_blocks(stage_key: str, inst_id: Optional[str]) -> str:
+                if not inst_id:
+                    return ""
+                parts: List[str] = []
+                if stage_key == "sensors":
+                    ids = sensor_logic_map.get(inst_id)
+                    section = render_conn_section(
+                        "To logic",
+                        ids,
+                        stage_lookup.get("logic", {}),
+                        has_sensor_links,
+                        "Implicit: all logic components" if stage_lookup.get("logic") else None,
+                    )
+                    if section:
+                        parts.append(section)
+                elif stage_key == "logic":
+                    inbound = reverse_sensor_links.get(inst_id)
+                    section_in = render_conn_section(
+                        "From sensors",
+                        inbound,
+                        stage_lookup.get("sensors", {}),
+                        has_sensor_links,
+                        "Implicit: all sensors" if stage_lookup.get("sensors") else None,
+                    )
+                    if section_in:
+                        parts.append(section_in)
+                    outbound = logic_actuator_map.get(inst_id)
+                    section_out = render_conn_section(
+                        "To actuators",
+                        outbound,
+                        stage_lookup.get("actuators", {}),
+                        has_logic_links,
+                        "Implicit: all actuators" if stage_lookup.get("actuators") else None,
+                    )
+                    if section_out:
+                        parts.append(section_out)
+                elif stage_key == "actuators":
+                    inbound = reverse_logic_links.get(inst_id)
+                    section = render_conn_section(
+                        "From logic",
+                        inbound,
+                        stage_lookup.get("logic", {}),
+                        has_logic_links,
+                        "Implicit: all logic components" if stage_lookup.get("logic") else None,
+                    )
+                    if section:
+                        parts.append(section)
+                return ''.join(parts)
 
-            group_rects = []
-            for group_id, group in groups.items():
-                nodes = group.get("nodes", [])
-                if not nodes:
-                    continue
-                ys = [node["y"] for node in nodes]
-                top = min(ys) - 12.0
-                bottom = max(ys) + node_height + 12.0
-                column_idx = group["column"]
-                x = margin_left + column_idx * (node_width + col_gap) - 12.0
-                group_rects.append({
-                    "x": x,
-                    "y": top,
-                    "width": node_width + 24.0,
-                    "height": bottom - top,
-                    "label": group.get("label", ""),
-                })
-
-            connectors = []
-            seen_pairs: set = set()
-            control_offset = col_gap * 0.5
-
-            def add_connector(src_node: Dict[str, Any], dst_node: Dict[str, Any]):
-                key = (src_node.get("instance_id"), dst_node.get("instance_id"))
-                if key in seen_pairs:
-                    return
-                seen_pairs.add(key)
-                connectors.append({
-                    "x1": src_node["x_right"],
-                    "y1": src_node["cy"],
-                    "x2": dst_node["x_left"],
-                    "y2": dst_node["cy"],
-                    "c1x": src_node["x_right"] + control_offset,
-                    "c1y": src_node["cy"],
-                    "c2x": dst_node["x_left"] - control_offset,
-                    "c2y": dst_node["cy"],
-                })
-
-            def connect_stage(src_key: str, dst_key: str, mapping: Dict[str, List[str]]):
-                column_src = columns_by_key.get(src_key)
-                column_dst = columns_by_key.get(dst_key)
-                if not column_src or not column_dst:
-                    return
-                src_nodes = [n for n in column_src["nodes"] if n.get("connectable")]
-                dst_nodes = [n for n in column_dst["nodes"] if n.get("connectable")]
-                if not src_nodes or not dst_nodes:
-                    return
-                src_lookup = node_lookup.get(src_key, {})
-                dst_lookup = node_lookup.get(dst_key, {})
-                for src_node in src_nodes:
-                    src_id = src_node.get("instance_id")
-                    targets = mapping.get(src_id) if mapping else None
-                    if targets:
-                        dst_candidates = [dst_lookup.get(tid) for tid in targets]
-                        dst_candidates = [dst for dst in dst_candidates if dst]
+            html_parts: List[str] = ['<div class="arch-lanes">']
+            for stage_key, stage_title, cards in stage_payload:
+                html_parts.append('<div class="lane">')
+                html_parts.append(f'<div class="lane-header">{esc(stage_title)}</div>')
+                html_parts.append('<div class="lane-cards">')
+                if not cards:
+                    html_parts.append('<div class="lane-card empty">No components listed</div>')
+                for card in cards:
+                    arch_badge = ''
+                    if card.get("architecture"):
+                        arch_badge = f'<span class="lane-pill arch">{esc(card["architecture"])}</span>'
+                    if card["type"] == "single":
+                        html_parts.append('<div class="lane-card">')
+                        html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
+                        if arch_badge:
+                            html_parts.append(arch_badge)
+                        metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
+                        if metrics_html:
+                            html_parts.append(metrics_html)
+                        conn_html = connection_blocks(stage_key, card.get("instance_id"))
+                        if conn_html:
+                            html_parts.append(conn_html)
+                        html_parts.append('</div>')
                     else:
-                        dst_candidates = dst_nodes
-                    for dst_node in dst_candidates:
-                        add_connector(src_node, dst_node)
-
-            connect_stage("sensors", "logic", sensor_logic_map)
-            connect_stage("logic", "actuators", logic_actuator_map)
-
-            svg_parts = [
-                f'<svg class="arch-svg" viewBox="0 0 {width:.0f} {height:.0f}" role="img" aria-label="Safety function architecture diagram">',
-                '<title>Safety function architecture</title>',
-            ]
-
-            header_y = margin_top - 18.0
-            for column in columns:
-                nodes = column["nodes"]
-                if not nodes:
-                    continue
-                header_x = nodes[0]["cx"]
-                svg_parts.append(
-                    f'<text class="arch-stage-label" x="{header_x:.1f}" y="{header_y:.1f}" text-anchor="middle">{esc(column["title"])}</text>'
-                )
-
-            for conn in connectors:
-                svg_parts.append(
-                    f'<path class="arch-conn" d="M{conn["x1"]:.1f},{conn["y1"]:.1f} C{conn["c1x"]:.1f},{conn["c1y"]:.1f} {conn["c2x"]:.1f},{conn["c2y"]:.1f} {conn["x2"]:.1f},{conn["y2"]:.1f}" />'
-                )
-
-            for rect in group_rects:
-                svg_parts.append(
-                    f'<rect class="arch-group" x="{rect["x"]:.1f}" y="{rect["y"]:.1f}" width="{rect["width"]:.1f}" height="{rect["height"]:.1f}" />'
-                )
-                if rect.get("label"):
-                    label_y = rect["y"] - 6.0
-                    svg_parts.append(
-                        f'<text class="arch-group-label" x="{rect["x"] + rect["width"] / 2.0:.1f}" y="{label_y:.1f}" text-anchor="middle">{esc(rect["label"])} group</text>'
-                    )
-
-            for column in columns:
-                for node in column["nodes"]:
-                    rect_class = "arch-node placeholder" if node.get("placeholder") else "arch-node"
-                    svg_parts.append(
-                        f'<rect class="{rect_class}" x="{node["x"]:.1f}" y="{node["y"]:.1f}" width="{node_width:.1f}" height="{node_height:.1f}" />'
-                    )
-                    svg_parts.append(
-                        f'<text class="arch-node-label" x="{node["cx"]:.1f}" y="{node["cy"]:.1f}" text-anchor="middle" dominant-baseline="middle">{esc(node["label"])}</text>'
-                    )
-
-            svg_parts.append('</svg>')
-            return '\n'.join(svg_parts)
+                        html_parts.append('<div class="lane-card group">')
+                        html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
+                        if arch_badge:
+                            html_parts.append(arch_badge)
+                        metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
+                        if metrics_html:
+                            html_parts.append(metrics_html)
+                        members = card.get("members", [])
+                        if members:
+                            html_parts.append('<div class="lane-members">')
+                            for member in members:
+                                html_parts.append('<div class="lane-member">')
+                                html_parts.append(f'<h4>{esc(member.get("label", "Member"))}</h4>')
+                                member_metrics = render_metrics(member.get("pfd"), member.get("pfh"), member.get("sil"), member.get("pdm"))
+                                if member_metrics:
+                                    html_parts.append(member_metrics)
+                                member_conn = connection_blocks(stage_key, member.get("instance_id"))
+                                if member_conn:
+                                    html_parts.append(member_conn)
+                                html_parts.append('</div>')
+                            html_parts.append('</div>')
+                        else:
+                            html_parts.append('<div class="lane-note">Group members unavailable</div>')
+                        group_conn = connection_blocks(stage_key, card.get("instance_id"))
+                        if group_conn:
+                            html_parts.append(group_conn)
+                        html_parts.append('</div>')
+                html_parts.append('</div>')
+                html_parts.append('</div>')
+            html_parts.append('</div>')
+            return ''.join(html_parts)
 
         # Build HTML
         parts = []
@@ -3311,20 +3337,11 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            screenshot = s.get("row_image")
-            if screenshot:
-                parts.append(
-                    '<figure class="row-image">'
-                    f'<img src="{screenshot}" alt="GUI snapshot of {esc(meta.get("sifu_name", "SIFU"))}">'
-                    f'<figcaption>GUI table row captured during export</figcaption>'
-                    '</figure>'
-                )
-
-            arch_svg = build_architecture_svg(s['sensors'], s['logic'], s['actuators'], s.get('connections'))
-            if arch_svg:
+            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'], s.get('connections'))
+            if arch_html:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
-                parts.append(arch_svg)
+                parts.append(arch_html)
                 parts.append('</div>')
 
             def render_group(title, items):
