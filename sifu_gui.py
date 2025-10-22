@@ -17,7 +17,7 @@ import json
 import hashlib
 import copy
 import weakref
-from typing import Dict, Tuple, List, Optional, Union, Any, ReferenceType
+from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -1412,8 +1412,8 @@ class MainWindow(QMainWindow):
         # --- per-row metadata store ---
         self.rows_meta: List[RowMeta] = []
         self._pending_link: Optional[Dict[str, Any]] = None
-        self._pending_link_widget_ref: Optional[ReferenceType[QtWidgets.QWidget]] = None
-        self._pending_link_item_ref: Optional[ReferenceType[QtWidgets.QWidget]] = None
+        self._pending_link_widget_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
+        self._pending_link_item_ref: Optional[weakref.ReferenceType[QtWidgets.QWidget]] = None
 
         # --- toolbar ---
         #tb = QToolBar("Actions"); tb.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
