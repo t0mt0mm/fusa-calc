@@ -2604,18 +2604,32 @@ class MainWindow(QMainWindow):
         parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-g7c+efxWWEXUvhYaL6VLdystD5nq2WEYLRh3SeDsICoZ6irMIXP+6JGZ3HF8NjEc" crossorigin="anonymous" defer></script>')
         parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQm6zXih/6KrAEyyGq+/NjEcNWef39MF4R2t8tGi99Z0eKCbFJH+08Lw8Hg" crossorigin="anonymous" defer></script>')
         parts.append('''<script>
-            document.addEventListener('DOMContentLoaded', function() {
-                if (window.renderMathInElement) {
+            (function() {
+                function renderMath() {
+                    if (!window.renderMathInElement) {
+                        return;
+                    }
                     window.renderMathInElement(document.body, {
                         delimiters: [
                             {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
                             {left: '\\(', right: '\\)', display: false},
                             {left: '\\[', right: '\\]', display: true}
                         ],
                         throwOnError: false
                     });
                 }
-            });
+
+                if (document.readyState === 'complete') {
+                    renderMath();
+                } else {
+                    window.addEventListener('load', function handleLoad() {
+                        window.removeEventListener('load', handleLoad);
+                        renderMath();
+                        window.setTimeout(renderMath, 40);
+                    });
+                }
+            })();
         </script>''')
         parts.append('</head><body>')
         parts.append('<div class="page">')
@@ -2646,24 +2660,28 @@ class MainWindow(QMainWindow):
         parts.append('<div class="formula-section">')
         parts.append('<p class="formula-intro">Key IEC&nbsp;61508 relations for representative 1oo1 and 1oo2 safety architectures.</p>')
         parts.append('<div class="formula-grid">')
-        parts.append('<div class="formula-card">'
-                     '<h4>1oo1 architecture</h4>'
-                     '<div class="formula">\\( \mathrm{PFD}_{1oo1} = \lambda_{DU} \bigl( \tfrac{TI}{2} + MTTR \bigr) + \lambda_{DD}\,MTTR \\)</div>'
-                     '<div class="formula-desc">Average probability of failure on demand combines undetected dangerous accumulation and the repair exposure of detected dangerous faults.</div>'
-                     '<div class="formula">\\( \mathrm{PFH}_{1oo1} = \lambda_{DU} \\)</div>'
-                     '<div class="formula-desc">For high-demand modes the dangerous undetected failure rate dominates the frequency of failure per hour.</div>'
-                     '</div>')
-        parts.append('<div class="formula-card">'
-                     '<h4>1oo2 architecture</h4>'
-                     '<div class="formula">\\( \mathrm{PFD}_{1oo2} = \mathrm{PFD}_{\mathrm{ind}} + \mathrm{PFD}_{\mathrm{CCF}} \\)</div>'
-                     '<div class="formula-desc">Demand exposure separates independent failures from common-cause contributions.</div>'
-                     '<div class="formula">\\( \mathrm{PFD}_{\mathrm{ind}} = (1-\beta)^{2} \lambda_{DU,ind}^{2} \tfrac{TI^{2}}{3} \\)</div>'
-                     '<div class="formula-desc">Independent dangerous failures require simultaneous channel loss across the proof-test interval.</div>'
-                     '<div class="formula">\\( \mathrm{PFD}_{\mathrm{CCF}} = \beta \lambda_{DU} \bigl( \tfrac{TI}{2} + MTTR \bigr) \\)</div>'
-                     '<div class="formula-desc">Common-cause effects are modelled like a single-channel exposure scaled by the beta factor.</div>'
-                     '<div class="formula">\\( \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_{DU,ind}\,t_{CE} + \beta \lambda_{DU} \\)</div>'
-                     '<div class="formula-desc">Continuous mode risk aggregates independent channel diagnostic coverage with the remaining common-cause share.</div>'
-                     '</div>')
+        parts.append(''.join([
+            '<div class="formula-card">',
+            '<h4>1oo1 architecture</h4>',
+            '<div class="formula">\[ \mathrm{PFD}_{1oo1} = \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) + \lambda_{DD}\,MTTR \]</div>',
+            '<div class="formula-desc">Average probability of failure on demand combines undetected dangerous accumulation and the repair exposure of detected dangerous faults.</div>',
+            '<div class="formula">\[ \mathrm{PFH}_{1oo1} = \lambda_{DU} \]</div>',
+            '<div class="formula-desc">For high-demand modes the dangerous undetected failure rate dominates the frequency of failure per hour.</div>',
+            '</div>'
+        ]))
+        parts.append(''.join([
+            '<div class="formula-card">',
+            '<h4>1oo2 architecture</h4>',
+            '<div class="formula">\[ \mathrm{PFD}_{1oo2} = \mathrm{PFD}_{\mathrm{ind}} + \mathrm{PFD}_{\mathrm{CCF}} \]</div>',
+            '<div class="formula-desc">Demand exposure separates independent failures from common-cause contributions.</div>',
+            '<div class="formula">\[ \mathrm{PFD}_{\mathrm{ind}} = (1-\beta)^{2} \lambda_{DU,ind}^{2} \frac{TI^{2}}{3} \]</div>',
+            '<div class="formula-desc">Independent dangerous failures require simultaneous channel loss across the proof-test interval.</div>',
+            '<div class="formula">\[ \mathrm{PFD}_{\mathrm{CCF}} = \beta \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) \]</div>',
+            '<div class="formula-desc">Common-cause effects are modelled like a single-channel exposure scaled by the beta factor.</div>',
+            '<div class="formula">\[ \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_{DU,ind}\,t_{CE} + \beta \lambda_{DU} \]</div>',
+            '<div class="formula-desc">Continuous mode risk aggregates independent channel diagnostic coverage with the remaining common-cause share.</div>',
+            '</div>'
+        ]))
         parts.append('</div>')
         parts.append('<div class="variable-legend">'
                      '<h4>Variable overview</h4>'
