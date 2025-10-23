@@ -2600,37 +2600,19 @@ class MainWindow(QMainWindow):
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
         parts.append(f'<style>{css}</style>')
-        parts.append('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-oq0K+cOYV3GQEvtzP8nH3UX0DpD+s/COM24kTx5cDIeEJD7BqXc9E+u6KDAdc8+" crossorigin="anonymous">')
-        parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-g7c+efxWWEXUvhYaL6VLdystD5nq2WEYLRh3SeDsICoZ6irMIXP+6JGZ3HF8NjEc" crossorigin="anonymous" defer></script>')
-        parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQm6zXih/6KrAEyyGq+/NjEcNWef39MF4R2t8tGi99Z0eKCbFJH+08Lw8Hg" crossorigin="anonymous" defer></script>')
         parts.append('''<script>
-            (function() {
-                function renderMath() {
-                    if (!window.renderMathInElement) {
-                        return;
-                    }
-                    window.renderMathInElement(document.body, {
-                        delimiters: [
-                            {left: '$$', right: '$$', display: true},
-                            {left: '$', right: '$', display: false},
-                            {left: '\\(', right: '\\)', display: false},
-                            {left: '\\[', right: '\\]', display: true}
-                        ],
-                        throwOnError: false
-                    });
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                    processEscapes: true
+                },
+                options: {
+                    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
                 }
-
-                if (document.readyState === 'complete') {
-                    renderMath();
-                } else {
-                    window.addEventListener('load', function handleLoad() {
-                        window.removeEventListener('load', handleLoad);
-                        renderMath();
-                        window.setTimeout(renderMath, 40);
-                    });
-                }
-            })();
+            };
         </script>''')
+        parts.append('<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
         parts.append('<h1>SIFU Calculation Report</h1>')
