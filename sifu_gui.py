@@ -2368,9 +2368,10 @@ class MainWindow(QMainWindow):
             text = text.rstrip('0').rstrip('.') if '.' in text else text
             return text or "0"
 
-        def component_derivation_boxes(stage_key: str, entry: Dict[str, Any], label: str,
-                                        comp_symbol_tex: str, value: float, mode_key: str) -> List[str]:
-            html_boxes: List[str] = []
+        def component_derivation_entry(stage_key: str, entry: Dict[str, Any], label: str,
+                                        mode_key: str) -> Optional[Dict[str, Any]]:
+            symbol = "PFD" if mode_key == 'low_demand' else "PFH"
+            comp_symbol_tex = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(label)}}}}}"
             group = stage_group(stage_key)
             du_ratio, dd_ratio = self._ratios(group)
             architecture = entry.get('architecture', '1oo1') or '1oo1'
@@ -2379,12 +2380,16 @@ class MainWindow(QMainWindow):
             beta = float(self.assumptions.get('beta', 0.0))
             beta_D = float(self.assumptions.get('beta_D', 0.0))
 
-            def make_box(caption: str, lines: List[str]) -> None:
-                if not lines:
-                    return
-                latex = ' \\\\ '.join(lines)
-                html_boxes.append(
-                    '<div class="formula-box">'
+            def make_cell(caption: str, symbolic: List[str], substitutions: List[str]) -> Optional[str]:
+                if not symbolic:
+                    return None
+                latex_lines: List[str] = list(symbolic)
+                if substitutions:
+                    latex_lines.append("\\text{substitutions:}")
+                    latex_lines.extend(substitutions)
+                latex = ' \\\\ '.join(latex_lines)
+                return (
+                    '<div class="formula-box formula-box--compact">'
                     + f'<div class="formula-caption muted small">{tex_escape(caption)}</div>'
                     + f"\\[\\begin{{aligned}}{latex}\\end{{aligned}}\\]"
                     + '</div>'
@@ -2416,165 +2421,152 @@ class MainWindow(QMainWindow):
                     pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
                     pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
                     pfd_dd_ccf = beta_D * lam_dd_total * MTTR
-                    pfd_ccf = pfd_du_ccf + pfd_dd_ccf
-                    make_box(
-                        f"{label} (1oo2) symbolic relations",
-                        [
-                            f"{comp_symbol_tex} = \\mathrm{{PFD}}_{{\\text{{ind}}}} + \\mathrm{{PFD}}_{{\\text{{CCF}}}}",
-                            "\\mathrm{PFD}_{\\text{ind}} = 2\\,\\lambda_{D,\\text{ind}}^{2}\\,t_{CE}\\,t_{GE}",
-                            "\\mathrm{PFD}_{\\text{CCF}} = \\beta\\,\\lambda_{DU}(\\tfrac{T_I}{2}+MTTR) + \\beta_D\\,\\lambda_{DD} MTTR",
-                            "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}",
-                        ],
-                    )
-                    make_box(
-                        f"{label} (1oo2) substitutions",
-                        [
-                            f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
-                            f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
-                            f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
-                            f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
-                            f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd_total)}",
-                            f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
-                            f"\\lambda_{{DD,\\text{{ind}}}} = (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_dd_ind)}",
-                            f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + {fmt_math(lam_dd_ind)} = {fmt_math(lam_d_ind)}",
-                            f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
-                            f"t_{{GE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/3.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tGE)}",
-                            f"\\mathrm{{PFD}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}^{2}\\times {fmt_math(tCE)}\\times {fmt_math(tGE)} = {fmt_math(pfd_ind)}",
-                            f"\\mathrm{{PFD}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(beta_D)}\\times {fmt_math(lam_dd_total)}\\times {fmt_math(MTTR)} = {fmt_math(pfd_ccf)}",
-                            f"{comp_symbol_tex} = {fmt_math(pfd_ind)} + {fmt_math(pfd_ccf)} = {fmt_math(value)}",
-                        ],
-                    )
+                    value = pfd_ind + pfd_du_ccf + pfd_dd_ccf
+                    symbolic_lines = [
+                        f"{comp_symbol_tex} = \\mathrm{{PFD}}_{{\\text{{ind}}}} + \\mathrm{{PFD}}_{{\\text{{CCF}}}}",
+                        "\\mathrm{PFD}_{\\text{ind}} = 2\\,\\lambda_{D,\\text{ind}}^{2}\\,t_{CE}\\,t_{GE}",
+                        "\\mathrm{PFD}_{\\text{CCF}} = \\beta\\,\\lambda_{DU}(\\tfrac{T_I}{2}+MTTR) + \\beta_D\\,\\lambda_{DD} MTTR",
+                        "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}",
+                    ]
+                    substitution_lines = [
+                        f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
+                        f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
+                        f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
+                        f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
+                        f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd_total)}",
+                        f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
+                        f"\\lambda_{{DD,\\text{{ind}}}} = (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_dd_ind)}",
+                        f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + {fmt_math(lam_dd_ind)} = {fmt_math(lam_d_ind)}",
+                        f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
+                        f"t_{{GE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/3.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tGE)}",
+                        f"\\mathrm{{PFD}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}^{2}\\times {fmt_math(tCE)}\\times {fmt_math(tGE)} = {fmt_math(pfd_ind)}",
+                        f"\\mathrm{{PFD}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(beta_D)}\\times {fmt_math(lam_dd_total)}\\times {fmt_math(MTTR)} = {fmt_math(pfd_du_ccf + pfd_dd_ccf)}",
+                        f"{comp_symbol_tex} = {fmt_math(pfd_ind)} + {fmt_math(pfd_du_ccf + pfd_dd_ccf)} = {fmt_math(value)}",
+                    ]
+                    cell_html = make_cell(f"{label} (1oo2)", symbolic_lines, substitution_lines)
+                    if cell_html:
+                        return {
+                            "symbol_tex": comp_symbol_tex,
+                            "value": value,
+                            "html": cell_html,
+                            "architecture": architecture,
+                        }
                 else:
                     lam_d_ind = lam_du_ind + lam_dd_ind
                     pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
                     pfh_ccf = beta * lam_du_total
-                    make_box(
-                        f"{label} (1oo2) symbolic relations",
-                        [
-                            f"{comp_symbol_tex} = 2(1-\\beta)\\,\\lambda_{{DU,\\text{{ind}}}} t_{{CE}} + \\beta\\,\\lambda_{{DU}}",
-                            "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU}",
-                            "t_{CE} = w_{DU}(\\tfrac{T_I}{2}+MTTR) + w_{DD} MTTR",
-                        ],
-                    )
-                    make_box(
-                        f"{label} (1oo2) substitutions",
-                        [
-                            f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
-                            f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
-                            f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
-                            f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
-                            f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
-                            f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_d_ind)}",
-                            f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
-                            f"\\mathrm{{PFH}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}\\times {fmt_math(lam_du_ind)}\\times {fmt_math(tCE)} = {fmt_math(pfh_ind)}",
-                            f"\\mathrm{{PFH}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)} = {fmt_math(pfh_ccf)}",
-                            f"{comp_symbol_tex} = {fmt_math(pfh_ind)} + {fmt_math(pfh_ccf)} = {fmt_math(value)}",
-                        ],
-                    )
-                return html_boxes
+                    value = pfh_ind + pfh_ccf
+                    symbolic_lines = [
+                        f"{comp_symbol_tex} = 2(1-\\beta)\\,\\lambda_{{DU,\\text{{ind}}}} t_{{CE}} + \\beta\\,\\lambda_{DU}",
+                        "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU}",
+                        "t_{CE} = w_{DU}(\\tfrac{T_I}{2}+MTTR) + w_{DD} MTTR",
+                    ]
+                    substitution_lines = [
+                        f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
+                        f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
+                        f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
+                        f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
+                        f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
+                        f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_d_ind)}",
+                        f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
+                        f"\\mathrm{{PFH}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}\\times {fmt_math(lam_du_ind)}\\times {fmt_math(tCE)} = {fmt_math(pfh_ind)}",
+                        f"\\mathrm{{PFH}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)} = {fmt_math(pfh_ccf)}",
+                        f"{comp_symbol_tex} = {fmt_math(pfh_ind)} + {fmt_math(pfh_ccf)} = {fmt_math(value)}",
+                    ]
+                    cell_html = make_cell(f"{label} (1oo2)", symbolic_lines, substitution_lines)
+                    if cell_html:
+                        return {
+                            "symbol_tex": comp_symbol_tex,
+                            "value": value,
+                            "html": cell_html,
+                            "architecture": architecture,
+                        }
+                return None
 
             lam_total = self._lambda_from_component(entry, mode_key)
             if mode_key == 'low_demand':
-                make_box(
-                    f"{label} (1oo1) symbolic relations",
-                    [
-                        f"{comp_symbol_tex} = \\lambda_{{DU}}(\\tfrac{{T_I}}{{2}}+MTTR) + \\lambda_{{DD}} MTTR",
-                        "\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda",
-                        f"\\lambda = \\frac{{2\\cdot {comp_symbol_tex}}}{{T_I}}",
-                    ],
-                )
                 lam_du = du_ratio * lam_total
                 lam_dd = dd_ratio * lam_total
-                make_box(
-                    f"{label} (1oo1) substitutions",
-                    [
-                        f"\\lambda = \\frac{{2\\cdot {fmt_math(value)}}}{{{fmt_math(TI)}}} = {fmt_math(lam_total)}",
-                        f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
-                        f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd)}",
-                        f"{comp_symbol_tex} = {fmt_math(lam_du)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(lam_dd)}\\times {fmt_math(MTTR)} = {fmt_math(value)}",
-                    ],
-                )
-            else:
-                make_box(
-                    f"{label} (1oo1) symbolic relations",
-                    [
-                        f"{comp_symbol_tex} = \\lambda_{{DU}}",
-                        "\\lambda_{DU} = w_{DU}\\,\\lambda",
-                        f"\\lambda = {comp_symbol_tex}",
-                    ],
-                )
-                lam_du = du_ratio * lam_total
-                make_box(
-                    f"{label} (1oo1) substitutions",
-                    [
-                        f"\\lambda = {fmt_math(lam_total)}",
-                        f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
-                        f"{comp_symbol_tex} = {fmt_math(lam_du)}",
-                    ],
-                )
-            return html_boxes
-
-        def build_sum_formula(stage_defs: List[Tuple[str, str, List[Dict[str, Any]]]], mode_key: str) -> str:
-            symbol = "PFD" if mode_key == 'low_demand' else "PFH"
-            primary_key = 'pfd_avg' if mode_key == 'low_demand' else 'pfh_avg'
-            fallback_key = 'pfd' if mode_key == 'low_demand' else 'pfh'
-
-            def extract(entry: Dict[str, Any]) -> Optional[float]:
-                for key in (primary_key, fallback_key):
-                    val = entry.get(key)
-                    if val in (None, "", "–"):
-                        continue
-                    try:
-                        return float(val)
-                    except Exception:
-                        continue
+                value = lam_du * (TI / 2.0 + MTTR) + lam_dd * MTTR
+                symbolic_lines = [
+                    f"{comp_symbol_tex} = \\lambda_{{DU}}(\\tfrac{{T_I}}{{2}}+MTTR) + \\lambda_{DD} MTTR",
+                    "\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda",
+                ]
+                substitution_lines = [
+                    f"\\lambda = {fmt_math(lam_total)}",
+                    f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
+                    f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd)}",
+                    f"{comp_symbol_tex} = {fmt_math(lam_du)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(lam_dd)}\\times {fmt_math(MTTR)} = {fmt_math(value)}",
+                ]
+                cell_html = make_cell(f"{label} (1oo1)", symbolic_lines, substitution_lines)
+                if cell_html:
+                    return {
+                        "symbol_tex": comp_symbol_tex,
+                        "value": value,
+                        "html": cell_html,
+                        "architecture": architecture,
+                    }
                 return None
+            lam_du = du_ratio * lam_total
+            value = lam_du
+            symbolic_lines = [
+                f"{comp_symbol_tex} = \\lambda_{{DU}}",
+                "\\lambda_{DU} = w_{DU}\\,\\lambda",
+            ]
+            substitution_lines = [
+                f"\\lambda = {fmt_math(lam_total)}",
+                f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
+                f"{comp_symbol_tex} = {fmt_math(value)}",
+            ]
+            cell_html = make_cell(f"{label} (1oo1)", symbolic_lines, substitution_lines)
+            if cell_html:
+                return {
+                    "symbol_tex": comp_symbol_tex,
+                    "value": value,
+                    "html": cell_html,
+                    "architecture": architecture,
+                }
+            return None
 
+        def build_sum_formula(stage_components: List[Dict[str, Any]], mode_key: str,
+                               expected_total: Optional[float]) -> str:
+            symbol = "PFD" if mode_key == 'low_demand' else "PFH"
             label_parts: List[str] = []
             stage_totals: List[str] = []
-            total_value = 0.0
-            has_values = False
             stage_details: List[Tuple[str, List[str], List[str], str]] = []
+            calc_total = 0.0
 
-            for stage_key, stage_title, entries in stage_defs:
-                values: List[float] = []
-                comp_symbols: List[str] = []
-                comp_numbers: List[str] = []
-                for entry in entries:
-                    val = extract(entry)
-                    if val is None:
-                        continue
-                    values.append(val)
-                    label = entry.get('code') or entry.get('name') or ''
-                    label = label.strip() or f"{symbol}_{len(values)}"
-                    comp_symbol_tex = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(label)}}}}}"
-                    comp_symbols.append(comp_symbol_tex)
-                    comp_numbers.append(fmt_math(val))
-                if not values:
+            for stage_data in stage_components:
+                comps = stage_data.get('components', [])
+                if not comps:
                     continue
-                has_values = True
+                stage_title = stage_data.get('stage_title', '')
                 stage_symbol = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(stage_title)}}}}}"
+                comp_symbols = [comp['symbol_tex'] for comp in comps]
+                comp_numbers = [fmt_math(comp['value']) for comp in comps]
+                stage_sum = sum(float(comp['value']) for comp in comps)
                 label_parts.append(stage_symbol)
-                stage_sum = sum(values)
                 stage_totals.append(fmt_math(stage_sum))
-                total_value += stage_sum
-                stage_details.append(
-                    (
-                        stage_title,
-                        comp_symbols,
-                        comp_numbers,
-                        fmt_math(stage_sum),
-                    )
-                )
+                stage_details.append((stage_title, comp_symbols, comp_numbers, fmt_math(stage_sum)))
+                calc_total += stage_sum
 
-            if not has_values or not label_parts:
+            if not label_parts:
                 return ""
 
             sum_lines: List[str] = []
             sum_lines.append(f"\\mathrm{{{symbol}}}_{{\\text{{sum}}}} = " + ' + '.join(label_parts))
             if stage_totals:
                 sum_lines.append("= " + ' + '.join(stage_totals))
-            sum_lines.append("= " + fmt_math(total_value))
+
+            approx_needed = False
+            final_total = calc_total
+            if expected_total is not None:
+                final_total = expected_total
+                if abs(calc_total - expected_total) > 1e-12:
+                    sum_lines.append("= " + fmt_math(calc_total))
+                    approx_needed = True
+
+            sum_lines.append(("\\approx " if approx_needed else "= ") + fmt_math(final_total))
 
             mode_label = "low-demand" if mode_key == 'low_demand' else "high/continuous-demand"
             caption = f"{mode_label.capitalize()} {symbol.lower()}sum calculation across all stages."
@@ -2605,6 +2597,82 @@ class MainWindow(QMainWindow):
                 )
 
             return ''.join(boxes)
+
+        def build_component_overview(stage_defs: List[Tuple[str, str, List[Dict[str, Any]]]],
+                                     mode_key: str) -> Tuple[str, List[Dict[str, Any]]]:
+            rows_html: List[str] = []
+            stage_components: List[Dict[str, Any]] = []
+
+            for stage_key, stage_title, entries in stage_defs:
+                comps_for_stage: List[Dict[str, Any]] = []
+                for idx, entry in enumerate(entries):
+                    architecture = entry.get('architecture', '1oo1') or '1oo1'
+                    base_label = entry.get('code') or entry.get('name') or f"{stage_title} {idx + 1}"
+                    subtitle = ""
+                    display_label = base_label
+                    if architecture == '1oo2' and entry.get('members'):
+                        member_codes = []
+                        for member in entry.get('members', []):
+                            if not isinstance(member, dict):
+                                continue
+                            member_codes.append(member.get('code') or member.get('name') or '')
+                        merged = ' ∥ '.join(code for code in member_codes if code)
+                        if merged:
+                            display_label = merged
+                            if merged != base_label:
+                                subtitle = base_label
+                        elif entry.get('name') and entry.get('name') != base_label:
+                            subtitle = entry.get('name')
+                    else:
+                        name_val = entry.get('name')
+                        if name_val and name_val != base_label:
+                            subtitle = name_val
+
+                    derivation = component_derivation_entry(stage_key, entry, display_label, mode_key)
+                    if not derivation:
+                        continue
+
+                    comps_for_stage.append({
+                        'symbol_tex': derivation['symbol_tex'],
+                        'value': derivation['value'],
+                    })
+
+                    label_bits: List[str] = []
+                    header_bits: List[str] = ['<div class="component-label-header">']
+                    if architecture == '1oo2':
+                        header_bits.append('<span class="pill arch">1oo2</span>')
+                    elif architecture and architecture != '1oo1':
+                        header_bits.append(f'<span class="pill">{esc(architecture)}</span>')
+                    header_bits.append(f'<span>{esc(display_label)}</span>')
+                    header_bits.append('</div>')
+                    label_bits.extend(header_bits)
+                    if subtitle:
+                        label_bits.append(f'<div class="component-label-sub">{esc(subtitle)}</div>')
+                    label_html = '<div class="component-label">' + ''.join(label_bits) + '</div>'
+                    rows_html.append(
+                        '<tr>'
+                        + f'<td>{esc(stage_title)}</td>'
+                        + f'<td>{label_html}</td>'
+                        + f'<td class="derivation-cell">{derivation["html"]}</td>'
+                        + '</tr>'
+                    )
+
+                stage_components.append({
+                    'stage_key': stage_key,
+                    'stage_title': stage_title,
+                    'components': comps_for_stage,
+                })
+
+            if not rows_html:
+                return "", stage_components
+
+            table_html = (
+                '<table class="derivation-table">'
+                '<colgroup><col class="col-stage"><col class="col-component"><col class="col-derivation"></colgroup>'
+                '<thead><tr><th>Stage</th><th>Component</th><th>Derivation</th></tr></thead>'
+                '<tbody>' + ''.join(rows_html) + '</tbody></table>'
+            )
+            return table_html, stage_components
 
         # Collect all data using existing helpers
         payload = {"sifus": []}
@@ -2689,6 +2757,18 @@ class MainWindow(QMainWindow):
         .formula-box { margin-top:8px; padding:8px 10px; border:1px dashed #c7d2fe; border-radius:10px; background:#fff; }
         .formula-box:last-child { margin-bottom:0; }
         .formula-box .formula-caption { margin:0 0 6px; }
+        .formula-box--compact { margin-top:0; }
+        .derivation-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .derivation-table col.col-stage { width:18%; }
+        .derivation-table col.col-component { width:30%; }
+        .derivation-table col.col-derivation { width:52%; }
+        .derivation-table th, .derivation-table td { border:1px solid #e5e7eb; padding:6px 8px; vertical-align:top; }
+        .derivation-table tbody tr:nth-child(even) { background:#f9fafb; }
+        .derivation-table tbody tr:hover { background:#f1f5f9; }
+        .derivation-table td.derivation-cell { padding:6px; }
+        .component-label { display:flex; flex-direction:column; gap:2px; }
+        .component-label-header { display:flex; align-items:center; gap:6px; font-weight:600; color:#111827; }
+        .component-label-sub { color:#6b7280; font-size:11px; }
         .lane-sum-card { margin-top:12px; }
         .muted { color:#6b7280; }
         .small { font-size: 12px; }
@@ -2726,7 +2806,6 @@ class MainWindow(QMainWindow):
         '''
 
         def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict], mode_key: str) -> str:
-            symbol = "PFD" if mode_key == 'low_demand' else "PFH"
             primary_key = 'pfd_avg' if mode_key == 'low_demand' else 'pfh_avg'
             fallback_key = 'pfd' if mode_key == 'low_demand' else 'pfh'
 
@@ -2864,18 +2943,6 @@ class MainWindow(QMainWindow):
                     metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
                     if metrics_html:
                         html_parts.append(metrics_html)
-                    derivation_entry = card.get("entry")
-                    derivation_value = card.get("value")
-                    numeric_value: Optional[float]
-                    try:
-                        numeric_value = float(derivation_value) if derivation_value is not None else None
-                    except Exception:
-                        numeric_value = None
-                    if derivation_entry is not None and numeric_value is not None:
-                        comp_symbol_tex = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(card['label'])}}}}}"
-                        boxes = component_derivation_boxes(stage_key, derivation_entry, card.get("label", ""), comp_symbol_tex, numeric_value, mode_key)
-                        if boxes:
-                            html_parts.extend(boxes)
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
@@ -2996,13 +3063,22 @@ class MainWindow(QMainWindow):
                 ("logic", "Logic", s['logic'] or []),
                 ("actuators", "Outputs / Actuators", s['actuators'] or []),
             ]
-            sum_formula_html = build_sum_formula(stage_defs_for_sum, mode_key)
+            component_table_html, stage_component_data = build_component_overview(stage_defs_for_sum, mode_key)
+            expected_total = s['pfd_sum'] if mode_key == 'low_demand' else s['pfh_sum']
+            sum_formula_html = build_sum_formula(stage_component_data, mode_key, expected_total)
             if sum_formula_html:
                 sum_heading = "PFDsum derivation" if mode_key == 'low_demand' else "PFHsum derivation"
                 parts.append('<div class="card formula-card lane-sum-card">')
                 parts.append(f'<h3>{sum_heading}</h3>')
                 parts.append('<p class="muted small">Complete accumulation from sensors, logic, and actuators.</p>')
                 parts.append(sum_formula_html)
+                parts.append('</div>')
+
+            if component_table_html:
+                parts.append('<div class="card formula-card component-derivations-card">')
+                parts.append('<h3>Component derivations</h3>')
+                parts.append('<p class="muted small">Symbolic relations followed by the substituted numerical values.</p>')
+                parts.append(component_table_html)
                 parts.append('</div>')
 
             arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'], mode_key)
