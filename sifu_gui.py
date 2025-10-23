@@ -2366,50 +2366,81 @@ class MainWindow(QMainWindow):
                 return text or "0"
 
             label_parts: List[str] = []
-            component_parts: List[str] = []
             stage_totals: List[str] = []
             total_value = 0.0
             has_values = False
+            stage_details: List[Tuple[str, List[str], List[str], str]] = []
 
             for _, stage_title, entries in stage_defs:
                 values: List[float] = []
+                comp_symbols: List[str] = []
+                comp_numbers: List[str] = []
                 for entry in entries:
                     val = extract(entry)
-                    if val is not None:
-                        values.append(val)
+                    if val is None:
+                        continue
+                    values.append(val)
+                    label = entry.get('code') or entry.get('name') or ''
+                    label = label.strip() or f"{symbol}_{len(values)}"
+                    comp_symbols.append(
+                        f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(label)}}}}}"
+                    )
+                    comp_numbers.append(fmt_math(val))
                 if not values:
                     continue
                 has_values = True
-                label_parts.append(f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(stage_title)}}}}}")
-                formatted_terms = [fmt_math(v) for v in values]
-                if len(formatted_terms) > 1:
-                    component_parts.append('(' + ' + '.join(formatted_terms) + ')')
-                else:
-                    component_parts.append(formatted_terms[0])
+                stage_symbol = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(stage_title)}}}}}"
+                label_parts.append(stage_symbol)
                 stage_sum = sum(values)
                 stage_totals.append(fmt_math(stage_sum))
                 total_value += stage_sum
+                stage_details.append(
+                    (
+                        stage_title,
+                        comp_symbols,
+                        comp_numbers,
+                        fmt_math(stage_sum),
+                    )
+                )
 
             if not has_values or not label_parts:
                 return ""
 
-            lines: List[str] = []
-            lines.append(f"\\mathrm{{{symbol}}}_{{\\text{{sum}}}} = " + ' + '.join(label_parts))
-            if component_parts:
-                lines.append("= " + ' + '.join(component_parts))
+            sum_lines: List[str] = []
+            sum_lines.append(f"\\mathrm{{{symbol}}}_{{\\text{{sum}}}} = " + ' + '.join(label_parts))
             if stage_totals:
-                lines.append("= " + ' + '.join(stage_totals))
-            lines.append("= " + fmt_math(total_value))
+                sum_lines.append("= " + ' + '.join(stage_totals))
+            sum_lines.append("= " + fmt_math(total_value))
 
-            latex = ' \\\\ '.join(lines)
             mode_label = "low-demand" if mode_key == 'low_demand' else "high/continuous-demand"
             caption = f"{mode_label.capitalize()} {symbol.lower()}sum calculation across all stages."
-            return (
+
+            boxes: List[str] = []
+            sum_latex = ' \\\\ '.join(sum_lines)
+            boxes.append(
                 '<div class="formula-box">'
                 + f'<div class="formula-caption muted small">{caption}</div>'
-                + f"\\[\\begin{{aligned}}{latex}\\end{{aligned}}\\]"
+                + f"\\[\\begin{{aligned}}{sum_latex}\\end{{aligned}}\\]"
                 + '</div>'
             )
+
+            for stage_title, comp_symbols, comp_numbers, stage_total in stage_details:
+                if not comp_symbols:
+                    continue
+                detail_lines: List[str] = []
+                stage_symbol = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(stage_title)}}}}}"
+                detail_lines.append(stage_symbol + " = " + ' + '.join(comp_symbols))
+                detail_lines.append("= " + ' + '.join(comp_numbers))
+                detail_lines.append("= " + stage_total)
+                detail_latex = ' \\\\ '.join(detail_lines)
+                boxes.append(
+                    '<div class="formula-box">'
+                    + f'<div class="formula-caption muted small">{tex_escape(stage_title)} contribution with substituted values.</div>'
+                    + f"\\[\\begin{{aligned}}{detail_latex}\\end{{aligned}}\\]"
+                    + '</div>'
+                )
+
+            return ''.join(boxes)
 
         # Collect all data using existing helpers
         payload = {"sifus": []}
