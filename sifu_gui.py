@@ -2439,6 +2439,8 @@ class MainWindow(QMainWindow):
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         .formula-section { margin: 24px 0; }
+        .formula-row { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; }
+        .formula-row .formula-collapsible { margin:0; flex:1 1 320px; }
         .formula-collapsible { border:1px solid #e5e7eb; border-radius:10px; margin:12px 0; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); overflow:hidden; }
         .formula-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; cursor:pointer; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; }
         .formula-header::after { content:'\25BC'; font-size:12px; color:#6b7280; transition:transform 0.2s ease; }
@@ -2451,6 +2453,10 @@ class MainWindow(QMainWindow):
         .formula-table { width:100%; border-collapse:collapse; font-size:13px; }
         .formula-table th, .formula-table td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
         .formula-table th { background:#f8fafc; width:32%; }
+        @media (max-width: 720px) {
+            .formula-row { flex-direction:column; }
+            .formula-row .formula-collapsible { flex-basis:auto; }
+        }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
@@ -2611,26 +2617,30 @@ class MainWindow(QMainWindow):
 
             collapsible_index = 0
 
-            def collapsible_block(title: str, inner_html: str, *, open_block: bool = False) -> None:
+            def collapsible_block(title: str, inner_html: str, *, open_block: bool = False) -> str:
                 nonlocal collapsible_index
                 collapsible_index += 1
                 content_id = f'formula-content-{collapsible_index}'
                 classes = 'formula-collapsible open' if open_block else 'formula-collapsible'
                 aria_expanded = 'true' if open_block else 'false'
-                section_parts.append(f'<div class="{classes}" data-collapsible>')
-                section_parts.append(
+                block_parts: List[str] = []
+                block_parts.append(f'<div class="{classes}" data-collapsible>')
+                block_parts.append(
                     f'<div class="formula-header" role="button" tabindex="0" aria-expanded="{aria_expanded}" aria-controls="{content_id}">{esc(title)}</div>'
                 )
-                section_parts.append(f'<div class="formula-content" id="{content_id}">')
-                section_parts.append(inner_html)
-                section_parts.append('</div>')
-                section_parts.append('</div>')
+                block_parts.append(f'<div class="formula-content" id="{content_id}">')
+                block_parts.append(inner_html)
+                block_parts.append('</div>')
+                block_parts.append('</div>')
+                return ''.join(block_parts)
 
             oneoo1_entries = [
                 (r'PFD_{1oo1} = \lambda_{DU}(T_I/2 + MTTR) + \lambda_{DD}MTTR', 'Average probability of failure on demand for a single 1oo1 channel.'),
                 (r'PFH_{1oo1} = \lambda_{DU}', 'Dangerous failure rate per hour for a single 1oo1 channel.'),
             ]
-            collapsible_block('1oo1 Architecture', render_formulas(oneoo1_entries), open_block=True)
+            architecture_blocks = [
+                collapsible_block('1oo1 Architecture', render_formulas(oneoo1_entries), open_block=True),
+            ]
 
             oneoo2_entries = [
                 (r't_{CE} = \frac{\lambda_{DU}}{\lambda_D}(T_I/2 + MTTR) + \frac{\lambda_{DD}}{\lambda_D}MTTR', 'Exposure time for common-cause dangerous undetected combinations.'),
@@ -2638,14 +2648,19 @@ class MainWindow(QMainWindow):
                 (r'PFD_{1oo2} = 2(1-\beta)^2(\lambda_D)^2 t_{CE}t_{GE} + \beta\lambda_{DU}(T_I/2 + MTTR) + \beta_D\lambda_{DD}MTTR', 'System-level probability of failure on demand for a redundant 1oo2 channel.'),
                 (r'PFH_{1oo2} = 2(1-\beta)\lambda_D^{ind}\lambda_{DU}^{ind}t_{CE} + \beta\lambda_{DU}', 'System-level dangerous failure rate per hour for a redundant 1oo2 channel.'),
             ]
-            collapsible_block('1oo2 Architecture', render_formulas(oneoo2_entries))
+            architecture_blocks.append(
+                collapsible_block('1oo2 Architecture', render_formulas(oneoo2_entries))
+            )
+            section_parts.append('<div class="formula-row formula-row-architecture">')
+            section_parts.extend(architecture_blocks)
+            section_parts.append('</div>')
 
             supporting_entries = [
                 (r'\lambda_D = \lambda_{DU} + \lambda_{DD}', 'Total dangerous failure rate split into undetected and detected parts.'),
                 (r'\lambda_{DU} = r_{DU}\lambda_D,\ \lambda_{DD} = r_{DD}\lambda_D', 'Ratios mapping total dangerous failures to undetected and detected portions.'),
                 (r'\lambda_{DU}^{ind} = (1-\beta)\lambda_{DU},\ \lambda_{DD}^{ind} = (1-\beta_D)\lambda_{DD}', 'Independent channel failure rates after removing common cause factors.'),
             ]
-            collapsible_block('Supporting Relations', render_formulas(supporting_entries))
+            supporting_block = collapsible_block('Supporting Relations', render_formulas(supporting_entries))
 
             var_rows: List[Tuple[str, str]] = [
                 (r'PFD_{1oo1}', 'Probability of failure on demand for a single-channel architecture.'),
@@ -2673,7 +2688,12 @@ class MainWindow(QMainWindow):
                 table_parts.append(f'<td>{esc(meaning)}</td>')
                 table_parts.append('</tr>')
             table_parts.append('</tbody></table></div>')
-            collapsible_block('Variable Summary', ''.join(table_parts))
+            variable_block = collapsible_block('Variable Summary', ''.join(table_parts))
+
+            section_parts.append('<div class="formula-row formula-row-support">')
+            section_parts.append(supporting_block)
+            section_parts.append(variable_block)
+            section_parts.append('</div>')
 
             section_parts.append('</section>')
             return ''.join(section_parts)
