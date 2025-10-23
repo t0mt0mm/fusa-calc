@@ -2373,12 +2373,25 @@ class MainWindow(QMainWindow):
         h2 { font-size: 18px; margin: 24px 0 8px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
         h3 { font-size: 16px; margin: 18px 0 6px; }
         .meta { color: #4b5563; font-size: 13px; margin-bottom: 12px; }
-        table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; }
-        th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
+        table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 13px; }
+        th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; vertical-align: top; }
         th { background: #f8fafc; font-weight: 600; }
+        tbody tr:nth-child(even) { background:#f9fafb; }
+        tbody tr:hover { background:#f1f5f9; }
+        table.component-table tbody tr.group-row td { background:#eef2ff; font-weight:600; border-bottom:0; }
+        table.component-table tbody tr.group-row:hover td { background:#e0e7ff; }
+        table.component-table tbody tr.group-row td .group-label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+        table.component-table tbody tr.group-row td .group-title { font-size:13px; }
+        table.component-table tbody tr.group-member td { background:#f9f5ff; border-top:0; font-size:12px; }
+        table.component-table tbody tr.group-member:hover td { background:#ede9fe; }
+        table.component-table tbody tr.group-member td:first-child { padding-left:30px; position:relative; }
+        table.component-table tbody tr.group-member td:first-child::before { content:'↳'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#6366f1; font-size:12px; }
+        .member-tag { display:inline-flex; align-items:center; padding:1px 6px; border-radius:999px; background:#ede9fe; color:#312e81; font-weight:600; }
+        .member-caption { display:block; color:#6b7280; font-size:11px; margin-top:2px; }
         .ok { color: #166534; font-weight: 600; }
         .bad { color: #b91c1c; font-weight: 600; }
-        .pill { display:inline-block; padding:2px 8px; border:1px solid #d1d5db; border-radius:999px; font-size:12px; }
+        .pill { display:inline-flex; align-items:center; padding:2px 7px; border:1px solid #d1d5db; border-radius:999px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.04em; background:#f9fafb; color:#374151; }
+        .pill.arch, .lane-pill.arch { background:#ede9fe; color:#312e81; border:1px solid #c4b5fd; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
         .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#fff; }
         .muted { color:#6b7280; }
@@ -2390,25 +2403,28 @@ class MainWindow(QMainWindow):
         .arch-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
-        .lane-cards { display:flex; flex-direction:column; gap:6px; }
-        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:6px 10px; background:#f9fafb; border-left:4px solid transparent; }
-        .lane-card.group { background:#eef2ff; border-color:#c7d2fe; }
+        .lane-cards { display:flex; flex-direction:column; gap:4px; }
+        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; background:#f9fafb; border-left:4px solid transparent; display:flex; flex-direction:column; gap:6px; }
+        .lane-card.group { background:#f5f3ff; border-color:#c7d2fe; border-left-color:#6366f1; }
         .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; border-left-color:transparent; }
         .lane--sensors .lane-card { border-left-color:#0EA5E9; }
         .lane--logic .lane-card { border-left-color:#22C55E; }
         .lane--actuators .lane-card { border-left-color:#A855F7; }
-        .lane-title { font-size: 14px; font-weight:600; color:#111827; margin:0 0 6px; }
-        .lane-subtitle { font-size:12px; color:#6b7280; margin-bottom:8px; }
-        .lane-metrics { display:flex; flex-wrap:wrap; gap:6px 12px; font-size:12px; color:#374151; margin-bottom:8px; }
-        .lane-metrics span { white-space:nowrap; }
-        .lane-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:11px; margin-right:6px; }
-        .lane-pill.arch { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
-        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; }
-        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:6px; background:#fff; border-left:3px solid transparent; }
+        .lane-card-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .lane-title { font-size:13px; font-weight:600; color:#111827; margin:0; }
+        .lane-subtitle { font-size:11px; color:#6b7280; margin:0; }
+        .lane-metrics { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:#374151; }
+        .lane-metrics span { white-space:nowrap; padding:0 6px; border-radius:999px; background:#fff; border:1px solid #e5e7eb; }
+        .lane-pill { display:inline-flex; align-items:center; padding:2px 6px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:10px; letter-spacing:0.05em; text-transform:uppercase; }
+        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:4px; }
+        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:4px 6px; background:#fff; border-left:3px solid transparent; display:flex; flex-direction:column; gap:4px; }
         .lane--sensors .lane-member { border-left-color:#0EA5E9; }
         .lane--logic .lane-member { border-left-color:#22C55E; }
         .lane--actuators .lane-member { border-left-color:#A855F7; }
-        .lane-member h4 { font-size:12px; margin:0 0 4px; color:#1f2937; }
+        .lane-member h4 { font-size:11px; margin:0; color:#1f2937; }
+        .lane-member .lane-metrics { margin:0; gap:4px; font-size:10px; }
+        .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
+        .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
@@ -2427,7 +2443,7 @@ class MainWindow(QMainWindow):
                 for idx, entry in enumerate(entries):
                     architecture = entry.get("architecture")
                     instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
-                    label = entry.get("code") or entry.get("name") or f"{stage_title} {idx + 1}"
+                    base_label = entry.get("code") or entry.get("name") or f"{stage_title} {idx + 1}"
                     pfd_val = entry.get("pfd_avg", entry.get("pfd"))
                     pfh_val = entry.get("pfh_avg", entry.get("pfh"))
                     sil_val = entry.get("sys_cap", entry.get("syscap", ""))
@@ -2435,30 +2451,43 @@ class MainWindow(QMainWindow):
 
                     if architecture == "1oo2" and entry.get("members"):
                         members_payload: List[Dict[str, Any]] = []
+                        member_codes: List[str] = []
                         for m_idx, member in enumerate(entry.get("members", [])):
                             if not isinstance(member, dict):
                                 continue
+                            member_label = member.get("code") or member.get("name") or f"Member {m_idx + 1}"
+                            member_codes.append(member_label)
                             members_payload.append({
-                                "label": member.get("code") or member.get("name") or f"Member {m_idx + 1}",
+                                "label": member_label,
+                                "name": member.get("name"),
                                 "pfd": member.get("pfd_avg", member.get("pfd")),
                                 "pfh": member.get("pfh_avg", member.get("pfh")),
                                 "sil": member.get("sys_cap", member.get("syscap", "")),
                                 "pdm": member.get("pdm_code", ""),
                             })
+                        display_label = " ∥ ".join(c for c in member_codes if c) or base_label
+                        subtitle = base_label if display_label != base_label else ""
                         cards.append({
                             "type": "group",
-                            "label": label,
+                            "label": display_label,
+                            "subtitle": subtitle,
                             "architecture": architecture,
                             "pfd": pfd_val,
                             "pfh": pfh_val,
                             "sil": sil_val,
                             "pdm": pdm_val,
                             "members": members_payload,
+                            "member_count": len(members_payload),
                         })
                     else:
+                        subtitle = ""
+                        name_val = entry.get("name")
+                        if name_val and name_val != base_label:
+                            subtitle = name_val
                         cards.append({
                             "type": "single",
-                            "label": label,
+                            "label": base_label,
+                            "subtitle": subtitle,
                             "architecture": architecture,
                             "pfd": pfd_val,
                             "pfh": pfh_val,
@@ -2498,15 +2527,30 @@ class MainWindow(QMainWindow):
                         classes.append("group")
                     class_attr = " ".join(classes)
                     html_parts.append(f'<div class="{class_attr}">')
+                    html_parts.append('<div class="lane-card-header">')
                     html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
                     if card.get("architecture"):
                         html_parts.append(f'<span class="lane-pill arch">{esc(card["architecture"])}</span>')
+                    html_parts.append('</div>')
+                    subtitle_bits: List[str] = []
+                    subtitle_text = card.get("subtitle")
+                    if subtitle_text:
+                        subtitle_bits.append(subtitle_text)
+                    if card["type"] == "group":
+                        count = card.get("member_count", len(card.get("members", [])))
+                        if count:
+                            comp_word = "components" if count != 1 else "component"
+                            subtitle_bits.append(f"{count} redundant {comp_word}")
+                    subtitle_render = ' • '.join(esc(bit) for bit in subtitle_bits if bit)
+                    if subtitle_render:
+                        html_parts.append(f'<div class="lane-subtitle">{subtitle_render}</div>')
                     metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
                     if metrics_html:
                         html_parts.append(metrics_html)
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
+                            html_parts.append(f'<div class="lane-group-meta">Members ({len(members)})</div>')
                             html_parts.append('<div class="lane-members">')
                             for member in members:
                                 html_parts.append('<div class="lane-member">')
@@ -2606,42 +2650,43 @@ class MainWindow(QMainWindow):
                 if not items:
                     parts.append('<div class="muted small">No items</div>')
                     return
-                parts.append('<table><thead><tr><th>Code / Name</th><th class="right">PFDavg</th><th class="right">PFHavg [1/h]</th><th class="right">PFH [FIT]</th><th>SIL capability</th><th>PDM code</th></tr></thead><tbody>')
+                parts.append('<table class="component-table"><thead><tr><th>Code / Name</th><th class="right">PFDavg</th><th class="right">PFHavg [1/h]</th><th class="right">PFH [FIT]</th><th>SIL capability</th><th>PDM code</th></tr></thead><tbody>')
                 for it in items:
                     if it.get('architecture') == '1oo2':
-                        # Group row (composite)
                         pfd_g = it.get('pfd_avg', 0.0)
                         pfh_g = it.get('pfh_avg', 0.0)
                         members = it.get('members', [])
-                        parts.append('<tr>'
-                                     f'<td><span class="pill">1oo2 group</span></td>'
+                        member_codes = [m.get('code') or m.get('name') or f'Member {idx + 1}' for idx, m in enumerate(members)]
+                        group_title = ' ∥ '.join([c for c in member_codes if c]) or '1oo2 redundant set'
+                        parts.append('<tr class="group-row">'
+                                     f'<td><div class="group-label"><span class="pill arch">1oo2</span>'
+                                     f'<span class="group-title">{esc(group_title)}</span></div></td>'
                                      f'<td class="right">{fmt_pfd(pfd_g)}</td>'
                                      f'<td class="right">{fmt_pfh(pfh_g)}</td>'
                                      f'<td class="right">{fmt_fit(pfh_g)}</td>'
                                      '<td>—</td><td>—</td></tr>')
-                        # Members subtable
-                        parts.append('<tr><td colspan="6" style="padding:0">'
-                                     '<table style="width:100%"><thead>'
-                                     '<tr><th style="width:28%">Member</th><th class="right">PFDavg</th><th class="right">PFHavg [1/h]</th><th class="right">PFH [FIT]</th><th>SIL cap</th><th>PDM</th></tr>'
-                                     '</thead><tbody>')
-                        for m in members:
-                            parts.append('<tr>'
-                                         f'<td>{esc(m.get("code","?"))}</td>'
+                        for m_idx, m in enumerate(members, 1):
+                            code_val = m.get('code') or m.get('name') or f'Member {m_idx}'
+                            name_val = m.get('name')
+                            label_html = f'<span class="member-tag">{esc(code_val)}</span>'
+                            if name_val and name_val != code_val:
+                                label_html += f'<span class="member-caption">{esc(name_val)}</span>'
+                            parts.append('<tr class="group-member">'
+                                         f'<td>{label_html}</td>'
                                          f'<td class="right">{fmt_pfd(m.get("pfd_avg", m.get("pfd")))}</td>'
                                          f'<td class="right">{fmt_pfh(m.get("pfh_avg", m.get("pfh")))}</td>'
                                          f'<td class="right">{fmt_fit(m.get("pfh_avg", m.get("pfh")))}</td>'
-                                         f'<td>{esc(m.get("sys_cap", m.get("syscap","")))}</td>'
-                                         f'<td>{esc(m.get("pdm_code", ""))}</td>'
+                                         f'<td>{esc(m.get("sys_cap", m.get("syscap", "")) or "—")}</td>'
+                                         f'<td>{esc(m.get("pdm_code", "") or "—")}</td>'
                                          '</tr>')
-                        parts.append('</tbody></table></td></tr>')
                     else:
                         parts.append('<tr>'
                                      f'<td>{esc(it.get("code", it.get("name","?")))}</td>'
                                      f'<td class="right">{fmt_pfd(it.get("pfd_avg", it.get("pfd")))}</td>'
                                      f'<td class="right">{fmt_pfh(it.get("pfh_avg", it.get("pfh")))}</td>'
                                      f'<td class="right">{fmt_fit(it.get("pfh_avg", it.get("pfh")))}</td>'
-                                     f'<td>{esc(it.get("sys_cap", it.get("syscap","")))}</td>'
-                                     f'<td>{esc(it.get("pdm_code", ""))}</td>'
+                                     f'<td>{esc(it.get("sys_cap", it.get("syscap","")) or "—")}</td>'
+                                     f'<td>{esc(it.get("pdm_code", "") or "—")}</td>'
                                      '</tr>')
                 parts.append('</tbody></table>')
 
