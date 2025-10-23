@@ -2331,6 +2331,86 @@ class MainWindow(QMainWindow):
             except Exception:
                 return "–"
 
+        def build_sum_formula(stage_defs: List[Tuple[str, str, List[Dict[str, Any]]]], mode_key: str) -> str:
+            symbol = "PFD" if mode_key == 'low_demand' else "PFH"
+            primary_key = 'pfd_avg' if mode_key == 'low_demand' else 'pfh_avg'
+            fallback_key = 'pfd' if mode_key == 'low_demand' else 'pfh'
+
+            def tex_escape(text: str) -> str:
+                return text.replace('_', '\\_')
+
+            def extract(entry: Dict[str, Any]) -> Optional[float]:
+                for key in (primary_key, fallback_key):
+                    val = entry.get(key)
+                    if val in (None, "", "–"):
+                        continue
+                    try:
+                        return float(val)
+                    except Exception:
+                        continue
+                return None
+
+            def fmt_math(val: Optional[float]) -> str:
+                if val is None:
+                    return "0"
+                try:
+                    val = float(val)
+                except Exception:
+                    return "0"
+                if val == 0.0:
+                    return "0"
+                if abs(val) >= 1e3 or abs(val) < 1e-4:
+                    return f"{val:.3e}"
+                text = f"{val:.6f}"
+                text = text.rstrip('0').rstrip('.') if '.' in text else text
+                return text or "0"
+
+            label_parts: List[str] = []
+            component_parts: List[str] = []
+            stage_totals: List[str] = []
+            total_value = 0.0
+            has_values = False
+
+            for _, stage_title, entries in stage_defs:
+                values: List[float] = []
+                for entry in entries:
+                    val = extract(entry)
+                    if val is not None:
+                        values.append(val)
+                if not values:
+                    continue
+                has_values = True
+                label_parts.append(f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(stage_title)}}}}}")
+                formatted_terms = [fmt_math(v) for v in values]
+                if len(formatted_terms) > 1:
+                    component_parts.append('(' + ' + '.join(formatted_terms) + ')')
+                else:
+                    component_parts.append(formatted_terms[0])
+                stage_sum = sum(values)
+                stage_totals.append(fmt_math(stage_sum))
+                total_value += stage_sum
+
+            if not has_values or not label_parts:
+                return ""
+
+            lines: List[str] = []
+            lines.append(f"\\mathrm{{{symbol}}}_{{\\text{{sum}}}} = " + ' + '.join(label_parts))
+            if component_parts:
+                lines.append("= " + ' + '.join(component_parts))
+            if stage_totals:
+                lines.append("= " + ' + '.join(stage_totals))
+            lines.append("= " + fmt_math(total_value))
+
+            latex = ' \\\\ '.join(lines)
+            mode_label = "low-demand" if mode_key == 'low_demand' else "high/continuous-demand"
+            caption = f"{mode_label.capitalize()} {symbol.lower()}sum calculation across all stages."
+            return (
+                '<div class="formula-box">'
+                + f'<div class="formula-caption muted small">{caption}</div>'
+                + f"\\[\\begin{{aligned}}{latex}\\end{{aligned}}\\]"
+                + '</div>'
+            )
+
         # Collect all data using existing helpers
         payload = {"sifus": []}
         for row_idx in range(len(self.rows_meta)):
@@ -2413,6 +2493,8 @@ class MainWindow(QMainWindow):
         .formula-card p { margin:0 0 8px; }
         .formula-box { margin-top:8px; padding:8px 10px; border:1px dashed #c7d2fe; border-radius:10px; background:#fff; }
         .formula-box:last-child { margin-bottom:0; }
+        .formula-box .formula-caption { margin:0 0 6px; }
+        .lane-sum-card { margin-top:12px; }
         .muted { color:#6b7280; }
         .small { font-size: 12px; }
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -2458,127 +2540,11 @@ class MainWindow(QMainWindow):
             stage_payload: List[Tuple[str, str, List[Dict[str, Any]]]] = []
             stage_group_map = {"sensors": "sensor", "logic": "logic", "actuators": "actuator"}
 
-            TI = float(self.assumptions.get('TI', 0.0))
-            MTTR = float(self.assumptions.get('MTTR', 0.0))
-            beta = float(self.assumptions.get('beta', 0.0))
-            beta_D = float(self.assumptions.get('beta_D', 0.0))
-
-            def fmt_tex(val: Optional[float], digits: int = 3) -> str:
-                if val is None:
-                    return "0"
-                try:
-                    val = float(val)
-                except Exception:
-                    return "0"
-                if val == 0:
-                    return "0"
-                if abs(val) >= 1e3 or abs(val) < 1e-3:
-                    return f"{val:.{digits}e}"
-                return f"{val:.{digits}f}"
-
-            def fmt_ratio(val: Optional[float]) -> str:
-                if val is None:
-                    return "0"
-                try:
-                    return f"{float(val):.3f}"
-                except Exception:
-                    return "0"
-
-            def fmt_time(val: Optional[float]) -> str:
-                if val is None:
-                    return "0"
-                try:
-                    return f"{float(val):.2f}"
-                except Exception:
-                    return "0"
-
-            def make_single_formula(entry: Dict[str, Any], group_key: str) -> str:
-                lam = self._lambda_from_component(entry, mode_key)
-                du_ratio, dd_ratio = self._ratios(group_key)
-                lam_du = du_ratio * lam
-                lam_dd = dd_ratio * lam
-                pfd_val = entry.get("pfd_avg", entry.get("pfd"))
-                pfh_val = entry.get("pfh_avg", entry.get("pfh"))
-                calc_pfd = lam_du * (TI / 2.0 + MTTR) + lam_dd * MTTR
-                result_pfd = calc_pfd if pfd_val in (None, "") else float(pfd_val)
-                result_pfh = lam_du if pfh_val in (None, "") else float(pfh_val)
-                if mode_key == 'low_demand':
-                    return (
-                        '<div class="formula-box">'
-                        + rf"""
-\[
-\mathrm{{PFD}}_{{1oo1}} = {fmt_tex(lam_du)}\left(\tfrac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_tex(lam_dd)}\cdot {fmt_time(MTTR)} = {fmt_tex(result_pfd)}
-\]
-"""
-                        + '</div>'
-                    )
-                return (
-                    '<div class="formula-box">'
-                    + rf"""
-\[
-\mathrm{{PFH}}_{{1oo1}} = {fmt_tex(lam_du)} = {fmt_tex(result_pfh)}
-\]
-"""
-                    + '</div>'
-                )
-
-            def make_group_formula(entry: Dict[str, Any], group_key: str) -> str:
-                members = entry.get("members", [])
-                if not members:
-                    return ""
-                m1 = members[0]
-                m2 = members[1] if len(members) > 1 else members[0]
-                lam1 = self._lambda_from_component(m1, mode_key)
-                lam2 = self._lambda_from_component(m2, mode_key)
-                du_ratio, dd_ratio = self._ratios(group_key)
-                lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
-                lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
-                lam_du_total = lam_du_1 + lam_du_2
-                lam_dd_total = lam_dd_1 + lam_dd_2
-                lam_du_ind = (1.0 - beta) * lam_du_total
-                lam_dd_ind = (1.0 - beta_D) * lam_dd_total
-                lam_d_ind = lam_du_ind + lam_dd_ind
-                if lam_d_ind > 0:
-                    w_du = lam_du_ind / lam_d_ind
-                    w_dd = lam_dd_ind / lam_d_ind
-                else:
-                    w_du = 0.0
-                    w_dd = 0.0
-                tCE = w_du * (TI / 2.0 + MTTR) + w_dd * MTTR
-                tGE = w_du * (TI / 3.0 + MTTR) + w_dd * MTTR
-                pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
-                pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
-                pfd_dd_ccf = beta_D * lam_dd_total * MTTR
-                pfd_total = pfd_ind + pfd_du_ccf + pfd_dd_ccf
-                pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
-                pfh_ccf = beta * lam_du_total
-                pfh_total = pfh_ind + pfh_ccf
-                if mode_key == 'low_demand':
-                    return (
-                        '<div class="formula-box">'
-                        + rf"""
-\[
-\mathrm{{PFD}}_{{1oo2}} = {fmt_tex(pfd_ind)} + {fmt_tex(pfd_du_ccf)} + {fmt_tex(pfd_dd_ccf)} = {fmt_tex(pfd_total)}
-\]
-"""
-                        + '</div>'
-                    )
-                return (
-                    '<div class="formula-box">'
-                    + rf"""
-\[
-\mathrm{{PFH}}_{{1oo2}} = 2(1-{fmt_ratio(beta)})\,{fmt_tex(lam_du_ind)}\cdot {fmt_time(tCE)} + {fmt_ratio(beta)}\,{fmt_tex(lam_du_total)} = {fmt_tex(pfh_total)}
-\]
-"""
-                    + '</div>'
-                )
-
             for stage_key, stage_title, entries in stage_defs:
                 cards: List[Dict[str, Any]] = []
                 group_key = stage_group_map.get(stage_key, stage_key)
                 for idx, entry in enumerate(entries):
                     architecture = entry.get("architecture")
-                    instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
                     base_label = entry.get("code") or entry.get("name") or f"{stage_title} {idx + 1}"
                     pfd_val = entry.get("pfd_avg", entry.get("pfd"))
                     pfh_val = entry.get("pfh_avg", entry.get("pfh"))
@@ -2614,7 +2580,6 @@ class MainWindow(QMainWindow):
                             "pdm": pdm_val,
                             "members": members_payload,
                             "member_count": len(members_payload),
-                            "formula_html": make_group_formula(entry, group_key) if members_payload else "",
                         })
                     else:
                         subtitle = ""
@@ -2630,7 +2595,6 @@ class MainWindow(QMainWindow):
                             "pfh": pfh_val,
                             "sil": sil_val,
                             "pdm": pdm_val,
-                            "formula_html": make_single_formula(entry, group_key),
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -2685,8 +2649,6 @@ class MainWindow(QMainWindow):
                     metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
                     if metrics_html:
                         html_parts.append(metrics_html)
-                    if card.get("formula_html"):
-                        html_parts.append(card["formula_html"])
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
@@ -2729,17 +2691,17 @@ class MainWindow(QMainWindow):
         parts.append('<div class="card formula-card">')
         parts.append('<h3>1oo1 architecture</h3>')
         parts.append('<p class="muted small">Single channel with independent dangerous undetected/detected shares.</p>')
-        parts.append('<div class="formula-box">\\[\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda\\]</div>')
-        parts.append('<div class="formula-box">\\[\\mathrm{PFD}_{1oo1} = \\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\lambda_{DD}\\,MTTR\\]</div>')
-        parts.append('<div class="formula-box">\\[\\mathrm{PFH}_{1oo1} = \\lambda_{DU}\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">Partition the dangerous failure rate into undetected and detected portions.</div>\\[\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">Low-demand probability of failure using DU/DD shares.</div>\\[\\mathrm{PFD}_{1oo1} = \\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\lambda_{DD}\\,MTTR\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">High-demand hazardous failure frequency equals the undetected dangerous rate.</div>\\[\\mathrm{PFH}_{1oo1} = \\lambda_{DU}\\]</div>')
         parts.append('</div>')
         parts.append('<div class="card formula-card">')
         parts.append('<h3>1oo2 architecture</h3>')
         parts.append('<p class="muted small">Two channels split into independent paths and common-cause portions.</p>')
-        parts.append('<div class="formula-box">\\[\\begin{aligned}\\mathrm{PFD}_{1oo2} &= \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}},\\\\ \\mathrm{PFD}_{\\text{ind}} &= 2\\lambda_{D,\\text{ind}}^{2} t_{CE} t_{GE},\\\\ \\mathrm{PFD}_{\\text{CCF}} &= \\beta\\,\\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\beta_D\\,\\lambda_{DD}\\,MTTR\\end{aligned}\\]</div>')
-        parts.append('<div class="formula-box">\\[t_{CE} = w_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + w_{DD}\\,MTTR,\\quad t_{GE} = w_{DU}\\left(\\tfrac{T_I}{3}+MTTR\\right) + w_{DD}\\,MTTR\\]</div>')
-        parts.append('<div class="formula-box">\\[\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}\\]</div>')
-        parts.append('<div class="formula-box">\\[\\mathrm{PFH}_{1oo2} = 2(1-\\beta)\\,\\lambda_{DU,\\text{ind}} t_{CE} + \\beta\\,\\lambda_{DU}\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">Combine independent-channel and common-cause contributions.</div>\\[\\begin{aligned}\\mathrm{PFD}_{1oo2} &= \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}},\\\\ \\mathrm{PFD}_{\\text{ind}} &= 2\\lambda_{D,\\text{ind}}^{2} t_{CE} t_{GE},\\\\ \\mathrm{PFD}_{\\text{CCF}} &= \\beta\\,\\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\beta_D\\,\\lambda_{DD}\\,MTTR\\end{aligned}\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">Exposure windows for coincident and general dangerous failures.</div>\\[t_{CE} = w_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + w_{DD}\\,MTTR,\\quad t_{GE} = w_{DU}\\left(\\tfrac{T_I}{3}+MTTR\\right) + w_{DD}\\,MTTR\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">Independent dangerous rates after removing the common-cause portions.</div>\\[\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}\\]</div>')
+        parts.append('<div class="formula-box"><div class="formula-caption muted small">High-demand hazardous failure frequency with independent and common-cause parts.</div>\\[\\mathrm{PFH}_{1oo2} = 2(1-\\beta)\\,\\lambda_{DU,\\text{ind}} t_{CE} + \\beta\\,\\lambda_{DU}\\]</div>')
         parts.append('</div>')
         parts.append('</div>')
         parts.append('</div>')
@@ -2802,6 +2764,20 @@ class MainWindow(QMainWindow):
             parts.append('</tbody></table>')
 
             mode_key = 'low_demand' if 'low' in s['mode'].lower() else 'high_demand'
+            stage_defs_for_sum = [
+                ("sensors", "Sensors / Inputs", s['sensors'] or []),
+                ("logic", "Logic", s['logic'] or []),
+                ("actuators", "Outputs / Actuators", s['actuators'] or []),
+            ]
+            sum_formula_html = build_sum_formula(stage_defs_for_sum, mode_key)
+            if sum_formula_html:
+                sum_heading = "PFDsum derivation" if mode_key == 'low_demand' else "PFHsum derivation"
+                parts.append('<div class="card formula-card lane-sum-card">')
+                parts.append(f'<h3>{sum_heading}</h3>')
+                parts.append('<p class="muted small">Complete accumulation from sensors, logic, and actuators.</p>')
+                parts.append(sum_formula_html)
+                parts.append('</div>')
+
             arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'], mode_key)
             if arch_html:
                 parts.append('<div class="architecture">')
