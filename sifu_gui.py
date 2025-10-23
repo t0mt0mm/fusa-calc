@@ -2498,18 +2498,25 @@ class MainWindow(QMainWindow):
                 lam_du = du_ratio * lam
                 lam_dd = dd_ratio * lam
                 pfd_val = entry.get("pfd_avg", entry.get("pfd"))
+                pfh_val = entry.get("pfh_avg", entry.get("pfh"))
+                calc_pfd = lam_du * (TI / 2.0 + MTTR) + lam_dd * MTTR
+                result_pfd = calc_pfd if pfd_val in (None, "") else float(pfd_val)
+                result_pfh = lam_du if pfh_val in (None, "") else float(pfh_val)
+                if mode_key == 'low_demand':
+                    return (
+                        '<div class="formula-box">'
+                        + rf"""
+\[
+\mathrm{{PFD}}_{{1oo1}} = {fmt_tex(lam_du)}\left(\tfrac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_tex(lam_dd)}\cdot {fmt_time(MTTR)} = {fmt_tex(result_pfd)}
+\]
+"""
+                        + '</div>'
+                    )
                 return (
                     '<div class="formula-box">'
                     + rf"""
 \[
-\begin{{aligned}}
-w_{{DU}} &= {fmt_ratio(du_ratio)},\quad w_{{DD}} = {fmt_ratio(dd_ratio)}\\
-\lambda &= {fmt_tex(lam)}\\
-\lambda_{{DU}} &= w_{{DU}}\lambda = {fmt_ratio(du_ratio)}\cdot {fmt_tex(lam)} = {fmt_tex(lam_du)}\\
-\lambda_{{DD}} &= w_{{DD}}\lambda = {fmt_ratio(dd_ratio)}\cdot {fmt_tex(lam)} = {fmt_tex(lam_dd)}\\
-\mathrm{{PFD}}_{{1oo1}} &= {fmt_tex(lam_du)}\left(\frac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_tex(lam_dd)}\cdot {fmt_time(MTTR)} = {fmt_tex(pfd_val)}\\
-\mathrm{{PFH}}_{{1oo1}} &= {fmt_tex(lam_du)}
-\end{{aligned}}
+\mathrm{{PFH}}_{{1oo1}} = {fmt_tex(lam_du)} = {fmt_tex(result_pfh)}
 \]
 """
                     + '</div>'
@@ -2546,22 +2553,21 @@ w_{{DU}} &= {fmt_ratio(du_ratio)},\quad w_{{DD}} = {fmt_ratio(dd_ratio)}\\
                 pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
                 pfh_ccf = beta * lam_du_total
                 pfh_total = pfh_ind + pfh_ccf
+                if mode_key == 'low_demand':
+                    return (
+                        '<div class="formula-box">'
+                        + rf"""
+\[
+\mathrm{{PFD}}_{{1oo2}} = {fmt_tex(pfd_ind)} + {fmt_tex(pfd_du_ccf)} + {fmt_tex(pfd_dd_ccf)} = {fmt_tex(pfd_total)}
+\]
+"""
+                        + '</div>'
+                    )
                 return (
                     '<div class="formula-box">'
                     + rf"""
 \[
-\begin{{aligned}}
-\lambda_{{DU,\text{{tot}}}} &= {fmt_tex(lam_du_total)},\quad \lambda_{{DD,\text{{tot}}}} = {fmt_tex(lam_dd_total)}\\
-\lambda_{{DU,\text{{ind}}}} &= (1-\beta)\,\lambda_{{DU,\text{{tot}}}} = (1-{fmt_ratio(beta)})\cdot {fmt_tex(lam_du_total)} = {fmt_tex(lam_du_ind)}\\
-\lambda_{{DD,\text{{ind}}}} &= (1-\beta_D)\,\lambda_{{DD,\text{{tot}}}} = (1-{fmt_ratio(beta_D)})\cdot {fmt_tex(lam_dd_total)} = {fmt_tex(lam_dd_ind)}\\
-\lambda_{{D,\text{{ind}}}} &= {fmt_tex(lam_du_ind)} + {fmt_tex(lam_dd_ind)} = {fmt_tex(lam_d_ind)}\\
-w_{{DU}} &= {fmt_tex(lam_du_ind)} / {fmt_tex(lam_d_ind)} = {fmt_ratio(w_du)}\\
-w_{{DD}} &= {fmt_tex(lam_dd_ind)} / {fmt_tex(lam_d_ind)} = {fmt_ratio(w_dd)}\\
-t_{{CE}} &= {fmt_ratio(w_du)}\left(\frac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_ratio(w_dd)}\cdot {fmt_time(MTTR)} = {fmt_time(tCE)}\\
-t_{{GE}} &= {fmt_ratio(w_du)}\left(\frac{{{fmt_time(TI)}}}{3} + {fmt_time(MTTR)}\right) + {fmt_ratio(w_dd)}\cdot {fmt_time(MTTR)} = {fmt_time(tGE)}\\
-\mathrm{{PFD}}_{{1oo2}} &= 2\,\lambda_{{D,\text{{ind}}}}^{2} t_{{CE}} t_{{GE}} + \beta\,\lambda_{{DU,\text{{tot}}}}\left(\frac{{{fmt_time(TI)}}}{2}+{fmt_time(MTTR)}\right) + \beta_D\,\lambda_{{DD,\text{{tot}}}}\cdot {fmt_time(MTTR)} = {fmt_tex(pfd_total)}\\
-\mathrm{{PFH}}_{{1oo2}} &= 2\,\lambda_{{D,\text{{ind}}}}\lambda_{{DU,\text{{ind}}}} t_{{CE}} + \beta\,\lambda_{{DU,\text{{tot}}}} = {fmt_tex(pfh_total)}
-\end{{aligned}}
+\mathrm{{PFH}}_{{1oo2}} = 2(1-{fmt_ratio(beta)})\,{fmt_tex(lam_du_ind)}\cdot {fmt_time(tCE)} + {fmt_ratio(beta)}\,{fmt_tex(lam_du_total)} = {fmt_tex(pfh_total)}
 \]
 """
                     + '</div>'
@@ -2717,18 +2723,19 @@ t_{{GE}} &= {fmt_ratio(w_du)}\left(\frac{{{fmt_time(TI)}}}{3} + {fmt_time(MTTR)}
         parts.append(f'<div class="meta">Generated: {esc(dt)}</div>')
 
         parts.append('<div class="formula-section">')
-        parts.append('<h2>Grundformeln</h2>')
+        parts.append('<h2>Base formulas</h2>')
+        parts.append('<p class="muted small">Core IEC 61508 relations used throughout this report.</p>')
         parts.append('<div class="formula-grid">')
         parts.append('<div class="card formula-card">')
-        parts.append('<h3>1oo1-Architektur</h3>')
-        parts.append('<p class="muted small">Basisgleichungen gemäß IEC 61508.</p>')
+        parts.append('<h3>1oo1 architecture</h3>')
+        parts.append('<p class="muted small">Single channel with independent dangerous undetected/detected shares.</p>')
         parts.append('<div class="formula-box">\\[\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda\\]</div>')
         parts.append('<div class="formula-box">\\[\\mathrm{PFD}_{1oo1} = \\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\lambda_{DD}\\,MTTR\\]</div>')
         parts.append('<div class="formula-box">\\[\\mathrm{PFH}_{1oo1} = \\lambda_{DU}\\]</div>')
         parts.append('</div>')
         parts.append('<div class="card formula-card">')
-        parts.append('<h3>1oo2-Architektur</h3>')
-        parts.append('<p class="muted small">Unabhängige und CCF-Anteile der IEC-61508-Modelle.</p>')
+        parts.append('<h3>1oo2 architecture</h3>')
+        parts.append('<p class="muted small">Two channels split into independent paths and common-cause portions.</p>')
         parts.append('<div class="formula-box">\\[\\begin{aligned}\\mathrm{PFD}_{1oo2} &= \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}},\\\\ \\mathrm{PFD}_{\\text{ind}} &= 2\\lambda_{D,\\text{ind}}^{2} t_{CE} t_{GE},\\\\ \\mathrm{PFD}_{\\text{CCF}} &= \\beta\\,\\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\beta_D\\,\\lambda_{DD}\\,MTTR\\end{aligned}\\]</div>')
         parts.append('<div class="formula-box">\\[t_{CE} = w_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + w_{DD}\\,MTTR,\\quad t_{GE} = w_{DU}\\left(\\tfrac{T_I}{3}+MTTR\\right) + w_{DD}\\,MTTR\\]</div>')
         parts.append('<div class="formula-box">\\[\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}\\]</div>')
