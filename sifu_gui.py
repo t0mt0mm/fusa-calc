@@ -2645,22 +2645,22 @@ class MainWindow(QMainWindow):
         parts.append(''.join([
             '<div class="formula-card">',
             '<h4>1oo1 architecture</h4>',
-            '<div class="formula">\[ \mathrm{PFD}_{1oo1} = \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) + \lambda_{DD}\,MTTR \]</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{1oo1} = \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) + \lambda_{DD}\,MTTR \]</div>',
             '<div class="formula-desc">Average probability of failure on demand combines undetected dangerous accumulation and the repair exposure of detected dangerous faults.</div>',
-            '<div class="formula">\[ \mathrm{PFH}_{1oo1} = \lambda_{DU} \]</div>',
+            r'<div class="formula">\[ \mathrm{PFH}_{1oo1} = \lambda_{DU} \]</div>',
             '<div class="formula-desc">For high-demand modes the dangerous undetected failure rate dominates the frequency of failure per hour.</div>',
             '</div>'
         ]))
         parts.append(''.join([
             '<div class="formula-card">',
             '<h4>1oo2 architecture</h4>',
-            '<div class="formula">\[ \mathrm{PFD}_{1oo2} = \mathrm{PFD}_{\mathrm{ind}} + \mathrm{PFD}_{\mathrm{CCF}} \]</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{1oo2} = \mathrm{PFD}_{\mathrm{ind}} + \mathrm{PFD}_{\mathrm{CCF}} \]</div>',
             '<div class="formula-desc">Demand exposure separates independent failures from common-cause contributions.</div>',
-            '<div class="formula">\[ \mathrm{PFD}_{\mathrm{ind}} = (1-\beta)^{2} \lambda_{DU,ind}^{2} \frac{TI^{2}}{3} \]</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{\mathrm{ind}} = (1-\beta)^{2} \lambda_{DU,ind}^{2} \frac{TI^{2}}{3} \]</div>',
             '<div class="formula-desc">Independent dangerous failures require simultaneous channel loss across the proof-test interval.</div>',
-            '<div class="formula">\[ \mathrm{PFD}_{\mathrm{CCF}} = \beta \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) \]</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{\mathrm{CCF}} = \beta \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) \]</div>',
             '<div class="formula-desc">Common-cause effects are modelled like a single-channel exposure scaled by the beta factor.</div>',
-            '<div class="formula">\[ \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_{DU,ind}\,t_{CE} + \beta \lambda_{DU} \]</div>',
+            r'<div class="formula">\[ \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_{DU,ind}\,t_{CE} + \beta \lambda_{DU} \]</div>',
             '<div class="formula-desc">Continuous mode risk aggregates independent channel diagnostic coverage with the remaining common-cause share.</div>',
             '</div>'
         ]))
@@ -2668,13 +2668,13 @@ class MainWindow(QMainWindow):
         parts.append('<div class="variable-legend">'
                      '<h4>Variable overview</h4>'
                      '<ul>'
-                     '<li><span class="var-symbol">\\(\lambda_{DU}\\)</span><span>Dangerous undetected failure rate of a channel.</span></li>'
-                     '<li><span class="var-symbol">\\(\lambda_{DD}\\)</span><span>Dangerous detected failure rate restored after repair.</span></li>'
-                     '<li><span class="var-symbol">\\(\lambda_{DU,ind}\\)</span><span>Channel-specific fraction of dangerous undetected failures not caused by common events.</span></li>'
-                     '<li><span class="var-symbol">\\(TI\\)</span><span>Proof-test interval covering the mission time between full function checks.</span></li>'
-                     '<li><span class="var-symbol">\\(MTTR\\)</span><span>Mean time to repair that the channel remains unavailable.</span></li>'
-                     '<li><span class="var-symbol">\\(t_{CE}\\)</span><span>Mean diagnostic exposure time for a detected channel excursion.</span></li>'
-                     '<li><span class="var-symbol">\\(\beta\\)</span><span>Common-cause fraction applied to dangerous undetected failures.</span></li>'
+                     r'<li><span class="var-symbol">\(\lambda_{DU}\)</span><span>Dangerous undetected failure rate of a channel.</span></li>'
+                     r'<li><span class="var-symbol">\(\lambda_{DD}\)</span><span>Dangerous detected failure rate restored after repair.</span></li>'
+                     r'<li><span class="var-symbol">\(\lambda_{DU,ind}\)</span><span>Channel-specific fraction of dangerous undetected failures not caused by common events.</span></li>'
+                     r'<li><span class="var-symbol">\(TI\)</span><span>Proof-test interval covering the mission time between full function checks.</span></li>'
+                     r'<li><span class="var-symbol">\(MTTR\)</span><span>Mean time to repair that the channel remains unavailable.</span></li>'
+                     r'<li><span class="var-symbol">\(t_{CE}\)</span><span>Mean diagnostic exposure time for a detected channel excursion.</span></li>'
+                     r'<li><span class="var-symbol">\(\beta\)</span><span>Common-cause fraction applied to dangerous undetected failures.</span></li>'
                      '</ul>'
                      '</div>')
         parts.append('</div>')
