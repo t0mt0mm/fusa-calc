@@ -2406,6 +2406,18 @@ class MainWindow(QMainWindow):
         .pill.arch, .lane-pill.arch { background:#ede9fe; color:#312e81; border:1px solid #c4b5fd; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
         .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#fff; }
+        .formula-section { margin: 28px 0 12px; }
+        .formula-intro { font-size:13px; color:#374151; margin:0 0 14px; max-width:720px; }
+        .formula-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-bottom:16px; }
+        .formula-card { border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; background:#fff; box-shadow:0 10px 20px rgba(15,23,42,0.05); display:flex; flex-direction:column; gap:8px; }
+        .formula-card h4 { margin:0; font-size:14px; color:#111827; }
+        .formula-card .formula { font-size:15px; color:#111827; }
+        .formula-card .formula-desc { font-size:12px; color:#4b5563; line-height:1.5; }
+        .variable-legend { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#f8fafc; }
+        .variable-legend h4 { font-size:14px; margin:0 0 8px; }
+        .variable-legend ul { list-style:none; margin:0; padding:0; display:grid; gap:6px; }
+        .variable-legend li { display:flex; gap:10px; align-items:flex-start; font-size:12px; color:#374151; }
+        .variable-legend li .var-symbol { font-weight:600; min-width:88px; font-family:"Times New Roman", serif; }
         .muted { color:#6b7280; }
         .small { font-size: 12px; }
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -2588,6 +2600,19 @@ class MainWindow(QMainWindow):
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
         parts.append(f'<style>{css}</style>')
+        parts.append('''<script>
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                    processEscapes: true
+                },
+                options: {
+                    skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+                }
+            };
+        </script>''')
+        parts.append('<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
         parts.append('<h1>SIFU Calculation Report</h1>')
@@ -2611,6 +2636,48 @@ class MainWindow(QMainWindow):
                 '</tr>'
             )
         parts.append('</tbody></table>')
+
+        # Fundamental formulas section
+        parts.append('<h2>Base Formulas</h2>')
+        parts.append('<div class="formula-section">')
+        parts.append('<p class="formula-intro">Key IEC&nbsp;61508 relations for representative 1oo1 and 1oo2 safety architectures.</p>')
+        parts.append('<div class="formula-grid">')
+        parts.append(''.join([
+            '<div class="formula-card">',
+            '<h4>1oo1 architecture</h4>',
+            r'<div class="formula">\[ \mathrm{PFD}_{1oo1} = \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) + \lambda_{DD}\,MTTR \]</div>',
+            '<div class="formula-desc">Average probability of failure on demand combines undetected dangerous accumulation and the repair exposure of detected dangerous faults.</div>',
+            r'<div class="formula">\[ \mathrm{PFH}_{1oo1} = \lambda_{DU} \]</div>',
+            '<div class="formula-desc">For high-demand modes the dangerous undetected failure rate dominates the frequency of failure per hour.</div>',
+            '</div>'
+        ]))
+        parts.append(''.join([
+            '<div class="formula-card">',
+            '<h4>1oo2 architecture</h4>',
+            r'<div class="formula">\[ \mathrm{PFD}_{1oo2} = \mathrm{PFD}_{\mathrm{ind}} + \mathrm{PFD}_{\mathrm{CCF}} \]</div>',
+            '<div class="formula-desc">Demand exposure separates independent failures from common-cause contributions.</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{\mathrm{ind}} = (1-\beta)^{2} \lambda_{DU,ind}^{2} \frac{TI^{2}}{3} \]</div>',
+            '<div class="formula-desc">Independent dangerous failures require simultaneous channel loss across the proof-test interval.</div>',
+            r'<div class="formula">\[ \mathrm{PFD}_{\mathrm{CCF}} = \beta \lambda_{DU} \left( \frac{TI}{2} + MTTR \right) \]</div>',
+            '<div class="formula-desc">Common-cause effects are modelled like a single-channel exposure scaled by the beta factor.</div>',
+            r'<div class="formula">\[ \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_{DU,ind}\,t_{CE} + \beta \lambda_{DU} \]</div>',
+            '<div class="formula-desc">Continuous mode risk aggregates independent channel diagnostic coverage with the remaining common-cause share.</div>',
+            '</div>'
+        ]))
+        parts.append('</div>')
+        parts.append('<div class="variable-legend">'
+                     '<h4>Variable overview</h4>'
+                     '<ul>'
+                     r'<li><span class="var-symbol">\(\lambda_{DU}\)</span><span>Dangerous undetected failure rate of a channel.</span></li>'
+                     r'<li><span class="var-symbol">\(\lambda_{DD}\)</span><span>Dangerous detected failure rate restored after repair.</span></li>'
+                     r'<li><span class="var-symbol">\(\lambda_{DU,ind}\)</span><span>Channel-specific fraction of dangerous undetected failures not caused by common events.</span></li>'
+                     r'<li><span class="var-symbol">\(TI\)</span><span>Proof-test interval covering the mission time between full function checks.</span></li>'
+                     r'<li><span class="var-symbol">\(MTTR\)</span><span>Mean time to repair that the channel remains unavailable.</span></li>'
+                     r'<li><span class="var-symbol">\(t_{CE}\)</span><span>Mean diagnostic exposure time for a detected channel excursion.</span></li>'
+                     r'<li><span class="var-symbol">\(\beta\)</span><span>Common-cause fraction applied to dangerous undetected failures.</span></li>'
+                     '</ul>'
+                     '</div>')
+        parts.append('</div>')
 
         # Assumptions & Ratios
         parts.append('<div class="grid">')
