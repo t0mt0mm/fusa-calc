@@ -2406,6 +2406,13 @@ class MainWindow(QMainWindow):
         .pill.arch, .lane-pill.arch { background:#ede9fe; color:#312e81; border:1px solid #c4b5fd; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
         .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#fff; }
+        .formula-section { margin:24px 0; }
+        .formula-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; }
+        .formula-card { background:#f9fafb; }
+        .formula-card h3 { margin-top:0; }
+        .formula-card p { margin:0 0 8px; }
+        .formula-box { margin-top:8px; padding:8px 10px; border:1px dashed #c7d2fe; border-radius:10px; background:#fff; }
+        .formula-box:last-child { margin-bottom:0; }
         .muted { color:#6b7280; }
         .small { font-size: 12px; }
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -2441,7 +2448,7 @@ class MainWindow(QMainWindow):
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
+        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict], mode_key: str) -> str:
             stage_defs = [
                 ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
@@ -2449,9 +2456,120 @@ class MainWindow(QMainWindow):
             ]
 
             stage_payload: List[Tuple[str, str, List[Dict[str, Any]]]] = []
+            stage_group_map = {"sensors": "sensor", "logic": "logic", "actuators": "actuator"}
+
+            TI = float(self.assumptions.get('TI', 0.0))
+            MTTR = float(self.assumptions.get('MTTR', 0.0))
+            beta = float(self.assumptions.get('beta', 0.0))
+            beta_D = float(self.assumptions.get('beta_D', 0.0))
+
+            def fmt_tex(val: Optional[float], digits: int = 3) -> str:
+                if val is None:
+                    return "0"
+                try:
+                    val = float(val)
+                except Exception:
+                    return "0"
+                if val == 0:
+                    return "0"
+                if abs(val) >= 1e3 or abs(val) < 1e-3:
+                    return f"{val:.{digits}e}"
+                return f"{val:.{digits}f}"
+
+            def fmt_ratio(val: Optional[float]) -> str:
+                if val is None:
+                    return "0"
+                try:
+                    return f"{float(val):.3f}"
+                except Exception:
+                    return "0"
+
+            def fmt_time(val: Optional[float]) -> str:
+                if val is None:
+                    return "0"
+                try:
+                    return f"{float(val):.2f}"
+                except Exception:
+                    return "0"
+
+            def make_single_formula(entry: Dict[str, Any], group_key: str) -> str:
+                lam = self._lambda_from_component(entry, mode_key)
+                du_ratio, dd_ratio = self._ratios(group_key)
+                lam_du = du_ratio * lam
+                lam_dd = dd_ratio * lam
+                pfd_val = entry.get("pfd_avg", entry.get("pfd"))
+                return (
+                    '<div class="formula-box">'
+                    + rf"""
+\[
+\begin{{aligned}}
+w_{{DU}} &= {fmt_ratio(du_ratio)},\quad w_{{DD}} = {fmt_ratio(dd_ratio)}\\
+\lambda &= {fmt_tex(lam)}\\
+\lambda_{{DU}} &= w_{{DU}}\lambda = {fmt_ratio(du_ratio)}\cdot {fmt_tex(lam)} = {fmt_tex(lam_du)}\\
+\lambda_{{DD}} &= w_{{DD}}\lambda = {fmt_ratio(dd_ratio)}\cdot {fmt_tex(lam)} = {fmt_tex(lam_dd)}\\
+\mathrm{{PFD}}_{{1oo1}} &= {fmt_tex(lam_du)}\left(\frac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_tex(lam_dd)}\cdot {fmt_time(MTTR)} = {fmt_tex(pfd_val)}\\
+\mathrm{{PFH}}_{{1oo1}} &= {fmt_tex(lam_du)}
+\end{{aligned}}
+\]
+"""
+                    + '</div>'
+                )
+
+            def make_group_formula(entry: Dict[str, Any], group_key: str) -> str:
+                members = entry.get("members", [])
+                if not members:
+                    return ""
+                m1 = members[0]
+                m2 = members[1] if len(members) > 1 else members[0]
+                lam1 = self._lambda_from_component(m1, mode_key)
+                lam2 = self._lambda_from_component(m2, mode_key)
+                du_ratio, dd_ratio = self._ratios(group_key)
+                lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
+                lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
+                lam_du_total = lam_du_1 + lam_du_2
+                lam_dd_total = lam_dd_1 + lam_dd_2
+                lam_du_ind = (1.0 - beta) * lam_du_total
+                lam_dd_ind = (1.0 - beta_D) * lam_dd_total
+                lam_d_ind = lam_du_ind + lam_dd_ind
+                if lam_d_ind > 0:
+                    w_du = lam_du_ind / lam_d_ind
+                    w_dd = lam_dd_ind / lam_d_ind
+                else:
+                    w_du = 0.0
+                    w_dd = 0.0
+                tCE = w_du * (TI / 2.0 + MTTR) + w_dd * MTTR
+                tGE = w_du * (TI / 3.0 + MTTR) + w_dd * MTTR
+                pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
+                pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
+                pfd_dd_ccf = beta_D * lam_dd_total * MTTR
+                pfd_total = pfd_ind + pfd_du_ccf + pfd_dd_ccf
+                pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
+                pfh_ccf = beta * lam_du_total
+                pfh_total = pfh_ind + pfh_ccf
+                return (
+                    '<div class="formula-box">'
+                    + rf"""
+\[
+\begin{{aligned}}
+\lambda_{{DU,\text{{tot}}}} &= {fmt_tex(lam_du_total)},\quad \lambda_{{DD,\text{{tot}}}} = {fmt_tex(lam_dd_total)}\\
+\lambda_{{DU,\text{{ind}}}} &= (1-\beta)\,\lambda_{{DU,\text{{tot}}}} = (1-{fmt_ratio(beta)})\cdot {fmt_tex(lam_du_total)} = {fmt_tex(lam_du_ind)}\\
+\lambda_{{DD,\text{{ind}}}} &= (1-\beta_D)\,\lambda_{{DD,\text{{tot}}}} = (1-{fmt_ratio(beta_D)})\cdot {fmt_tex(lam_dd_total)} = {fmt_tex(lam_dd_ind)}\\
+\lambda_{{D,\text{{ind}}}} &= {fmt_tex(lam_du_ind)} + {fmt_tex(lam_dd_ind)} = {fmt_tex(lam_d_ind)}\\
+w_{{DU}} &= {fmt_tex(lam_du_ind)} / {fmt_tex(lam_d_ind)} = {fmt_ratio(w_du)}\\
+w_{{DD}} &= {fmt_tex(lam_dd_ind)} / {fmt_tex(lam_d_ind)} = {fmt_ratio(w_dd)}\\
+t_{{CE}} &= {fmt_ratio(w_du)}\left(\frac{{{fmt_time(TI)}}}{2} + {fmt_time(MTTR)}\right) + {fmt_ratio(w_dd)}\cdot {fmt_time(MTTR)} = {fmt_time(tCE)}\\
+t_{{GE}} &= {fmt_ratio(w_du)}\left(\frac{{{fmt_time(TI)}}}{3} + {fmt_time(MTTR)}\right) + {fmt_ratio(w_dd)}\cdot {fmt_time(MTTR)} = {fmt_time(tGE)}\\
+\mathrm{{PFD}}_{{1oo2}} &= 2\,\lambda_{{D,\text{{ind}}}}^{2} t_{{CE}} t_{{GE}} + \beta\,\lambda_{{DU,\text{{tot}}}}\left(\frac{{{fmt_time(TI)}}}{2}+{fmt_time(MTTR)}\right) + \beta_D\,\lambda_{{DD,\text{{tot}}}}\cdot {fmt_time(MTTR)} = {fmt_tex(pfd_total)}\\
+\mathrm{{PFH}}_{{1oo2}} &= 2\,\lambda_{{D,\text{{ind}}}}\lambda_{{DU,\text{{ind}}}} t_{{CE}} + \beta\,\lambda_{{DU,\text{{tot}}}} = {fmt_tex(pfh_total)}
+\end{{aligned}}
+\]
+"""
+                    + '</div>'
+                )
 
             for stage_key, stage_title, entries in stage_defs:
                 cards: List[Dict[str, Any]] = []
+                group_key = stage_group_map.get(stage_key, stage_key)
                 for idx, entry in enumerate(entries):
                     architecture = entry.get("architecture")
                     instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
@@ -2490,6 +2608,7 @@ class MainWindow(QMainWindow):
                             "pdm": pdm_val,
                             "members": members_payload,
                             "member_count": len(members_payload),
+                            "formula_html": make_group_formula(entry, group_key) if members_payload else "",
                         })
                     else:
                         subtitle = ""
@@ -2505,6 +2624,7 @@ class MainWindow(QMainWindow):
                             "pfh": pfh_val,
                             "sil": sil_val,
                             "pdm": pdm_val,
+                            "formula_html": make_single_formula(entry, group_key),
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -2559,6 +2679,8 @@ class MainWindow(QMainWindow):
                     metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
                     if metrics_html:
                         html_parts.append(metrics_html)
+                    if card.get("formula_html"):
+                        html_parts.append(card["formula_html"])
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
@@ -2588,10 +2710,32 @@ class MainWindow(QMainWindow):
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
         parts.append(f'<style>{css}</style>')
+        parts.append('<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
         parts.append('<h1>SIFU Calculation Report</h1>')
         parts.append(f'<div class="meta">Generated: {esc(dt)}</div>')
+
+        parts.append('<div class="formula-section">')
+        parts.append('<h2>Grundformeln</h2>')
+        parts.append('<div class="formula-grid">')
+        parts.append('<div class="card formula-card">')
+        parts.append('<h3>1oo1-Architektur</h3>')
+        parts.append('<p class="muted small">Basisgleichungen gemäß IEC 61508.</p>')
+        parts.append('<div class="formula-box">\\[\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda\\]</div>')
+        parts.append('<div class="formula-box">\\[\\mathrm{PFD}_{1oo1} = \\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\lambda_{DD}\\,MTTR\\]</div>')
+        parts.append('<div class="formula-box">\\[\\mathrm{PFH}_{1oo1} = \\lambda_{DU}\\]</div>')
+        parts.append('</div>')
+        parts.append('<div class="card formula-card">')
+        parts.append('<h3>1oo2-Architektur</h3>')
+        parts.append('<p class="muted small">Unabhängige und CCF-Anteile der IEC-61508-Modelle.</p>')
+        parts.append('<div class="formula-box">\\[\\begin{aligned}\\mathrm{PFD}_{1oo2} &= \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}},\\\\ \\mathrm{PFD}_{\\text{ind}} &= 2\\lambda_{D,\\text{ind}}^{2} t_{CE} t_{GE},\\\\ \\mathrm{PFD}_{\\text{CCF}} &= \\beta\\,\\lambda_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + \\beta_D\\,\\lambda_{DD}\\,MTTR\\end{aligned}\\]</div>')
+        parts.append('<div class="formula-box">\\[t_{CE} = w_{DU}\\left(\\tfrac{T_I}{2}+MTTR\\right) + w_{DD}\\,MTTR,\\quad t_{GE} = w_{DU}\\left(\\tfrac{T_I}{3}+MTTR\\right) + w_{DD}\\,MTTR\\]</div>')
+        parts.append('<div class="formula-box">\\[\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}\\]</div>')
+        parts.append('<div class="formula-box">\\[\\mathrm{PFH}_{1oo2} = 2(1-\\beta)\\,\\lambda_{DU,\\text{ind}} t_{CE} + \\beta\\,\\lambda_{DU}\\]</div>')
+        parts.append('</div>')
+        parts.append('</div>')
+        parts.append('</div>')
 
         # Summary table
         parts.append('<h2>Summary</h2>')
@@ -2650,7 +2794,8 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'])
+            mode_key = 'low_demand' if 'low' in s['mode'].lower() else 'high_demand'
+            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'], mode_key)
             if arch_html:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
