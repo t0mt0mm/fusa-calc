@@ -84,7 +84,13 @@ class ConfigDialog(QDialog):
         self.setObjectName("ModernConfigDialog")
 
         self._defaults = {
-            'TI': 8760.0, 'MTTR': 8.0, 'beta': 0.1, 'beta_D': 0.02, 'C_PST': 0.3, 'T_PST': 168.0
+            'TI': 8760.0,
+            'MTTR': 8.0,
+            'beta': 0.1,
+            'beta_D': 0.02,
+            'C_PST': 0.3,
+            'T_PST': 168.0,
+            'lambda_consistency_threshold': 0.2,
         }
 
         vroot = QVBoxLayout(self)
@@ -122,6 +128,8 @@ class ConfigDialog(QDialog):
         add_param('MTTR', "MTTR — Mean time to repair", 0, 1e6, 2, 0.5,"Average repair time.", "h")
         add_param('beta',  "β — Common-cause fraction (DU)", 0, 1.0, 4, 0.001, "Common-cause share for DU.")
         add_param('beta_D',"β_D — Common-cause fraction (DD)",0, 1.0, 4, 0.001, "Common-cause share for DD.")
+        add_param('lambda_consistency_threshold', "λ mismatch tolerance", 0.0, 1.0, 3, 0.01,
+                  "Relative tolerance for λ estimates derived from PFD vs PFH.")
         add_param('C_PST',"C_PST", 0, 1.0, 3, 0.01, "Proof test coverage constant.")
         add_param('T_PST',"T_PST", 0, 1e6, 2, 1.0, "Proof test duration.", "h")
         tabs.addTab(pg_ass, "Assumptions")
@@ -177,6 +185,7 @@ class ConfigDialog(QDialog):
             self.fields['MTTR'].setValue(self._defaults['MTTR'])
             self.fields['beta'].setValue(self._defaults['beta'])
             self.fields['beta_D'].setValue(self._defaults['beta_D'])
+            self.fields['lambda_consistency_threshold'].setValue(self._defaults['lambda_consistency_threshold'])
             self.fields['C_PST'].setValue(self._defaults['C_PST'])
             self.fields['T_PST'].setValue(self._defaults['T_PST'])
             for g, (du_sp, dd_sp) in self.du_dd_fields.items():
@@ -1391,6 +1400,7 @@ class MainWindow(QMainWindow):
             'MTTR': 8.0,   # [h]
             'beta': 0.1,   # [–]
             'beta_D': 0.02,# [–]
+            'lambda_consistency_threshold': 0.2,  # [–]
             'C_PST': 0.3,  # [–]
             'T_PST': 168.0 # [h]
         }
@@ -1941,7 +1951,7 @@ class MainWindow(QMainWindow):
             self.table.setColumnWidth(2, 360)
 
     
-    def _tooltip_for_1oo2(self, m1: dict, m2: dict, group: str = "actuator") -> str:
+    def _tooltip_for_1oo2(self, m1: dict, m2: dict, group: str = "actuator", demand_mode: Optional[str] = None) -> str:
         """Build an HTML tooltip for a 1oo2 group. Starts with <qt> so Qt renders it as HTML."""
         def esc(x: Any) -> str:
             s = "" if x is None else str(x)
@@ -1950,11 +1960,21 @@ class MainWindow(QMainWindow):
             return "–" if x is None else f"{float(x):.6f}"
         def fh(x):
             return "–" if x is None else f"{float(x):.3e} 1/h"
+        def fl(x):
+            return "–" if x is None else f"{float(x):.3e} 1/h"
+        is_low = True if demand_mode is None else ('low' in demand_mode.lower())
+        metrics = self._calc_1oo2_metrics(m1, m2, group, is_low)
         c1 = esc(m1.get("code", "?")); c2 = esc(m2.get("code", "?"))
         pfd1 = m1.get("pfd", m1.get("pfd_avg", None)); pfh1 = m1.get("pfh", m1.get("pfh_avg", None))
         pfd2 = m2.get("pfd", m2.get("pfd_avg", None)); pfh2 = m2.get("pfh", m2.get("pfh_avg", None))
-        pfd_g = self._group_pfd_1oo2_grouped(m1, m2, group)
-        pfh_g = self._group_pfh_1oo2_grouped(m1, m2, group)
+        pfd_g = metrics['pfd']
+        pfh_g = metrics['pfh']
+        ch1, ch2 = metrics['channels']
+        warnings = metrics.get('warnings', [])
+        warning_html = ""
+        if warnings:
+            warning_html = "<div style='margin-top:6px;'><b>Warnings:</b><ul style='margin:4px 0 0 14px;'>" + \
+                ''.join(f"<li>{esc(w)}</li>" for w in warnings) + "</ul></div>"
         return (
             "<qt>"
             f"<div style='font-weight:600;'>1oo2 Group — {c1} ∥ {c2}</div>"
@@ -1971,6 +1991,17 @@ class MainWindow(QMainWindow):
             f"<tr><td>{c1}</td><td>{fp(pfd1)}</td><td>{fh(pfh1)}</td></tr>"
             f"<tr><td>{c2}</td><td>{fp(pfd2)}</td><td>{fh(pfh2)}</td></tr>"
             "</table>"
+            "<table style='border-collapse:collapse; margin-top:6px;'>"
+            "<tr><th style='text-align:left;padding-right:10px;'>Channel</th>"
+            "<th style='text-align:left;padding-right:10px;'>λ<sub>DU</sub></th>"
+            "<th style='text-align:left;padding-right:10px;'>λ<sub>DD</sub></th>"
+            "<th style='text-align:left;'>DC</th></tr>"
+            f"<tr><td>{c1}</td><td>{fl(ch1.get('calc_lambda_du'))}</td><td>{fl(ch1.get('calc_lambda_dd'))}</td>"
+            f"<td>{fp(ch1.get('calc_dc_detected'))}</td></tr>"
+            f"<tr><td>{c2}</td><td>{fl(ch2.get('calc_lambda_du'))}</td><td>{fl(ch2.get('calc_lambda_dd'))}</td>"
+            f"<td>{fp(ch2.get('calc_dc_detected'))}</td></tr>"
+            "</table>"
+            f"{warning_html}"
             "</qt>"
         )
 
@@ -1979,6 +2010,7 @@ class MainWindow(QMainWindow):
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return
         lw = widgets.out_list
+        mode = self._effective_demand_mode(row_idx)
         for i in range(lw.count()):
             item = lw.item(i)
             if not item: continue
@@ -1987,7 +2019,7 @@ class MainWindow(QMainWindow):
                 members = d.get('members', [{}, {}])
                 m1 = members[0] if len(members) > 0 else {}
                 m2 = members[1] if len(members) > 1 else {}
-                item.setToolTip(self._tooltip_for_1oo2(m1, m2, "actuator"))
+                item.setToolTip(self._tooltip_for_1oo2(m1, m2, "actuator", mode))
 
     def _gather_table_content_for_kind(self, kind: str) -> List[Dict[str, Any]]:
         seen = set()
@@ -2333,11 +2365,11 @@ class MainWindow(QMainWindow):
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
-            sensors = self._collect_list_items(widgets.in_list)
-            logic = self._collect_list_items(widgets.logic_list)
-            outputs = self._collect_list_items(widgets.out_list)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
             mode = self._effective_demand_mode(row_idx)
+            sensors = self._collect_list_items(widgets.in_list, mode, 'sensor')
+            logic = self._collect_list_items(widgets.logic_list, mode, 'logic')
+            outputs = self._collect_list_items(widgets.out_list, mode, 'actuator')
+            pfd_sum, pfh_sum, warnings = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode)
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2358,6 +2390,7 @@ class MainWindow(QMainWindow):
                 "sil_calc": sil_calc,
                 "ok": ok,
                 "req_sil": req_sil_str,
+                "warnings": warnings,
                 "uid": uid,
             })
 
@@ -2403,6 +2436,8 @@ class MainWindow(QMainWindow):
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
         .card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#fff; }
         .muted { color:#6b7280; }
+        .warning-block { background:#fff4d6; border-left:4px solid #f59e0b; padding:8px 12px; margin:12px 0; color:#92400e; }
+        .warning-block ul { margin:6px 0 0 18px; padding:0; }
         .small { font-size: 12px; }
         .code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
         .right { text-align:right; }
@@ -2701,6 +2736,12 @@ class MainWindow(QMainWindow):
             render_group('Sensors / Inputs', s['sensors'])
             render_group('Logic', s['logic'])
             render_group('Outputs / Actuators', s['actuators'])
+            warn_list = s.get('warnings') or []
+            if warn_list:
+                parts.append('<div class="warning-block"><strong>Warnings</strong><ul>')
+                for msg in warn_list:
+                    parts.append(f'<li>{esc(msg)}</li>')
+                parts.append('</ul></div>')
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div></body></html>')
@@ -2712,11 +2753,11 @@ class MainWindow(QMainWindow):
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
-            sensors = self._collect_list_items(widgets.in_list)
-            logic   = self._collect_list_items(widgets.logic_list)
-            outputs = self._collect_list_items(widgets.out_list)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
             mode = self._effective_demand_mode(row_idx)
+            sensors = self._collect_list_items(widgets.in_list, mode, 'sensor')
+            logic   = self._collect_list_items(widgets.logic_list, mode, 'logic')
+            outputs = self._collect_list_items(widgets.out_list, mode, 'actuator')
+            pfd_sum, pfh_sum, warnings = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode)
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2727,6 +2768,7 @@ class MainWindow(QMainWindow):
                 "demand_mode_override": meta.get("demand_mode_override", None),  # optional
                 "sensors": sensors, "logic": logic, "actuators": outputs,
                 "pfd_sum": float(pfd_sum), "pfh_sum": float(pfh_sum),
+                "warnings": warnings,
                 "sil_calculated": sil_calc,
                 "sil_required_met": sil_rank(sil_calc) >= req_rank and sil_rank(sil_calc) > 0,
             })
@@ -2812,8 +2854,9 @@ class MainWindow(QMainWindow):
         self.recalculate_all()
 
     # ----- collect list items -----
-    def _collect_list_items(self, lw: QListWidget) -> List[dict]:
+    def _collect_list_items(self, lw: QListWidget, demand_mode: Optional[str] = None, group_kind: Optional[str] = None) -> List[dict]:
         items: List[dict] = []
+        is_low = True if demand_mode is None else ('low' in demand_mode.lower())
         for i in range(lw.count()):
             item = lw.item(i)
             if not item:
@@ -2847,8 +2890,9 @@ class MainWindow(QMainWindow):
                     d = new_payload
                 member_a = normalized_members[0] if normalized_members else {}
                 member_b = normalized_members[1] if len(normalized_members) > 1 else {}
-                pfd_grp = self._group_pfd_1oo2_grouped(member_a, member_b, 'actuator')
-                pfh_grp = self._group_pfh_1oo2_grouped(member_a, member_b, 'actuator')
+                group_label = group_kind or 'actuator'
+                pfd_grp = self._group_pfd_1oo2_grouped(member_a, member_b, group_label, is_low)
+                pfh_grp = self._group_pfh_1oo2_grouped(member_a, member_b, group_label, is_low)
                 items.append({
                     'architecture': '1oo2',
                     'members': members_payload,
@@ -2880,67 +2924,214 @@ class MainWindow(QMainWindow):
         meta = self.rows_meta[row_idx]
         return meta.get("demand_mode_override") or meta.get("demand_mode_required", "High demand")
 
-    # ----- sums + display (math unchanged) -----
-    def _lambda_from_component(self, d: dict) -> float:
-        TI = float(self.assumptions['TI'])
-        pfd = float(d.get('pfd', 0.0)); pfh = float(d.get('pfh', 0.0))
-        lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-        return max(pfh, lam_pfd)
-
-    def _ratios(self, group: str) -> Tuple[float, float]:
-        du, dd = self.du_dd_ratios.get(group, (0.6, 0.4))
-        tot = du + dd
-        if tot <= 0: return 0.6, 0.4
-        return du / tot, dd / tot
-
-    def _estimate_lambda_dd(self, pfd: float, pfh: float, group: str) -> float:
-        TI = float(self.assumptions['TI'])
-        lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-        lam = max(float(pfh), lam_pfd)
-        du_ratio, dd_ratio = self._ratios(group)
-        return lam * (dd_ratio if du_ratio == 0 else (dd_ratio / du_ratio))
-
-    def _group_pfd_1oo2_grouped(self, d1: dict, d2: dict, group: str) -> float:
-        beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
-        TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
-        du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1); lam2 = self._lambda_from_component(d2)
-        lam = 0.5 * (lam1 + lam2)
-        lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-        lam_DU_ind = (1.0 - beta) * lam_DU; lam_DD_ind = (1.0 - beta_D) * lam_DD
-        lam_D_ind = lam_DU_ind + lam_DD_ind
-        if lam_D_ind <= 0.0:
-            pfd_ind = 0.0
+    # ----- failure rate helpers -----
+    def _coerce_fraction(self, value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            text = value.strip()
+            if not text:
+                return None
+            if text.endswith('%'):
+                try:
+                    value = float(text[:-1]) / 100.0
+                except ValueError:
+                    return None
+            else:
+                try:
+                    value = float(text)
+                except ValueError:
+                    return None
         else:
-            w_DU = lam_DU_ind / lam_D_ind; w_DD = lam_DD_ind / lam_D_ind
-            tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
-            tGE = w_DU * (TI / 3.0 + MTTR) + w_DD * MTTR
-            pfd_ind = 2.0 * (lam_D_ind ** 2) * tCE * tGE
-        pfd_du_ccf = beta * lam_DU * (TI / 2.0)
-        pfd_dd_ccf = beta_D * lam_DD * MTTR
-        return pfd_ind + pfd_du_ccf + pfd_dd_ccf
+            try:
+                value = float(value)
+            except (TypeError, ValueError):
+                return None
+        if abs(value) > 1.0 and -100.0 <= value <= 100.0:
+            value = value / 100.0
+        return max(0.0, min(1.0, value))
 
-    def _group_pfh_1oo2_grouped(self, d1: dict, d2: dict, group: str) -> float:
-        beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
-        MTTR = float(self.assumptions['MTTR']); TI = float(self.assumptions.get('TI', 0.0))
-        du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1); lam2 = self._lambda_from_component(d2)
-        lam = 0.5 * (lam1 + lam2)
-        lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-        lam_DU_ind = (1.0 - beta) * lam_DU; lam_DD_ind = (1.0 - beta_D) * lam_DD
-        lam_D_ind = lam_DU_ind + lam_DD_ind
-        if lam_D_ind <= 0.0:
-            pfh_ind = 0.0; tCE = 0.0
+    def _extract_dc_fractions(self, component: dict) -> Tuple[Optional[float], Optional[float]]:
+        dd_fraction = None
+        for key in ('dc_detected', 'dc_dd', 'dc_d', 'dc'):
+            dd_fraction = self._coerce_fraction(component.get(key))
+            if dd_fraction is not None:
+                break
+        du_fraction = None
+        for key in ('dc_du', 'dc_undetected'):
+            du_fraction = self._coerce_fraction(component.get(key))
+            if du_fraction is not None:
+                break
+        if du_fraction is None and dd_fraction is not None:
+            du_fraction = max(0.0, min(1.0, 1.0 - dd_fraction))
+        if dd_fraction is None and du_fraction is not None:
+            dd_fraction = max(0.0, min(1.0, 1.0 - du_fraction))
+        if du_fraction is not None and dd_fraction is not None:
+            total = du_fraction + dd_fraction
+            if total > 0:
+                du_fraction /= total
+                dd_fraction /= total
+        return du_fraction, dd_fraction
+
+    def _lambda_from_component(self, component: dict, is_low_demand: bool) -> Tuple[float, Dict[str, Any]]:
+        TI = float(self.assumptions.get('TI', 0.0))
+        threshold = float(self.assumptions.get('lambda_consistency_threshold', 0.0))
+        pfd = float(component.get('pfd', component.get('pfd_avg', 0.0)) or 0.0)
+        pfh = float(component.get('pfh', component.get('pfh_avg', 0.0)) or 0.0)
+        lam_from_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
+        lam_from_pfh = pfh
+        primary = lam_from_pfd if is_low_demand else lam_from_pfh
+        alternative = lam_from_pfh if is_low_demand else lam_from_pfd
+        selected_source = 'pfd' if is_low_demand else 'pfh'
+        used_fallback = False
+        if primary <= 0.0 and alternative > 0.0:
+            primary = alternative
+            selected_source = f"{selected_source}_fallback"
+            used_fallback = True
+        diff = abs(lam_from_pfd - lam_from_pfh)
+        denom = max(abs(lam_from_pfd), abs(lam_from_pfh))
+        mismatch_ratio = (diff / denom) if denom > 0 else 0.0
+        mismatch = denom > 0 and mismatch_ratio > threshold
+        comp_name = component.get('code') or component.get('name') or 'Component'
+        warnings: List[str] = []
+        if mismatch:
+            warnings.append(
+                f"{comp_name}: λ mismatch between PFH ({lam_from_pfh:.3e}) and 2·PFD/TI ({lam_from_pfd:.3e}) (Δ={mismatch_ratio:.0%})"
+            )
+        if used_fallback:
+            src = 'PFH' if is_low_demand else '2·PFD/TI'
+            warnings.append(f"{comp_name}: λ fallback to {src} due to missing primary source")
+        info = {
+            'lambda_from_pfd': lam_from_pfd,
+            'lambda_from_pfh': lam_from_pfh,
+            'selected_source': selected_source,
+            'consistency_ratio': mismatch_ratio,
+            'consistency_warning': mismatch,
+            'warnings': warnings,
+        }
+        return primary, info
+
+    def _split_lambda_by_dc(self, component: dict, lam_total: float, group: str) -> Tuple[float, float, Dict[str, Any]]:
+        du_fraction, dd_fraction = self._extract_dc_fractions(component)
+        if du_fraction is None or dd_fraction is None:
+            du_ratio, dd_ratio = self.du_dd_ratios.get(group, (0.6, 0.4))
+            total = du_ratio + dd_ratio
+            if total <= 0:
+                du_ratio, dd_ratio = 0.6, 0.4
+                total = 1.0
+            du_fraction = du_ratio / total
+            dd_fraction = dd_ratio / total
+            source = 'ratio'
         else:
-            w_DU = lam_DU_ind / lam_D_ind; w_DD = lam_DD_ind / lam_D_ind
-            tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
-            pfh_ind = 2.0 * lam_D_ind * ((1.0 - beta) * lam_DU) * tCE
-        pfh_ccf = beta * lam_DU
-        return pfh_ind + pfh_ccf
+            source = 'dc'
+        lam_du = lam_total * du_fraction if lam_total > 0 else 0.0
+        lam_dd = lam_total * dd_fraction if lam_total > 0 else 0.0
+        info = {'dc_source': source, 'dc_detected': dd_fraction}
+        return lam_du, lam_dd, info
 
-    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget]) -> Tuple[float, float]:
-        pfd_sum = 0.0; pfh_sum = 0.0
-        TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
+    def _component_failure_breakdown(self, component: dict, group: str, is_low_demand: bool) -> Tuple[Dict[str, Any], List[str]]:
+        lam_total, lam_info = self._lambda_from_component(component, is_low_demand)
+        lam_du, lam_dd, dc_info = self._split_lambda_by_dc(component, lam_total, group)
+        warnings = list(lam_info.pop('warnings', []))
+        result = {
+            'calc_lambda_total': lam_total,
+            'calc_lambda_du': lam_du,
+            'calc_lambda_dd': lam_dd,
+            'calc_lambda_from_pfd': lam_info.get('lambda_from_pfd', 0.0),
+            'calc_lambda_from_pfh': lam_info.get('lambda_from_pfh', 0.0),
+            'calc_lambda_source': lam_info.get('selected_source', ''),
+            'calc_lambda_consistency_ratio': lam_info.get('consistency_ratio', 0.0),
+            'calc_lambda_consistency_warning': lam_info.get('consistency_warning', False),
+            'calc_dc_source': dc_info.get('dc_source'),
+            'calc_dc_detected': dc_info.get('dc_detected'),
+        }
+        if isinstance(component, dict):
+            component.update(result)
+            component['calc_lambda_warning_count'] = len(warnings)
+        return result, warnings
+
+    def _calc_1oo2_metrics(self, d1: dict, d2: dict, group: str, is_low_demand: bool) -> Dict[str, Any]:
+        beta = float(self.assumptions.get('beta', 0.0))
+        beta_D = float(self.assumptions.get('beta_D', 0.0))
+        TI = float(self.assumptions.get('TI', 0.0))
+        MTTR = float(self.assumptions.get('MTTR', 0.0))
+
+        ch1, warn1 = self._component_failure_breakdown(d1, group, is_low_demand)
+        ch2, warn2 = self._component_failure_breakdown(d2, group, is_low_demand)
+
+        lam1 = ch1['calc_lambda_total']; lam2 = ch2['calc_lambda_total']
+        lam_du1 = ch1['calc_lambda_du']; lam_du2 = ch2['calc_lambda_du']
+        lam_dd1 = ch1['calc_lambda_dd']; lam_dd2 = ch2['calc_lambda_dd']
+
+        def _t_terms(lam_total: float, lam_du: float, lam_dd: float) -> Tuple[float, float]:
+            if lam_total <= 0:
+                return 0.0, 0.0
+            frac_du = lam_du / lam_total if lam_total > 0 else 0.0
+            frac_dd = lam_dd / lam_total if lam_total > 0 else 0.0
+            t_ce = frac_du * (TI / 2.0 + MTTR) + frac_dd * MTTR
+            t_ge = frac_du * (TI / 3.0 + MTTR) + frac_dd * MTTR
+            return t_ce, t_ge
+
+        t_ce1, t_ge1 = _t_terms(lam1, lam_du1, lam_dd1)
+        t_ce2, t_ge2 = _t_terms(lam2, lam_du2, lam_dd2)
+        t_ce_avg = 0.5 * (t_ce1 + t_ce2)
+        t_ge_avg = 0.5 * (t_ge1 + t_ge2)
+
+        term1 = ((1.0 - beta_D) * lam_dd1 + (1.0 - beta) * lam_du1)
+        term2 = ((1.0 - beta_D) * lam_dd2 + (1.0 - beta) * lam_du2)
+        pfd_ind = 2.0 * term1 * term2 * t_ce_avg * t_ge_avg
+        pfd_ccf = beta_D * (lam_dd1 + lam_dd2) * 0.5 * MTTR + beta * (lam_du1 + lam_du2) * 0.5 * (TI / 2.0 + MTTR)
+        pfd = pfd_ind + pfd_ccf
+
+        lam_du_avg = 0.5 * (lam_du1 + lam_du2)
+        lam_total_avg = 0.5 * (lam1 + lam2)
+        pfh = 2.0 * (1.0 - beta) * lam_du_avg * lam_total_avg * t_ce_avg + beta * lam_du_avg
+
+        metrics = {
+            'pfd': pfd,
+            'pfh': pfh,
+            't_CE_avg': t_ce_avg,
+            't_GE_avg': t_ge_avg,
+            'channels': (
+                {**ch1, 'calc_t_CE': t_ce1, 'calc_t_GE': t_ge1},
+                {**ch2, 'calc_t_CE': t_ce2, 'calc_t_GE': t_ge2},
+            ),
+            'warnings': warn1 + warn2,
+        }
+        return metrics
+
+    def _refresh_component_tooltip(self, item: QListWidgetItem, data: dict) -> None:
+        title = data.get('code') or data.get('name') or item.text()
+        pfd_val = float(data.get('pfd', data.get('pfd_avg', 0.0)) or 0.0)
+        pfh_val = float(data.get('pfh', data.get('pfh_avg', 0.0)) or 0.0)
+        syscap = data.get('syscap', data.get('sys_cap', ''))
+        pdm_code = data.get('pdm_code', '')
+        excluded = {'members', 'calc_group_metrics', 'calc_lambda_warning_messages'}
+        extra_fields = {k: v for k, v in data.items() if k not in excluded}
+        item.setToolTip(make_html_tooltip(
+            title,
+            pfd_val,
+            pfh_val,
+            syscap,
+            pdm_code=pdm_code,
+            pfh_entered_fit=data.get('pfh_fit'),
+            pfd_entered_fit=data.get('pfd_fit'),
+            extra_fields=extra_fields,
+        ))
+
+    def _group_pfd_1oo2_grouped(self, d1: dict, d2: dict, group: str, is_low_demand: bool = True) -> float:
+        return self._calc_1oo2_metrics(d1, d2, group, is_low_demand)['pfd']
+
+    def _group_pfh_1oo2_grouped(self, d1: dict, d2: dict, group: str, is_low_demand: bool = True) -> float:
+        return self._calc_1oo2_metrics(d1, d2, group, is_low_demand)['pfh']
+
+    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget], demand_mode: str) -> Tuple[float, float, List[str]]:
+        pfd_sum = 0.0
+        pfh_sum = 0.0
+        warnings: List[str] = []
+        TI = float(self.assumptions.get('TI', 0.0))
+        MTTR = float(self.assumptions.get('MTTR', 0.0))
+        is_low_demand = 'low' in str(demand_mode or '').lower()
 
         def group_of(idx: int) -> str:
             return ('sensor', 'logic', 'actuator')[idx]
@@ -2949,30 +3140,44 @@ class MainWindow(QMainWindow):
             group = group_of(idx)
             for i in range(lw.count()):
                 item = lw.item(i)
-                if item is None: continue
-                ud = item.data(Qt.UserRole) or {}
-                if ud.get('group') and ud.get('architecture') == '1oo2':
-                    m1, m2 = ud.get('members', [{}, {}])
-                    pfd_sum += self._group_pfd_1oo2_grouped(m1, m2, group)
-                    pfh_sum += self._group_pfh_1oo2_grouped(m1, m2, group)
+                if item is None:
+                    continue
+                data = item.data(Qt.UserRole) or {}
+                if data.get('group') and data.get('architecture') == '1oo2':
+                    members = data.get('members', [{}, {}])
+                    member_a = members[0] if len(members) > 0 else {}
+                    member_b = members[1] if len(members) > 1 else {}
+                    metrics = self._calc_1oo2_metrics(member_a, member_b, group, is_low_demand)
+                    data['calc_group_metrics'] = metrics
+                    item.setData(Qt.UserRole, data)
+                    pfd_sum += metrics['pfd']
+                    pfh_sum += metrics['pfh']
+                    warnings.extend(metrics['warnings'])
                 else:
-                    pfh = float(ud.get('pfh', 0.0)); pfd = float(ud.get('pfd', 0.0))
-                    lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-                    lam = max(pfh, lam_pfd)
-                    du_ratio, dd_ratio = self._ratios(group)
-                    lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-                    pfh_sum += lam_DU
-                    pfd_sum += lam_DU * (TI / 2.0) + lam_DD * MTTR
+                    breakdown, comp_warnings = self._component_failure_breakdown(data, group, is_low_demand)
+                    data.update(breakdown)
+                    data['calc_lambda_warning_messages'] = comp_warnings
+                    if comp_warnings:
+                        data['calc_lambda_warning_note'] = ' | '.join(comp_warnings)
+                    else:
+                        data.pop('calc_lambda_warning_note', None)
+                    item.setData(Qt.UserRole, data)
+                    self._refresh_component_tooltip(item, data)
+                    lam_du = breakdown['calc_lambda_du']
+                    lam_dd = breakdown['calc_lambda_dd']
+                    pfd_sum += lam_du * (TI / 2.0 + MTTR) + lam_dd * MTTR
+                    pfh_sum += lam_du
+                    warnings.extend(comp_warnings)
 
-        return pfd_sum, pfh_sum
+        return pfd_sum, pfh_sum, warnings
 
     # ----- recalc & UI update -----
     def recalculate_row(self, row_idx: int):
         if row_idx < 0 or row_idx >= len(self.rows_meta): return
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return  # can happen after remove
-        pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
         mode = self._effective_demand_mode(row_idx)
+        pfd_sum, pfh_sum, warnings = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode)
         is_high = "high" in mode.lower()
         if is_high:
             sil_calc = classify_sil_from_pfh(pfh_sum)
@@ -2996,8 +3201,22 @@ class MainWindow(QMainWindow):
         widgets.result.combo.setCurrentText(demand_txt)
         widgets.result.lbl_req.setText(f"Required: {req_sil_str}")
         widgets.result.lbl_calc.setText(f"Calculated: {sil_calc}")
-        widgets.result.lbl_metric.setText(metric)
-        widgets.result.setToolTip(f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric}")
+        warning_count = len(warnings)
+        if warning_count:
+            suffix = "warnings" if warning_count != 1 else "warning"
+            widgets.result.lbl_metric.setText(f"{metric} • ⚠︎ {warning_count} {suffix}")
+        else:
+            widgets.result.lbl_metric.setText(metric)
+
+        tooltip_lines = [demand_txt, f"Required: {req_sil_str}", f"Calculated: {sil_calc}", metric]
+        if warning_count:
+            tooltip_lines.append("Warnings:")
+            tooltip_lines.extend(f"- {msg}" for msg in warnings)
+        widgets.result.setToolTip("\n".join(tooltip_lines))
+
+        meta = self.rows_meta[row_idx]
+        meta['calc_warnings'] = warnings
+        meta['calc_warning_count'] = warning_count
 
         self._update_row_height(row_idx)
         # refresh 1oo2 tooltips
