@@ -1941,7 +1941,8 @@ class MainWindow(QMainWindow):
             self.table.setColumnWidth(2, 360)
 
     
-    def _tooltip_for_1oo2(self, m1: dict, m2: dict, group: str = "actuator") -> str:
+    def _tooltip_for_1oo2(self, m1: dict, m2: dict, group: str = "actuator",
+                          mode_key: str = "low_demand") -> str:
         """Build an HTML tooltip for a 1oo2 group. Starts with <qt> so Qt renders it as HTML."""
         def esc(x: Any) -> str:
             s = "" if x is None else str(x)
@@ -1953,8 +1954,8 @@ class MainWindow(QMainWindow):
         c1 = esc(m1.get("code", "?")); c2 = esc(m2.get("code", "?"))
         pfd1 = m1.get("pfd", m1.get("pfd_avg", None)); pfh1 = m1.get("pfh", m1.get("pfh_avg", None))
         pfd2 = m2.get("pfd", m2.get("pfd_avg", None)); pfh2 = m2.get("pfh", m2.get("pfh_avg", None))
-        pfd_g = self._group_pfd_1oo2_grouped(m1, m2, group)
-        pfh_g = self._group_pfh_1oo2_grouped(m1, m2, group)
+        pfd_g = self._group_pfd_1oo2_grouped(m1, m2, group, mode_key)
+        pfh_g = self._group_pfh_1oo2_grouped(m1, m2, group, mode_key)
         return (
             "<qt>"
             f"<div style='font-weight:600;'>1oo2 Group — {c1} ∥ {c2}</div>"
@@ -1978,6 +1979,8 @@ class MainWindow(QMainWindow):
         """Update tooltips for all 1oo2 groups in Output/Actuator of the given row."""
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return
+        mode = self._effective_demand_mode(row_idx) if 0 <= row_idx < len(self.rows_meta) else ""
+        mode_key = "low_demand" if "low" in str(mode).lower() else "high_demand"
         lw = widgets.out_list
         for i in range(lw.count()):
             item = lw.item(i)
@@ -1987,7 +1990,7 @@ class MainWindow(QMainWindow):
                 members = d.get('members', [{}, {}])
                 m1 = members[0] if len(members) > 0 else {}
                 m2 = members[1] if len(members) > 1 else {}
-                item.setToolTip(self._tooltip_for_1oo2(m1, m2, "actuator"))
+                item.setToolTip(self._tooltip_for_1oo2(m1, m2, "actuator", mode_key))
 
     def _gather_table_content_for_kind(self, kind: str) -> List[Dict[str, Any]]:
         seen = set()
@@ -2336,8 +2339,9 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list)
             logic = self._collect_list_items(widgets.logic_list)
             outputs = self._collect_list_items(widgets.out_list)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
             mode = self._effective_demand_mode(row_idx)
+            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2715,8 +2719,9 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list)
             logic   = self._collect_list_items(widgets.logic_list)
             outputs = self._collect_list_items(widgets.out_list)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
             mode = self._effective_demand_mode(row_idx)
+            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2881,11 +2886,13 @@ class MainWindow(QMainWindow):
         return meta.get("demand_mode_override") or meta.get("demand_mode_required", "High demand")
 
     # ----- sums + display (math unchanged) -----
-    def _lambda_from_component(self, d: dict) -> float:
+    def _lambda_from_component(self, d: dict, mode_key: str) -> float:
         TI = float(self.assumptions['TI'])
-        pfd = float(d.get('pfd', 0.0)); pfh = float(d.get('pfh', 0.0))
-        lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-        return max(pfh, lam_pfd)
+        pfd = float(d.get('pfd', d.get('pfd_avg', 0.0)))
+        pfh = float(d.get('pfh', d.get('pfh_avg', 0.0)))
+        if mode_key == "low_demand":
+            return (2.0 * pfd / TI) if TI > 0 else 0.0
+        return pfh
 
     def _ratios(self, group: str) -> Tuple[float, float]:
         du, dd = self.du_dd_ratios.get(group, (0.6, 0.4))
@@ -2893,52 +2900,71 @@ class MainWindow(QMainWindow):
         if tot <= 0: return 0.6, 0.4
         return du / tot, dd / tot
 
-    def _estimate_lambda_dd(self, pfd: float, pfh: float, group: str) -> float:
+    def _estimate_lambda_dd(self, pfd: float, pfh: float, group: str,
+                            mode_key: str = "low_demand") -> float:
         TI = float(self.assumptions['TI'])
-        lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-        lam = max(float(pfh), lam_pfd)
+        if mode_key == "low_demand":
+            lam = (2.0 * pfd / TI) if TI > 0 else 0.0
+        else:
+            lam = float(pfh)
         du_ratio, dd_ratio = self._ratios(group)
         return lam * (dd_ratio if du_ratio == 0 else (dd_ratio / du_ratio))
 
-    def _group_pfd_1oo2_grouped(self, d1: dict, d2: dict, group: str) -> float:
+    def _group_pfd_1oo2_grouped(self, d1: dict, d2: dict, group: str,
+                                mode_key: str = "low_demand") -> float:
         beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
         TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
         du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1); lam2 = self._lambda_from_component(d2)
-        lam = 0.5 * (lam1 + lam2)
-        lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-        lam_DU_ind = (1.0 - beta) * lam_DU; lam_DD_ind = (1.0 - beta_D) * lam_DD
-        lam_D_ind = lam_DU_ind + lam_DD_ind
-        if lam_D_ind <= 0.0:
+        lam1 = self._lambda_from_component(d1, mode_key)
+        lam2 = self._lambda_from_component(d2, mode_key)
+        lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
+        lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
+        lam_du_total = lam_du_1 + lam_du_2
+        lam_dd_total = lam_dd_1 + lam_dd_2
+        lam_du_ind = (1.0 - beta) * lam_du_total
+        lam_dd_ind = (1.0 - beta_D) * lam_dd_total
+        lam_d_ind = lam_du_ind + lam_dd_ind
+        if lam_d_ind <= 0.0:
             pfd_ind = 0.0
+            tCE = 0.0
+            tGE = 0.0
         else:
-            w_DU = lam_DU_ind / lam_D_ind; w_DD = lam_DD_ind / lam_D_ind
+            w_DU = lam_du_ind / lam_d_ind
+            w_DD = lam_dd_ind / lam_d_ind
             tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
             tGE = w_DU * (TI / 3.0 + MTTR) + w_DD * MTTR
-            pfd_ind = 2.0 * (lam_D_ind ** 2) * tCE * tGE
-        pfd_du_ccf = beta * lam_DU * (TI / 2.0)
-        pfd_dd_ccf = beta_D * lam_DD * MTTR
+            pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
+        pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
+        pfd_dd_ccf = beta_D * lam_dd_total * MTTR
         return pfd_ind + pfd_du_ccf + pfd_dd_ccf
 
-    def _group_pfh_1oo2_grouped(self, d1: dict, d2: dict, group: str) -> float:
+    def _group_pfh_1oo2_grouped(self, d1: dict, d2: dict, group: str,
+                                mode_key: str = "low_demand") -> float:
         beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
         MTTR = float(self.assumptions['MTTR']); TI = float(self.assumptions.get('TI', 0.0))
         du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1); lam2 = self._lambda_from_component(d2)
-        lam = 0.5 * (lam1 + lam2)
-        lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-        lam_DU_ind = (1.0 - beta) * lam_DU; lam_DD_ind = (1.0 - beta_D) * lam_DD
-        lam_D_ind = lam_DU_ind + lam_DD_ind
-        if lam_D_ind <= 0.0:
-            pfh_ind = 0.0; tCE = 0.0
+        lam1 = self._lambda_from_component(d1, mode_key)
+        lam2 = self._lambda_from_component(d2, mode_key)
+        lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
+        lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
+        lam_du_total = lam_du_1 + lam_du_2
+        lam_dd_total = lam_dd_1 + lam_dd_2
+        lam_du_ind = (1.0 - beta) * lam_du_total
+        lam_dd_ind = (1.0 - beta_D) * lam_dd_total
+        lam_d_ind = lam_du_ind + lam_dd_ind
+        if lam_d_ind <= 0.0:
+            pfh_ind = 0.0
+            tCE = 0.0
         else:
-            w_DU = lam_DU_ind / lam_D_ind; w_DD = lam_DD_ind / lam_D_ind
+            w_DU = lam_du_ind / lam_d_ind
+            w_DD = lam_dd_ind / lam_d_ind
             tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
-            pfh_ind = 2.0 * lam_D_ind * ((1.0 - beta) * lam_DU) * tCE
-        pfh_ccf = beta * lam_DU
+            pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
+        pfh_ccf = beta * lam_du_total
         return pfh_ind + pfh_ccf
 
-    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget]) -> Tuple[float, float]:
+    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget],
+                   mode_key: str) -> Tuple[float, float]:
         pfd_sum = 0.0; pfh_sum = 0.0
         TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
 
@@ -2953,16 +2979,14 @@ class MainWindow(QMainWindow):
                 ud = item.data(Qt.UserRole) or {}
                 if ud.get('group') and ud.get('architecture') == '1oo2':
                     m1, m2 = ud.get('members', [{}, {}])
-                    pfd_sum += self._group_pfd_1oo2_grouped(m1, m2, group)
-                    pfh_sum += self._group_pfh_1oo2_grouped(m1, m2, group)
+                    pfd_sum += self._group_pfd_1oo2_grouped(m1, m2, group, mode_key)
+                    pfh_sum += self._group_pfh_1oo2_grouped(m1, m2, group, mode_key)
                 else:
-                    pfh = float(ud.get('pfh', 0.0)); pfd = float(ud.get('pfd', 0.0))
-                    lam_pfd = (2.0 * pfd / TI) if TI > 0 else 0.0
-                    lam = max(pfh, lam_pfd)
+                    lam = self._lambda_from_component(ud, mode_key)
                     du_ratio, dd_ratio = self._ratios(group)
                     lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
                     pfh_sum += lam_DU
-                    pfd_sum += lam_DU * (TI / 2.0) + lam_DD * MTTR
+                    pfd_sum += lam_DU * (TI / 2.0 + MTTR) + lam_DD * MTTR
 
         return pfd_sum, pfh_sum
 
@@ -2971,9 +2995,10 @@ class MainWindow(QMainWindow):
         if row_idx < 0 or row_idx >= len(self.rows_meta): return
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return  # can happen after remove
-        pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list))
         mode = self._effective_demand_mode(row_idx)
-        is_high = "high" in mode.lower()
+        mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+        pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+        is_high = (mode_key == "high_demand")
         if is_high:
             sil_calc = classify_sil_from_pfh(pfh_sum)
             metric = f"PFHsum = {pfh_sum:.3e} 1/h"
