@@ -2444,7 +2444,7 @@ class MainWindow(QMainWindow):
         .formula-column--architecture { flex:1 1 340px; }
         .formula-column--supporting { flex:1 1 260px; }
         .formula-column--variables { flex:1 1 320px; min-width:280px; }
-        .formula-panel { flex:1 1 280px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:240px; }
+        .formula-panel { flex:0 0 auto; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:240px; }
         .formula-panel-header { padding:12px 16px; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; border-bottom:1px solid #e5e7eb; }
         .formula-panel-body { padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
         .formula-box { border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; padding:12px 14px; }
@@ -2653,10 +2653,6 @@ class MainWindow(QMainWindow):
             supporting_block = panel_block('Supporting Relations', render_formulas(supporting_entries))
 
             var_rows: List[Tuple[str, str]] = [
-                (r'PFD_{1oo1}', 'Probability of failure on demand for a single-channel architecture.'),
-                (r'PFH_{1oo1}', 'Dangerous failure rate per hour for a single-channel architecture.'),
-                (r'PFD_{1oo2}', 'Probability of failure on demand for a redundant 1oo2 channel.'),
-                (r'PFH_{1oo2}', 'Dangerous failure rate per hour for a redundant 1oo2 channel.'),
                 (r't_{CE}', 'Exposure window for common-cause dangerous undetected failures.'),
                 (r't_{GE}', 'Exposure window for general dangerous undetected failures.'),
                 (r'\lambda_{DU}', 'Dangerous undetected failure rate.'),
