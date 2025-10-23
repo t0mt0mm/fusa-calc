@@ -2378,6 +2378,13 @@ class MainWindow(QMainWindow):
         th { background: #f8fafc; font-weight: 600; }
         tbody tr:nth-child(even) { background:#f9fafb; }
         tbody tr:hover { background:#f1f5f9; }
+        table.component-table { table-layout: fixed; }
+        table.component-table col.col-code { width: 32%; }
+        table.component-table col.col-pfd { width: 14%; }
+        table.component-table col.col-pfh { width: 16%; }
+        table.component-table col.col-fit { width: 14%; }
+        table.component-table col.col-sil { width: 14%; }
+        table.component-table col.col-pdm { width: 10%; }
         table.component-table tbody tr.group-row td { background:#eef2ff; font-weight:600; border-bottom:0; }
         table.component-table tbody tr.group-row:hover td { background:#e0e7ff; }
         table.component-table tbody tr.group-row td .group-label { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
@@ -2386,6 +2393,7 @@ class MainWindow(QMainWindow):
         table.component-table tbody tr.group-member:hover td { background:#ede9fe; }
         table.component-table tbody tr.group-member td:first-child { padding-left:30px; position:relative; }
         table.component-table tbody tr.group-member td:first-child::before { content:'↳'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#6366f1; font-size:12px; }
+        table.component-table td.right, table.component-table th.right { font-variant-numeric: tabular-nums; white-space: nowrap; }
         .member-tag { display:inline-flex; align-items:center; padding:1px 6px; border-radius:999px; background:#ede9fe; color:#312e81; font-weight:600; }
         .member-caption { display:block; color:#6b7280; font-size:11px; margin-top:2px; }
         .ok { color: #166534; font-weight: 600; }
@@ -2650,7 +2658,7 @@ class MainWindow(QMainWindow):
                 if not items:
                     parts.append('<div class="muted small">No items</div>')
                     return
-                parts.append('<table class="component-table"><thead><tr><th>Code / Name</th><th class="right">PFDavg</th><th class="right">PFHavg [1/h]</th><th class="right">PFH [FIT]</th><th>SIL capability</th><th>PDM code</th></tr></thead><tbody>')
+                parts.append('<table class="component-table"><colgroup><col class="col-code"><col class="col-pfd"><col class="col-pfh"><col class="col-fit"><col class="col-sil"><col class="col-pdm"></colgroup><thead><tr><th>Code / Name</th><th class="right">PFDavg</th><th class="right">PFHavg [1/h]</th><th class="right">PFH [FIT]</th><th>SIL capability</th><th>PDM code</th></tr></thead><tbody>')
                 for it in items:
                     if it.get('architecture') == '1oo2':
                         pfd_g = it.get('pfd_avg', 0.0)
