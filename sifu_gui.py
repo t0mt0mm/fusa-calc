@@ -2600,13 +2600,23 @@ class MainWindow(QMainWindow):
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
         parts.append(f'<style>{css}</style>')
+        parts.append('<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-oq0K+cOYV3GQEvtzP8nH3UX0DpD+s/COM24kTx5cDIeEJD7BqXc9E+u6KDAdc8+" crossorigin="anonymous">')
+        parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-g7c+efxWWEXUvhYaL6VLdystD5nq2WEYLRh3SeDsICoZ6irMIXP+6JGZ3HF8NjEc" crossorigin="anonymous" defer></script>')
+        parts.append('<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-mll67QQm6zXih/6KrAEyyGq+/NjEcNWef39MF4R2t8tGi99Z0eKCbFJH+08Lw8Hg" crossorigin="anonymous" defer></script>')
         parts.append('''<script>
-            window.MathJax = {
-                tex: { inlineMath: [["$","$"], ["\\(","\\)"]], displayMath: [["$$","$$"], ["\\[","\\]"]] },
-                options: { renderActions: { addMenu: [] } }
-            };
+            document.addEventListener('DOMContentLoaded', function() {
+                if (window.renderMathInElement) {
+                    window.renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                }
+            });
         </script>''')
-        parts.append('<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
         parts.append('<h1>SIFU Calculation Report</h1>')
@@ -2632,7 +2642,7 @@ class MainWindow(QMainWindow):
         parts.append('</tbody></table>')
 
         # Fundamental formulas section
-        parts.append('<h2>Grundformeln</h2>')
+        parts.append('<h2>Base Formulas</h2>')
         parts.append('<div class="formula-section">')
         parts.append('<p class="formula-intro">Key IEC&nbsp;61508 relations for representative 1oo1 and 1oo2 safety architectures.</p>')
         parts.append('<div class="formula-grid">')
