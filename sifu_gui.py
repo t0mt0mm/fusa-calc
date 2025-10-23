@@ -2414,7 +2414,7 @@ class MainWindow(QMainWindow):
                         make_box(
                             f"{label} (1oo2) symbolic relations",
                             [
-                                "{} = \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}}".format(comp_symbol_tex),
+                                f"{comp_symbol_tex} = \\mathrm{{PFD}}_{{\\text{{ind}}}} + \\mathrm{{PFD}}_{{\\text{{CCF}}}}",
                                 "\\mathrm{PFD}_{\\text{ind}} = 2\\,\\lambda_{D,\\text{ind}}^{2}\\,t_{CE}\\,t_{GE}",
                                 "\\mathrm{PFD}_{\\text{CCF}} = \\beta\\,\\lambda_{DU}(\\tfrac{T_I}{2}+MTTR) + \\beta_D\\,\\lambda_{DD} MTTR",
                                 "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}",
@@ -2428,40 +2428,14 @@ class MainWindow(QMainWindow):
                                 f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
                                 f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
                                 f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd_total)}",
-                                "\\lambda_{{DU,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
-                                    fmt_math(beta),
-                                    fmt_math(lam_du_total),
-                                    fmt_math(lam_du_ind),
-                                ),
-                                "\\lambda_{{DD,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
-                                    fmt_math(beta_D),
-                                    fmt_math(lam_dd_total),
-                                    fmt_math(lam_dd_ind),
-                                ),
-                                "\\lambda_{{D,\\text{{ind}}}} = {} + {} = {}".format(
-                                    fmt_math(lam_du_ind),
-                                    fmt_math(lam_dd_ind),
-                                    fmt_math(lam_d_ind),
-                                ),
+                                f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
+                                f"\\lambda_{{DD,\\text{{ind}}}} = (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_dd_ind)}",
+                                f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + {fmt_math(lam_dd_ind)} = {fmt_math(lam_d_ind)}",
                                 f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
                                 f"t_{{GE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/3.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tGE)}",
-                                "\\mathrm{{PFD}}_{{\\text{{ind}}}} = 2\\times {}^{2}\\times {}\\times {} = {}".format(
-                                    fmt_math(lam_d_ind),
-                                    fmt_math(tCE),
-                                    fmt_math(tGE),
-                                    fmt_math(pfd_ind),
-                                ),
-                                "\\mathrm{{PFD}}_{{\\text{{CCF}}}} = {}\\times {}\\times({} + {}) + {}\\times {}\\times {} = {}".format(
-                                    fmt_math(beta),
-                                    fmt_math(lam_du_total),
-                                    fmt_math(TI/2.0),
-                                    fmt_math(MTTR),
-                                    fmt_math(beta_D),
-                                    fmt_math(lam_dd_total),
-                                    fmt_math(MTTR),
-                                    fmt_math(pfd_ccf),
-                                ),
-                                "{} = {} + {} = {}".format(comp_symbol_tex, fmt_math(pfd_ind), fmt_math(pfd_ccf), fmt_math(value)),
+                                f"\\mathrm{{PFD}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}^{2}\\times {fmt_math(tCE)}\\times {fmt_math(tGE)} = {fmt_math(pfd_ind)}",
+                                f"\\mathrm{{PFD}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(beta_D)}\\times {fmt_math(lam_dd_total)}\\times {fmt_math(MTTR)} = {fmt_math(pfd_ccf)}",
+                                f"{comp_symbol_tex} = {fmt_math(pfd_ind)} + {fmt_math(pfd_ccf)} = {fmt_math(value)}",
                             ],
                         )
                     else:
@@ -2470,7 +2444,7 @@ class MainWindow(QMainWindow):
                         make_box(
                             f"{label} (1oo2) symbolic relations",
                             [
-                                "{} = 2(1-\\beta)\\,\\lambda_{DU,\\text{ind}} t_{CE} + \\beta\\,\\lambda_{DU}".format(comp_symbol_tex),
+                                f"{comp_symbol_tex} = 2(1-\\beta)\\,\\lambda_{{DU,\\text{{ind}}}} t_{{CE}} + \\beta\\,\\lambda_{{DU}}",
                                 "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU}",
                                 "t_{CE} = w_{DU}(\\tfrac{T_I}{2}+MTTR) + w_{DD} MTTR",
                             ],
@@ -2482,30 +2456,12 @@ class MainWindow(QMainWindow):
                                 f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
                                 f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
                                 f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
-                                "\\lambda_{{DU,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
-                                    fmt_math(beta),
-                                    fmt_math(lam_du_total),
-                                    fmt_math(lam_du_ind),
-                                ),
-                                "\\lambda_{{D,\\text{{ind}}}} = {} + (1-{})\\times {} = {}".format(
-                                    fmt_math(lam_du_ind),
-                                    fmt_math(beta_D),
-                                    fmt_math(lam_dd_total),
-                                    fmt_math(lam_d_ind),
-                                ),
+                                f"\\lambda_{{DU,\\text{{ind}}}} = (1-{fmt_math(beta)})\\times {fmt_math(lam_du_total)} = {fmt_math(lam_du_ind)}",
+                                f"\\lambda_{{D,\\text{{ind}}}} = {fmt_math(lam_du_ind)} + (1-{fmt_math(beta_D)})\\times {fmt_math(lam_dd_total)} = {fmt_math(lam_d_ind)}",
                                 f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
-                                "\\mathrm{{PFH}}_{{\\text{{ind}}}} = 2\\times {}\\times {}\\times {} = {}".format(
-                                    fmt_math(lam_d_ind),
-                                    fmt_math(lam_du_ind),
-                                    fmt_math(tCE),
-                                    fmt_math(pfh_ind),
-                                ),
-                                "\\mathrm{{PFH}}_{{\\text{{CCF}}}} = {}\\times {} = {}".format(
-                                    fmt_math(beta),
-                                    fmt_math(lam_du_total),
-                                    fmt_math(pfh_ccf),
-                                ),
-                                "{} = {} + {} = {}".format(comp_symbol_tex, fmt_math(pfh_ind), fmt_math(pfh_ccf), fmt_math(value)),
+                                f"\\mathrm{{PFH}}_{{\\text{{ind}}}} = 2\\times {fmt_math(lam_d_ind)}\\times {fmt_math(lam_du_ind)}\\times {fmt_math(tCE)} = {fmt_math(pfh_ind)}",
+                                f"\\mathrm{{PFH}}_{{\\text{{CCF}}}} = {fmt_math(beta)}\\times {fmt_math(lam_du_total)} = {fmt_math(pfh_ccf)}",
+                                f"{comp_symbol_tex} = {fmt_math(pfh_ind)} + {fmt_math(pfh_ccf)} = {fmt_math(value)}",
                             ],
                         )
                     return html_boxes
@@ -2515,9 +2471,9 @@ class MainWindow(QMainWindow):
                     make_box(
                         f"{label} (1oo1) symbolic relations",
                         [
-                            "{} = \\lambda_{{DU}}(\\tfrac{{T_I}}{{2}}+MTTR) + \\lambda_{{DD}} MTTR".format(comp_symbol_tex),
+                            f"{comp_symbol_tex} = \\lambda_{{DU}}(\\tfrac{{T_I}}{{2}}+MTTR) + \\lambda_{{DD}} MTTR",
                             "\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda",
-                            "\\lambda = \\frac{{2\\cdot {}}}{{T_I}}".format(comp_symbol_tex),
+                            f"\\lambda = \\frac{{2\\cdot {comp_symbol_tex}}}{{T_I}}",
                         ],
                     )
                     lam_du = du_ratio * lam_total
@@ -2525,31 +2481,19 @@ class MainWindow(QMainWindow):
                     make_box(
                         f"{label} (1oo1) substitutions",
                         [
-                            "\\lambda = \\frac{{2\\cdot {}}}{{{}}} = {}".format(
-                                fmt_math(value),
-                                fmt_math(TI),
-                                fmt_math(lam_total),
-                            ),
+                            f"\\lambda = \\frac{{2\\cdot {fmt_math(value)}}}{{{fmt_math(TI)}}} = {fmt_math(lam_total)}",
                             f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
                             f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd)}",
-                            "{} = {}\\times({} + {}) + {}\\times {} = {}".format(
-                                comp_symbol_tex,
-                                fmt_math(lam_du),
-                                fmt_math(TI/2.0),
-                                fmt_math(MTTR),
-                                fmt_math(lam_dd),
-                                fmt_math(MTTR),
-                                fmt_math(value),
-                            ),
+                            f"{comp_symbol_tex} = {fmt_math(lam_du)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(lam_dd)}\\times {fmt_math(MTTR)} = {fmt_math(value)}",
                         ],
                     )
                 else:
                     make_box(
                         f"{label} (1oo1) symbolic relations",
                         [
-                            "{} = \\lambda_{{DU}}".format(comp_symbol_tex),
+                            f"{comp_symbol_tex} = \\lambda_{{DU}}",
                             "\\lambda_{DU} = w_{DU}\\,\\lambda",
-                            "\\lambda = {}".format(comp_symbol_tex),
+                            f"\\lambda = {comp_symbol_tex}",
                         ],
                     )
                     lam_du = du_ratio * lam_total
@@ -2558,7 +2502,7 @@ class MainWindow(QMainWindow):
                         [
                             f"\\lambda = {fmt_math(lam_total)}",
                             f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
-                            "{} = {}".format(comp_symbol_tex, fmt_math(lam_du)),
+                            f"{comp_symbol_tex} = {fmt_math(lam_du)}",
                         ],
                     )
                 return html_boxes
