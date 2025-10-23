@@ -2414,6 +2414,19 @@ class MainWindow(QMainWindow):
         .architecture { margin: 18px 0 24px; }
         .arch-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
+        .formula-section { margin: 32px 0 12px; }
+        .formula-section > p { margin: 4px 0 18px; }
+        .formula-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+        .formula-card { border:1px solid #e5e7eb; border-radius:14px; padding:16px 18px; background:#f9fafb; box-shadow:0 8px 20px rgba(15,23,42,0.05); }
+        .formula-card h4 { margin: 0 0 8px; font-size: 15px; }
+        .formula { font-size: 15px; margin: 10px 0; text-align: center; }
+        .formula-desc { color:#4b5563; font-size: 12px; line-height: 1.5; margin: 0 0 6px; }
+        .variables-card { margin-top: 18px; }
+        .variables-table { width: 100%; border-collapse: collapse; }
+        .variables-table td { border: none; padding: 4px 8px; font-size: 12px; }
+        .variables-table tr:nth-child(even) { background: transparent; }
+        .variables-table td.symbol { font-family: 'STIX Two Math', 'Times New Roman', serif; white-space: nowrap; font-weight: 600; }
+        .variables-table td.desc { color:#374151; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
         .lane-cards { display:flex; flex-direction:column; gap:4px; }
         .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:8px 10px; background:#f9fafb; border-left:4px solid transparent; display:flex; flex-direction:column; gap:6px; }
@@ -2587,6 +2600,8 @@ class MainWindow(QMainWindow):
         parts.append('<!doctype html><html><head><meta charset="utf-8">')
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
+        parts.append('<script>window.MathJax = {tex: {inlineMath: [["$","$"],["\\(","\\)"]], displayMath: [["\\[","\\]"],["$$","$$"]]}};</script>')
+        parts.append('<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>')
         parts.append(f'<style>{css}</style>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
@@ -2633,6 +2648,53 @@ class MainWindow(QMainWindow):
             du, dd = ratios.get(g, (0.6, 0.4))
             parts.append(f'<tr><td>{g}</td><td class="right">{du:.2f}</td><td class="right">{dd:.2f}</td></tr>')
         parts.append('</tbody></table>')
+        parts.append('</div>')
+        parts.append('</div>')
+
+        # Base formulas
+        parts.append('<div class="formula-section">')
+        parts.append('<h2>Base Formulas</h2>')
+        parts.append('<p class="muted small">Reference relations for IEC 61508 compliant assessments of simple 1oo1 and 1oo2 safety functions.</p>')
+        parts.append('<div class="formula-grid">')
+        parts.append('<div class="formula-card">')
+        parts.append('<h4>1oo1 Architecture</h4>')
+        parts.append('<p class="formula">\\[\mathrm{PFD}_{1oo1} = \lambda_{DU}\,(T_I/2 + MTTR) + \lambda_{DD}\,MTTR\\]</p>')
+        parts.append('<p class="formula-desc">Average probability of dangerous failure on demand while the channel is in operation, proof testing, or repair.</p>')
+        parts.append('<p class="formula">\\[\mathrm{PFH}_{1oo1} = \lambda_{DU}\\]</p>')
+        parts.append('<p class="formula-desc">Dangerous failure rate in high or continuous demand scenarios for a single channel.</p>')
+        parts.append('</div>')
+        parts.append('<div class="formula-card">')
+        parts.append('<h4>1oo2 Architecture</h4>')
+        parts.append('<p class="formula">\\[t_{CE} = \frac{1}{2(1-\beta)\,\lambda_{DU,ind} + 2(1-\beta_D)\,\lambda_{DD,ind}}\\]</p>')
+        parts.append('<p class="formula-desc">Mean exposure time until the first channel becomes dangerous undetected, considering independent and detected portions.</p>')
+        parts.append('<p class="formula">\\[t_{GE} = t_{CE} + MTTR\\]</p>')
+        parts.append('<p class="formula-desc">Mean time window where both channels can be unavailable, combining exposure and repair.</p>')
+        parts.append('<p class="formula">\\[\mathrm{PFD}_{ind} = 2(1-\beta)\,\lambda_{DU,ind}\,t_{CE} + \frac{(1-\beta)^2\,\lambda_{DU,ind}^2\,(T_I/2 + MTTR)^2}{3}\\]</p>')
+        parts.append('<p class="formula-desc">Average probability contribution from independent dangerous undetected failures.</p>')
+        parts.append('<p class="formula">\\[\mathrm{PFD}_{CCF} = \beta\,\lambda_{DU}\,(T_I/2 + MTTR)\\]</p>')
+        parts.append('<p class="formula-desc">Common-cause contribution that mirrors the exposure of a single channel.</p>')
+        parts.append('<p class="formula">\\[\mathrm{PFD}_{1oo2} = \mathrm{PFD}_{ind} + \mathrm{PFD}_{CCF}\\]</p>')
+        parts.append('<p class="formula-desc">Total average probability of failure on demand for a 1oo2 redundant set.</p>')
+        parts.append('<p class="formula">\\[\mathrm{PFH}_{1oo2} = 2(1-\beta)\,\lambda_{DU,ind}\,t_{CE} + \beta\,\lambda_{DU}\\]</p>')
+        parts.append('<p class="formula-desc">Dangerous failure rate combining independent and common-cause parts.</p>')
+        parts.append('</div>')
+        parts.append('<div class="formula-card variables-card">')
+        parts.append('<h4>Variable Summary</h4>')
+        parts.append('<table class="variables-table">')
+        parts.append('<tr><td class="symbol">\lambda_D</td><td class="desc">total dangerous failure rate</td></tr>')
+        parts.append('<tr><td class="symbol">\lambda_{DU}</td><td class="desc">dangerous undetected failure rate</td></tr>')
+        parts.append('<tr><td class="symbol">\lambda_{DD}</td><td class="desc">dangerous detected failure rate</td></tr>')
+        parts.append('<tr><td class="symbol">\lambda_{DU,ind}</td><td class="desc">independent portion of \(\lambda_{DU}\)</td></tr>')
+        parts.append('<tr><td class="symbol">\lambda_{DD,ind}</td><td class="desc">independent portion of \(\lambda_{DD}\)</td></tr>')
+        parts.append('<tr><td class="symbol">\beta,\;\beta_D</td><td class="desc">common-cause factors for undetected / detected failures</td></tr>')
+        parts.append('<tr><td class="symbol">T_I</td><td class="desc">proof-test interval</td></tr>')
+        parts.append('<tr><td class="symbol">MTTR</td><td class="desc">mean time to repair</td></tr>')
+        parts.append('<tr><td class="symbol">t_{CE}</td><td class="desc">channel exposure time (first failure window)</td></tr>')
+        parts.append('<tr><td class="symbol">t_{GE}</td><td class="desc">global exposure time until both channels fail</td></tr>')
+        parts.append('<tr><td class="symbol">r_{DU},\;r_{DD}</td><td class="desc">DU / DD ratios per subsystem</td></tr>')
+        parts.append('</table>')
+        parts.append('<p class="formula-desc">Independent failure rates relate via \(\lambda_{DU,ind} = (1-\beta)\lambda_{DU}\) and \(\lambda_{DD,ind} = (1-\beta_D)\lambda_{DD}\); the total dangerous rate is \(\lambda_D = \lambda_{DU} + \lambda_{DD}\).</p>')
+        parts.append('</div>')
         parts.append('</div>')
         parts.append('</div>')
 
