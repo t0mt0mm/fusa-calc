@@ -2339,6 +2339,230 @@ class MainWindow(QMainWindow):
             def tex_escape(text: str) -> str:
                 return text.replace('_', '\\_')
 
+            def fmt_ratio(val: Optional[float]) -> str:
+                if val is None:
+                    return "0"
+                try:
+                    val = float(val)
+                except Exception:
+                    return "0"
+                if abs(val) >= 1e3 or abs(val) < 1e-4:
+                    return f"{val:.3e}"
+                text = f"{val:.4f}"
+                return text.rstrip('0').rstrip('.') if '.' in text else text or "0"
+
+            def stage_group(stage_key: str) -> str:
+                if stage_key == 'logic':
+                    return 'logic'
+                if stage_key == 'actuators':
+                    return 'actuator'
+                return 'sensor'
+
+            TI = float(self.assumptions.get('TI', 0.0))
+            MTTR = float(self.assumptions.get('MTTR', 0.0))
+            beta = float(self.assumptions.get('beta', 0.0))
+            beta_D = float(self.assumptions.get('beta_D', 0.0))
+
+            def component_boxes_for(stage_key: str, entry: Dict[str, Any], label: str,
+                                     comp_symbol_tex: str, value: float) -> List[str]:
+                html_boxes: List[str] = []
+                group = stage_group(stage_key)
+                du_ratio, dd_ratio = self._ratios(group)
+                architecture = entry.get('architecture', '1oo1')
+                architecture = architecture or '1oo1'
+
+                def make_box(caption: str, lines: List[str]) -> None:
+                    if not lines:
+                        return
+                    latex = ' \\\\ '.join(lines)
+                    html_boxes.append(
+                        '<div class="formula-box">'
+                        + f'<div class="formula-caption muted small">{tex_escape(caption)}</div>'
+                        + f"\\[\\begin{{aligned}}{latex}\\end{{aligned}}\\]"
+                        + '</div>'
+                    )
+
+                if architecture == '1oo2' and isinstance(entry.get('members'), list):
+                    members = entry.get('members', [])
+                    member1 = members[0] if len(members) > 0 else {}
+                    member2 = members[1] if len(members) > 1 else {}
+                    lam1 = self._lambda_from_component(member1, mode_key)
+                    lam2 = self._lambda_from_component(member2, mode_key)
+                    member1_label = member1.get('code') or member1.get('name') or 'Ch1'
+                    member2_label = member2.get('code') or member2.get('name') or 'Ch2'
+                    lam_total = lam1 + lam2
+                    lam_du_total = du_ratio * lam_total
+                    lam_dd_total = dd_ratio * lam_total
+                    lam_du_ind = (1.0 - beta) * lam_du_total
+                    lam_dd_ind = (1.0 - beta_D) * lam_dd_total
+                    lam_d_ind = lam_du_ind + lam_dd_ind
+                    if lam_d_ind > 0.0:
+                        w_DU = lam_du_ind / lam_d_ind
+                        w_DD = lam_dd_ind / lam_d_ind
+                    else:
+                        w_DU = 0.0
+                        w_DD = 0.0
+                    tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
+                    tGE = w_DU * (TI / 3.0 + MTTR) + w_DD * MTTR
+                    pfd_ind = 0.0
+                    pfh_ind = 0.0
+                    if mode_key == 'low_demand':
+                        pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
+                        pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
+                        pfd_dd_ccf = beta_D * lam_dd_total * MTTR
+                        pfd_ccf = pfd_du_ccf + pfd_dd_ccf
+                        make_box(
+                            f"{label} (1oo2) symbolic relations",
+                            [
+                                "{} = \\mathrm{PFD}_{\\text{ind}} + \\mathrm{PFD}_{\\text{CCF}}".format(comp_symbol_tex),
+                                "\\mathrm{PFD}_{\\text{ind}} = 2\\,\\lambda_{D,\\text{ind}}^{2}\\,t_{CE}\\,t_{GE}",
+                                "\\mathrm{PFD}_{\\text{CCF}} = \\beta\\,\\lambda_{DU}(\\tfrac{T_I}{2}+MTTR) + \\beta_D\\,\\lambda_{DD} MTTR",
+                                "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU},\\quad \\lambda_{DD,\\text{ind}} = (1-\\beta_D)\\,\\lambda_{DD}",
+                            ],
+                        )
+                        make_box(
+                            f"{label} (1oo2) substitutions",
+                            [
+                                f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
+                                f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
+                                f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
+                                f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
+                                f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd_total)}",
+                                "\\lambda_{{DU,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
+                                    fmt_math(beta),
+                                    fmt_math(lam_du_total),
+                                    fmt_math(lam_du_ind),
+                                ),
+                                "\\lambda_{{DD,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
+                                    fmt_math(beta_D),
+                                    fmt_math(lam_dd_total),
+                                    fmt_math(lam_dd_ind),
+                                ),
+                                "\\lambda_{{D,\\text{{ind}}}} = {} + {} = {}".format(
+                                    fmt_math(lam_du_ind),
+                                    fmt_math(lam_dd_ind),
+                                    fmt_math(lam_d_ind),
+                                ),
+                                f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
+                                f"t_{{GE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/3.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tGE)}",
+                                "\\mathrm{{PFD}}_{{\\text{{ind}}}} = 2\\times {}^{2}\\times {}\\times {} = {}".format(
+                                    fmt_math(lam_d_ind),
+                                    fmt_math(tCE),
+                                    fmt_math(tGE),
+                                    fmt_math(pfd_ind),
+                                ),
+                                "\\mathrm{{PFD}}_{{\\text{{CCF}}}} = {}\\times {}\\times({} + {}) + {}\\times {}\\times {} = {}".format(
+                                    fmt_math(beta),
+                                    fmt_math(lam_du_total),
+                                    fmt_math(TI/2.0),
+                                    fmt_math(MTTR),
+                                    fmt_math(beta_D),
+                                    fmt_math(lam_dd_total),
+                                    fmt_math(MTTR),
+                                    fmt_math(pfd_ccf),
+                                ),
+                                "{} = {} + {} = {}".format(comp_symbol_tex, fmt_math(pfd_ind), fmt_math(pfd_ccf), fmt_math(value)),
+                            ],
+                        )
+                    else:
+                        pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
+                        pfh_ccf = beta * lam_du_total
+                        make_box(
+                            f"{label} (1oo2) symbolic relations",
+                            [
+                                "{} = 2(1-\\beta)\\,\\lambda_{DU,\\text{ind}} t_{CE} + \\beta\\,\\lambda_{DU}".format(comp_symbol_tex),
+                                "\\lambda_{DU,\\text{ind}} = (1-\\beta)\\,\\lambda_{DU}",
+                                "t_{CE} = w_{DU}(\\tfrac{T_I}{2}+MTTR) + w_{DD} MTTR",
+                            ],
+                        )
+                        make_box(
+                            f"{label} (1oo2) substitutions",
+                            [
+                                f"\\lambda_{{\\text{{{tex_escape(member1_label)}}}}} = {fmt_math(lam1)}",
+                                f"\\lambda_{{\\text{{{tex_escape(member2_label)}}}}} = {fmt_math(lam2)}",
+                                f"\\lambda = {fmt_math(lam1)} + {fmt_math(lam2)} = {fmt_math(lam_total)}",
+                                f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du_total)}",
+                                "\\lambda_{{DU,\\text{{ind}}}} = (1-{})\\times {} = {}".format(
+                                    fmt_math(beta),
+                                    fmt_math(lam_du_total),
+                                    fmt_math(lam_du_ind),
+                                ),
+                                "\\lambda_{{D,\\text{{ind}}}} = {} + (1-{})\\times {} = {}".format(
+                                    fmt_math(lam_du_ind),
+                                    fmt_math(beta_D),
+                                    fmt_math(lam_dd_total),
+                                    fmt_math(lam_d_ind),
+                                ),
+                                f"t_{{CE}} = {fmt_math(w_DU)}\\times({fmt_math(TI/2.0)} + {fmt_math(MTTR)}) + {fmt_math(w_DD)}\\times{fmt_math(MTTR)} = {fmt_math(tCE)}",
+                                "\\mathrm{{PFH}}_{{\\text{{ind}}}} = 2\\times {}\\times {}\\times {} = {}".format(
+                                    fmt_math(lam_d_ind),
+                                    fmt_math(lam_du_ind),
+                                    fmt_math(tCE),
+                                    fmt_math(pfh_ind),
+                                ),
+                                "\\mathrm{{PFH}}_{{\\text{{CCF}}}} = {}\\times {} = {}".format(
+                                    fmt_math(beta),
+                                    fmt_math(lam_du_total),
+                                    fmt_math(pfh_ccf),
+                                ),
+                                "{} = {} + {} = {}".format(comp_symbol_tex, fmt_math(pfh_ind), fmt_math(pfh_ccf), fmt_math(value)),
+                            ],
+                        )
+                    return html_boxes
+
+                lam_total = self._lambda_from_component(entry, mode_key)
+                if mode_key == 'low_demand':
+                    make_box(
+                        f"{label} (1oo1) symbolic relations",
+                        [
+                            "{} = \\lambda_{{DU}}(\\tfrac{{T_I}}{{2}}+MTTR) + \\lambda_{{DD}} MTTR".format(comp_symbol_tex),
+                            "\\lambda_{DU} = w_{DU}\\,\\lambda,\\quad \\lambda_{DD} = w_{DD}\\,\\lambda",
+                            "\\lambda = \\frac{{2\\cdot {}}}{{T_I}}".format(comp_symbol_tex),
+                        ],
+                    )
+                    lam_du = du_ratio * lam_total
+                    lam_dd = dd_ratio * lam_total
+                    make_box(
+                        f"{label} (1oo1) substitutions",
+                        [
+                            "\\lambda = \\frac{{2\\cdot {}}}{{{}}} = {}".format(
+                                fmt_math(value),
+                                fmt_math(TI),
+                                fmt_math(lam_total),
+                            ),
+                            f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
+                            f"\\lambda_{{DD}} = {fmt_ratio(dd_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_dd)}",
+                            "{} = {}\\times({} + {}) + {}\\times {} = {}".format(
+                                comp_symbol_tex,
+                                fmt_math(lam_du),
+                                fmt_math(TI/2.0),
+                                fmt_math(MTTR),
+                                fmt_math(lam_dd),
+                                fmt_math(MTTR),
+                                fmt_math(value),
+                            ),
+                        ],
+                    )
+                else:
+                    make_box(
+                        f"{label} (1oo1) symbolic relations",
+                        [
+                            "{} = \\lambda_{{DU}}".format(comp_symbol_tex),
+                            "\\lambda_{DU} = w_{DU}\\,\\lambda",
+                            "\\lambda = {}".format(comp_symbol_tex),
+                        ],
+                    )
+                    lam_du = du_ratio * lam_total
+                    make_box(
+                        f"{label} (1oo1) substitutions",
+                        [
+                            f"\\lambda = {fmt_math(lam_total)}",
+                            f"\\lambda_{{DU}} = {fmt_ratio(du_ratio)}\\times {fmt_math(lam_total)} = {fmt_math(lam_du)}",
+                            "{} = {}".format(comp_symbol_tex, fmt_math(lam_du)),
+                        ],
+                    )
+                return html_boxes
+
             def extract(entry: Dict[str, Any]) -> Optional[float]:
                 for key in (primary_key, fallback_key):
                     val = entry.get(key)
@@ -2369,12 +2593,13 @@ class MainWindow(QMainWindow):
             stage_totals: List[str] = []
             total_value = 0.0
             has_values = False
-            stage_details: List[Tuple[str, List[str], List[str], str]] = []
+            stage_details: List[Tuple[str, List[str], List[str], str, List[str]]] = []
 
-            for _, stage_title, entries in stage_defs:
+            for stage_key, stage_title, entries in stage_defs:
                 values: List[float] = []
                 comp_symbols: List[str] = []
                 comp_numbers: List[str] = []
+                component_boxes: List[str] = []
                 for entry in entries:
                     val = extract(entry)
                     if val is None:
@@ -2382,10 +2607,12 @@ class MainWindow(QMainWindow):
                     values.append(val)
                     label = entry.get('code') or entry.get('name') or ''
                     label = label.strip() or f"{symbol}_{len(values)}"
-                    comp_symbols.append(
-                        f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(label)}}}}}"
-                    )
+                    comp_symbol_tex = f"\\mathrm{{{symbol}}}_{{\\text{{{tex_escape(label)}}}}}"
+                    comp_symbols.append(comp_symbol_tex)
                     comp_numbers.append(fmt_math(val))
+                    component_boxes.extend(
+                        component_boxes_for(stage_key, entry, label, comp_symbol_tex, float(val))
+                    )
                 if not values:
                     continue
                 has_values = True
@@ -2400,6 +2627,7 @@ class MainWindow(QMainWindow):
                         comp_symbols,
                         comp_numbers,
                         fmt_math(stage_sum),
+                        component_boxes,
                     )
                 )
 
@@ -2424,7 +2652,7 @@ class MainWindow(QMainWindow):
                 + '</div>'
             )
 
-            for stage_title, comp_symbols, comp_numbers, stage_total in stage_details:
+            for stage_title, comp_symbols, comp_numbers, stage_total, component_boxes in stage_details:
                 if not comp_symbols:
                     continue
                 detail_lines: List[str] = []
@@ -2439,6 +2667,7 @@ class MainWindow(QMainWindow):
                     + f"\\[\\begin{{aligned}}{detail_latex}\\end{{aligned}}\\]"
                     + '</div>'
                 )
+                boxes.extend(component_boxes)
 
             return ''.join(boxes)
 
