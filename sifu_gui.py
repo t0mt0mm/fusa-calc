@@ -2637,7 +2637,7 @@ class MainWindow(QMainWindow):
             oneoo2_entries = [
                 (r't_{CE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}(T_I/2 + MTTR) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}}MTTR', 'Exposure time for common-cause dangerous undetected combinations using independent channel rates.'),
                 (r't_{GE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}(T_I/3 + MTTR) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}}MTTR', 'Exposure time for general dangerous undetected combinations with staggered testing, independent portion.'),
-                (r'PFD_{1oo2} = 2(1-\beta)^2(\lambda_D)^2 t_{CE}t_{GE} \[4pt]'
+                (r'PFD_{1oo2} = 2(1-\beta)^2(\lambda_D)^2 t_{CE}t_{GE} \\[4pt]'
                  r'+ \beta\lambda_{DU}(T_I/2 + MTTR) + \beta_D\lambda_{DD}MTTR', 'System-level probability of failure on demand for a redundant 1oo2 channel.'),
                 (r'PFH_{1oo2} = 2(1-\beta)\lambda_D^{ind}\lambda_{DU}^{ind}t_{CE} + \beta\lambda_{DU}', 'System-level dangerous failure rate per hour for a redundant 1oo2 channel.'),
             ]
