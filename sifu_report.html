@@ -11,6 +11,8 @@
         table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; }
         th, td { border: 1px solid #e5e7eb; padding: 6px 8px; text-align: left; }
         th { background: #f8fafc; font-weight: 600; }
+        tbody tr:nth-child(even) { background:#f9fafb; }
+        tbody tr:hover { background:#f1f5f9; }
         .ok { color: #166534; font-weight: 600; }
         .bad { color: #b91c1c; font-weight: 600; }
         .pill { display:inline-block; padding:2px 8px; border:1px solid #d1d5db; border-radius:999px; font-size:12px; }
@@ -26,8 +28,11 @@
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
         .lane-cards { display:flex; flex-direction:column; gap:6px; }
-        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:6px 10px; background:#f9fafb; border-left:4px solid transparent; }
-        .lane-card.group { background:#eef2ff; border-color:#c7d2fe; }
+        .lane-card { border:1px solid #e5e7eb; border-radius:10px; padding:6px 10px; background:#f9fafb; border-left:4px solid transparent; position:relative; }
+        .lane-card.group { background:#eef2ff; border-color:#c7d2fe; border-left-color:#6366f1; padding-top:18px; }
+        .lane-card.group .lane-title { padding-right:72px; }
+        .lane-card.group .lane-pill { position:absolute; top:8px; right:12px; margin:0; background:#c7d2fe; color:#312e81; border:1px solid #a5b4fc; }
+        .lane-card.group .lane-members { margin-top:6px; }
         .lane-card.empty { border-style: dashed; color:#9ca3af; background:#fff; border-left-color:transparent; }
         .lane--sensors .lane-card { border-left-color:#0EA5E9; }
         .lane--logic .lane-card { border-left-color:#22C55E; }
@@ -38,12 +43,14 @@
         .lane-metrics span { white-space:nowrap; }
         .lane-pill { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; background:#e5e7eb; color:#374151; font-size:11px; margin-right:6px; }
         .lane-pill.arch { background:#fef3c7; color:#92400e; border:1px solid #fcd34d; }
-        .lane-members { display:grid; grid-template-columns:repeat(auto-fit, minmax(120px, 1fr)); gap:6px; }
-        .lane-member { border:1px solid #d1d5db; border-radius:8px; padding:6px; background:#fff; border-left:3px solid transparent; }
+        .lane-members { display:flex; flex-wrap:wrap; gap:8px; }
+        .lane-member { flex:1 1 180px; min-width:160px; border:1px solid #d1d5db; border-radius:8px; padding:6px 10px; background:#fff; border-left:3px solid transparent; box-shadow:0 1px 2px rgba(15,23,42,0.08); }
         .lane--sensors .lane-member { border-left-color:#0EA5E9; }
         .lane--logic .lane-member { border-left-color:#22C55E; }
         .lane--actuators .lane-member { border-left-color:#A855F7; }
-        .lane-member h4 { font-size:12px; margin:0 0 4px; color:#1f2937; }
+        .lane-member h4 { font-size:11px; margin:0 0 4px; color:#1f2937; }
+        .lane-member .lane-metrics { font-size:10px; line-height:1.25; display:flex; flex-wrap:wrap; gap:2px 6px; }
+        .lane-member .lane-metrics span { display:inline-flex; align-items:center; padding:0 6px; border-radius:999px; background:#f8fafc; border:1px solid #e2e8f0; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         </style>
