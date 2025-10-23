@@ -12,9 +12,6 @@ import os
 import sys
 import re
 import uuid
-import base64
-import json
-import hashlib
 import copy
 from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
@@ -2303,97 +2300,6 @@ class MainWindow(QMainWindow):
             new_data["members"] = members
         return new_data
 
-    def _capture_row_snapshot(self, row_idx: int) -> Optional[str]:
-        table = self.table
-        if not table or row_idx < 0 or row_idx >= table.rowCount():
-            return None
-        try:
-            model = table.model()
-            selection_model = table.selectionModel()
-            previous_selection: List[QtCore.QModelIndex] = []
-            previous_current = table.currentIndex()
-            if selection_model is not None:
-                previous_selection = selection_model.selectedRows()
-            if model is None:
-                return None
-
-            first_index = model.index(row_idx, 0)
-            if selection_model is not None:
-                table.selectRow(row_idx)
-
-            if first_index.isValid():
-                table.scrollTo(first_index, QAbstractItemView.PositionAtCenter)
-                table.setCurrentIndex(first_index)
-                QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents, 25)
-
-            viewport = table.viewport()
-            if viewport is None:
-                return None
-
-            union_rect: Optional[QtCore.QRect] = None
-            for col in range(table.columnCount()):
-                idx = model.index(row_idx, col)
-                if not idx.isValid():
-                    continue
-                rect = table.visualRect(idx)
-                if not rect.isValid() or rect.isNull():
-                    continue
-                union_rect = rect if union_rect is None else union_rect.united(rect)
-
-            if not union_rect or union_rect.isNull():
-                return None
-
-            union_rect.adjust(-2, -2, 2, 2)
-            union_rect = union_rect.intersected(viewport.rect())
-            if union_rect.isEmpty():
-                return None
-
-            viewport.update(union_rect)
-            QtWidgets.QApplication.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents, 25)
-
-            pixmap = viewport.grab(union_rect)
-            if pixmap.isNull():
-                return None
-
-            data: bytes
-            dpr = pixmap.devicePixelRatio() or 1.0
-            if dpr != 1.0:
-                image = pixmap.toImage()
-                target_size = QtCore.QSize(max(1, int(image.width() / dpr)),
-                                           max(1, int(image.height() / dpr)))
-                image = image.scaled(target_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-                buffer = QtCore.QBuffer()
-                buffer.open(QtCore.QIODevice.WriteOnly)
-                image.save(buffer, "PNG")
-                data = bytes(buffer.data())
-                buffer.close()
-            else:
-                buffer = QtCore.QBuffer()
-                buffer.open(QtCore.QIODevice.WriteOnly)
-                pixmap.save(buffer, "PNG")
-                data = bytes(buffer.data())
-                buffer.close()
-
-            if not data:
-                return None
-
-            encoded = base64.b64encode(data).decode("ascii")
-            return f"data:image/png;base64,{encoded}"
-        except Exception as exc:
-            print(f"[export] Failed to capture row {row_idx}: {exc}", file=sys.stderr)
-            return None
-        finally:
-            if selection_model is not None:
-                restore_blocker = QtCore.QSignalBlocker(selection_model)
-                selection_model.clearSelection()
-                for idx in previous_selection:
-                    selection_model.select(idx, QtCore.QItemSelectionModel.Select | QtCore.QItemSelectionModel.Rows)
-                del restore_blocker
-            if previous_current.isValid():
-                table.setCurrentIndex(previous_current)
-            else:
-                table.setCurrentIndex(QtCore.QModelIndex())
-
     def _build_html_report(self) -> str:
         '''Build a self-contained HTML report (print-friendly) with all SIFUs,
         their components, assumptions, DU/DD ratios and computed results.'''
@@ -2422,17 +2328,6 @@ class MainWindow(QMainWindow):
             except Exception:
                 return "–"
 
-        def _normalize_for_signature(obj):
-            if isinstance(obj, (str, int, float)) or obj is None:
-                return obj
-            if isinstance(obj, np.generic):
-                return obj.item()
-            if isinstance(obj, (list, tuple)):
-                return [_normalize_for_signature(x) for x in obj]
-            if isinstance(obj, dict):
-                return {k: _normalize_for_signature(v) for k, v in obj.items()}
-            return str(obj)
-
         # Collect all data using existing helpers
         payload = {"sifus": []}
         for row_idx in range(len(self.rows_meta)):
@@ -2452,35 +2347,6 @@ class MainWindow(QMainWindow):
             row_pos = self._row_index_from_uid(uid)
             if row_pos < 0:
                 print(f"[export] No table row found for uid {uid}", file=sys.stderr)
-            snapshot_signature_payload = {
-                "meta": {
-                    "sifu_name": meta.get("sifu_name"),
-                    "sil_required": meta.get("sil_required"),
-                    "demand_mode_required": meta.get("demand_mode_required"),
-                    "demand_mode_override": meta.get("demand_mode_override"),
-                },
-                "sensors": sensors,
-                "logic": logic,
-                "actuators": outputs,
-                "pfd_sum": float(pfd_sum),
-                "pfh_sum": float(pfh_sum),
-                "mode": mode,
-            }
-            signature = hashlib.sha1(
-                json.dumps(_normalize_for_signature(snapshot_signature_payload), sort_keys=True).encode("utf-8")
-            ).hexdigest()
-            cached_sig = meta.get("_row_snapshot_sig")
-            cached_snapshot = meta.get("_row_snapshot_cache") if isinstance(meta.get("_row_snapshot_cache"), str) else None
-            if cached_sig == signature and cached_snapshot:
-                snapshot = cached_snapshot
-            else:
-                snapshot = self._capture_row_snapshot(row_pos) if row_pos >= 0 else None
-                if snapshot:
-                    meta["_row_snapshot_cache"] = snapshot
-                    meta["_row_snapshot_sig"] = signature
-                elif cached_snapshot:
-                    snapshot = cached_snapshot
-                    meta["_row_snapshot_sig"] = signature
             payload["sifus"].append({
                 "meta": meta,
                 "sensors": sensors,
@@ -2493,7 +2359,6 @@ class MainWindow(QMainWindow):
                 "ok": ok,
                 "req_sil": req_sil_str,
                 "uid": uid,
-                "row_image": snapshot,
             })
 
         # Global assumptions and DU/DD ratios
