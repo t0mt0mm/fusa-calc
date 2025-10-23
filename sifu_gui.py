@@ -2439,8 +2439,11 @@ class MainWindow(QMainWindow):
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         .formula-section { margin: 24px 0; }
-        .formula-row { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; align-items:stretch; }
-        .formula-panel { flex:1 1 320px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:260px; }
+        .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
+        .formula-left { flex:2 1 520px; display:flex; flex-direction:column; gap:16px; }
+        .formula-left-row { display:flex; flex-wrap:wrap; gap:16px; }
+        .formula-right { flex:1 1 320px; min-width:280px; display:flex; flex-direction:column; gap:16px; }
+        .formula-panel { flex:1 1 280px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:240px; }
         .formula-panel-header { padding:12px 16px; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; border-bottom:1px solid #e5e7eb; }
         .formula-panel-body { padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
         .formula-box { border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; padding:12px 14px; }
@@ -2448,8 +2451,13 @@ class MainWindow(QMainWindow):
         .formula-table { width:100%; border-collapse:collapse; font-size:13px; }
         .formula-table th, .formula-table td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
         .formula-table th { background:#f8fafc; width:32%; }
+        @media (max-width: 960px) {
+            .formula-layout { flex-direction:column; }
+            .formula-right { min-width:0; }
+        }
         @media (max-width: 720px) {
-            .formula-row { flex-direction:column; }
+            .formula-left { flex:1 1 auto; }
+            .formula-left-row { flex-direction:column; }
             .formula-panel { min-width:0; }
         }
         @media print { .page { padding: 0; } .no-print { display:none; } }
@@ -2636,9 +2644,6 @@ class MainWindow(QMainWindow):
             architecture_blocks.append(
                 panel_block('1oo2 Architecture', render_formulas(oneoo2_entries))
             )
-            section_parts.append('<div class="formula-row formula-row-architecture">')
-            section_parts.extend(architecture_blocks)
-            section_parts.append('</div>')
 
             supporting_entries = [
                 (r'\lambda_D = \lambda_{DU} + \lambda_{DD}', 'Total dangerous failure rate split into undetected and detected parts.'),
@@ -2675,9 +2680,16 @@ class MainWindow(QMainWindow):
             table_parts.append('</tbody></table></div>')
             variable_block = panel_block('Variable Summary', ''.join(table_parts))
 
-            section_parts.append('<div class="formula-row formula-row-support">')
+            section_parts.append('<div class="formula-layout">')
+            section_parts.append('<div class="formula-left">')
+            section_parts.append('<div class="formula-left-row">')
+            section_parts.extend(architecture_blocks)
+            section_parts.append('</div>')
             section_parts.append(supporting_block)
+            section_parts.append('</div>')
+            section_parts.append('<div class="formula-right">')
             section_parts.append(variable_block)
+            section_parts.append('</div>')
             section_parts.append('</div>')
 
             section_parts.append('</section>')
