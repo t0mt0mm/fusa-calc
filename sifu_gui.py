@@ -2439,23 +2439,18 @@ class MainWindow(QMainWindow):
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         .formula-section { margin: 24px 0; }
-        .formula-row { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; }
-        .formula-row .formula-collapsible { margin:0; flex:1 1 320px; }
-        .formula-collapsible { border:1px solid #e5e7eb; border-radius:10px; margin:12px 0; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); overflow:hidden; }
-        .formula-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; cursor:pointer; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; }
-        .formula-header::after { content:'\25BC'; font-size:12px; color:#6b7280; transition:transform 0.2s ease; }
-        .formula-collapsible.open .formula-header::after { transform:rotate(180deg); }
-        .formula-content { display:none; padding:12px 16px 16px; border-top:1px solid #e5e7eb; background:#fff; }
-        .formula-collapsible.open .formula-content { display:block; }
-        .formula-box { border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; padding:12px 14px; margin:0 0 14px; }
-        .formula-box:last-child { margin-bottom:0; }
+        .formula-row { display:flex; flex-wrap:wrap; gap:16px; margin:12px 0; align-items:stretch; }
+        .formula-panel { flex:1 1 320px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:260px; }
+        .formula-panel-header { padding:12px 16px; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; border-bottom:1px solid #e5e7eb; }
+        .formula-panel-body { padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
+        .formula-box { border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; padding:12px 14px; }
         .formula-note { margin:6px 0 0; }
         .formula-table { width:100%; border-collapse:collapse; font-size:13px; }
         .formula-table th, .formula-table td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
         .formula-table th { background:#f8fafc; width:32%; }
         @media (max-width: 720px) {
             .formula-row { flex-direction:column; }
-            .formula-row .formula-collapsible { flex-basis:auto; }
+            .formula-panel { min-width:0; }
         }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
@@ -2615,20 +2610,11 @@ class MainWindow(QMainWindow):
                     box_bits.append('</div>')
                 return ''.join(box_bits)
 
-            collapsible_index = 0
-
-            def collapsible_block(title: str, inner_html: str, *, open_block: bool = False) -> str:
-                nonlocal collapsible_index
-                collapsible_index += 1
-                content_id = f'formula-content-{collapsible_index}'
-                classes = 'formula-collapsible open' if open_block else 'formula-collapsible'
-                aria_expanded = 'true' if open_block else 'false'
+            def panel_block(title: str, inner_html: str) -> str:
                 block_parts: List[str] = []
-                block_parts.append(f'<div class="{classes}" data-collapsible>')
-                block_parts.append(
-                    f'<div class="formula-header" role="button" tabindex="0" aria-expanded="{aria_expanded}" aria-controls="{content_id}">{esc(title)}</div>'
-                )
-                block_parts.append(f'<div class="formula-content" id="{content_id}">')
+                block_parts.append('<div class="formula-panel">')
+                block_parts.append(f'<div class="formula-panel-header">{esc(title)}</div>')
+                block_parts.append('<div class="formula-panel-body">')
                 block_parts.append(inner_html)
                 block_parts.append('</div>')
                 block_parts.append('</div>')
@@ -2639,9 +2625,8 @@ class MainWindow(QMainWindow):
                 (r'PFH_{1oo1} = \lambda_{DU}', 'Dangerous failure rate per hour for a single 1oo1 channel.'),
             ]
             architecture_blocks = [
-                collapsible_block('1oo1 Architecture', render_formulas(oneoo1_entries), open_block=True),
+                panel_block('1oo1 Architecture', render_formulas(oneoo1_entries)),
             ]
-
             oneoo2_entries = [
                 (r't_{CE} = \frac{\lambda_{DU}}{\lambda_D}(T_I/2 + MTTR) + \frac{\lambda_{DD}}{\lambda_D}MTTR', 'Exposure time for common-cause dangerous undetected combinations.'),
                 (r't_{GE} = \frac{\lambda_{DU}}{\lambda_D}(T_I/3 + MTTR) + \frac{\lambda_{DD}}{\lambda_D}MTTR', 'Exposure time for general dangerous undetected combinations with staggered testing.'),
@@ -2649,7 +2634,7 @@ class MainWindow(QMainWindow):
                 (r'PFH_{1oo2} = 2(1-\beta)\lambda_D^{ind}\lambda_{DU}^{ind}t_{CE} + \beta\lambda_{DU}', 'System-level dangerous failure rate per hour for a redundant 1oo2 channel.'),
             ]
             architecture_blocks.append(
-                collapsible_block('1oo2 Architecture', render_formulas(oneoo2_entries))
+                panel_block('1oo2 Architecture', render_formulas(oneoo2_entries))
             )
             section_parts.append('<div class="formula-row formula-row-architecture">')
             section_parts.extend(architecture_blocks)
@@ -2660,7 +2645,7 @@ class MainWindow(QMainWindow):
                 (r'\lambda_{DU} = r_{DU}\lambda_D,\ \lambda_{DD} = r_{DD}\lambda_D', 'Ratios mapping total dangerous failures to undetected and detected portions.'),
                 (r'\lambda_{DU}^{ind} = (1-\beta)\lambda_{DU},\ \lambda_{DD}^{ind} = (1-\beta_D)\lambda_{DD}', 'Independent channel failure rates after removing common cause factors.'),
             ]
-            supporting_block = collapsible_block('Supporting Relations', render_formulas(supporting_entries))
+            supporting_block = panel_block('Supporting Relations', render_formulas(supporting_entries))
 
             var_rows: List[Tuple[str, str]] = [
                 (r'PFD_{1oo1}', 'Probability of failure on demand for a single-channel architecture.'),
@@ -2688,7 +2673,7 @@ class MainWindow(QMainWindow):
                 table_parts.append(f'<td>{esc(meaning)}</td>')
                 table_parts.append('</tr>')
             table_parts.append('</tbody></table></div>')
-            variable_block = collapsible_block('Variable Summary', ''.join(table_parts))
+            variable_block = panel_block('Variable Summary', ''.join(table_parts))
 
             section_parts.append('<div class="formula-row formula-row-support">')
             section_parts.append(supporting_block)
@@ -2828,7 +2813,6 @@ class MainWindow(QMainWindow):
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div>')
-        parts.append('<script>document.addEventListener("DOMContentLoaded",function(){document.querySelectorAll(".formula-collapsible").forEach(function(block){var header=block.querySelector(".formula-header");if(!header){return;}var applyState=function(open){if(open){block.classList.add("open");}else{block.classList.remove("open");}header.setAttribute("aria-expanded",open?"true":"false");};applyState(block.classList.contains("open"));var toggle=function(){applyState(!block.classList.contains("open"));};header.addEventListener("click",function(){toggle();});header.addEventListener("keydown",function(evt){if(evt.key==="Enter"||evt.key===" "||evt.key==="Spacebar"){evt.preventDefault();toggle();}});});});</script>')
         parts.append('</body></html>')
 
         return '\n'.join(parts)
