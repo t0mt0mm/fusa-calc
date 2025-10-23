@@ -2600,8 +2600,26 @@ class MainWindow(QMainWindow):
         parts.append('<!doctype html><html><head><meta charset="utf-8">')
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
-        parts.append('<script>window.MathJax = {tex: {inlineMath: [["$","$"],["\\(","\\)"]], displayMath: [["\\[","\\]"],["$$","$$"]]}};</script>')
-        parts.append('<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>')
+        parts.append(
+            '<script>'
+            'window.MathJax = {'
+            'tex: {'
+            'inlineMath: [["$","$"],["\\(","\\)"]],'
+            'displayMath: [["\\[","\\]"],["$$","$$"]],'
+            'processEscapes: true,'
+            'tags: "none"'
+            '},'
+            'options: {renderActions: {addMenu: []}},'
+            'startup: {'
+            'ready: () => {'
+            'MathJax.startup.defaultReady();'
+            'return MathJax.typesetPromise();'
+            '}'
+            '}'
+            '};'
+            '</script>'
+        )
+        parts.append('<script defer id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>')
         parts.append(f'<style>{css}</style>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
