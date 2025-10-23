@@ -2440,9 +2440,10 @@ class MainWindow(QMainWindow):
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
-        .formula-left { flex:2 1 520px; display:flex; flex-direction:column; gap:16px; }
-        .formula-left-row { display:flex; flex-wrap:wrap; gap:16px; }
-        .formula-right { flex:1 1 320px; min-width:280px; display:flex; flex-direction:column; gap:16px; }
+        .formula-column { display:flex; flex-direction:column; gap:16px; }
+        .formula-column--architecture { flex:1 1 340px; }
+        .formula-column--supporting { flex:1 1 260px; }
+        .formula-column--variables { flex:1 1 320px; min-width:280px; }
         .formula-panel { flex:1 1 280px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:240px; }
         .formula-panel-header { padding:12px 16px; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; border-bottom:1px solid #e5e7eb; }
         .formula-panel-body { padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
@@ -2453,11 +2454,9 @@ class MainWindow(QMainWindow):
         .formula-table th { background:#f8fafc; width:32%; }
         @media (max-width: 960px) {
             .formula-layout { flex-direction:column; }
-            .formula-right { min-width:0; }
+            .formula-column--variables { min-width:0; }
         }
         @media (max-width: 720px) {
-            .formula-left { flex:1 1 auto; }
-            .formula-left-row { flex-direction:column; }
             .formula-panel { min-width:0; }
         }
         @media print { .page { padding: 0; } .no-print { display:none; } }
@@ -2683,13 +2682,13 @@ class MainWindow(QMainWindow):
             variable_block = panel_block('Variable Summary', ''.join(table_parts))
 
             section_parts.append('<div class="formula-layout">')
-            section_parts.append('<div class="formula-left">')
-            section_parts.append('<div class="formula-left-row">')
+            section_parts.append('<div class="formula-column formula-column--architecture">')
             section_parts.extend(architecture_blocks)
             section_parts.append('</div>')
+            section_parts.append('<div class="formula-column formula-column--supporting">')
             section_parts.append(supporting_block)
             section_parts.append('</div>')
-            section_parts.append('<div class="formula-right">')
+            section_parts.append('<div class="formula-column formula-column--variables">')
             section_parts.append(variable_block)
             section_parts.append('</div>')
             section_parts.append('</div>')
