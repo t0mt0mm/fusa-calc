@@ -13,13 +13,14 @@ import sys
 import re
 import uuid
 import copy
-from typing import Dict, Tuple, List, Optional, Union, Any
+import json
+from typing import Dict, Tuple, List, Optional, Union, Any, Set
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView, QGridLayout
+    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QActionGroup, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView, QGridLayout, QColorDialog
 )
-from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage
+from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage, QCursor, QIcon
 from datetime import datetime
 import yaml
 import numpy as np
@@ -447,31 +448,91 @@ class ChipList(QListWidget):
     # ----- Item presentation helper -----
     def attach_chip(self, item: QListWidgetItem) -> None:
         d = item.data(Qt.UserRole) or {}
-        kind = d.get("kind", "")
+        kind = d.get("kind", self.allowed_kind)
         text = d.get("code") or d.get("name") or item.text()
 
-        w = QWidget()
-        w.setProperty("kind", kind)
-        lay = QHBoxLayout(w)
-        lay.setContentsMargins(8, 4, 8, 4)
-        lay.setSpacing(6)
+        if d.get("group") and d.get("architecture") == "1oo2":
+            widget = QWidget()
+            widget.setProperty("kind", kind)
+            layout = QHBoxLayout(widget)
+            layout.setContentsMargins(8, 4, 8, 4)
+            layout.setSpacing(8)
 
-        lbl = QLabel(str(text))
-        lbl.setObjectName("ChipLabel")
-        lbl.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        lbl.adjustSize()
-        lay.addWidget(lbl)
+            indicator = self._make_link_indicator()
+            layout.addWidget(indicator)
+            widget._link_indicator = indicator  # type: ignore[attr-defined]
 
-        # ensure enough vertical room
-        w.setMinimumHeight(30)
-        sh = w.sizeHint()
-        try:
-            h0 = sh.height()
-            sh.setHeight(max(h0, 38))
-        except Exception:
-            pass
-        item.setSizeHint(sh)
-        self.setItemWidget(item, w)
+            members = [m for m in d.get("members", []) if isinstance(m, dict)]
+            member_labels: List[str] = []
+            for idx, member in enumerate(members):
+                label = member.get("code") or member.get("name") or f"Member {idx + 1}"
+                member_labels.append(str(label))
+
+            primary_label = member_labels[0] if member_labels else str(text)
+            secondary_label = member_labels[1] if len(member_labels) > 1 else None
+
+            layout.addWidget(self._make_chip_label(primary_label))
+
+            badge = QLabel("← 1oo2 →")
+            badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            badge.setStyleSheet(
+                "QLabel{color:#555; background:#eee; border:1px solid #ddd; "
+                "border-radius:10px; padding:4px 10px; font-size:11px; font-weight:bold;}"
+            )
+            layout.addWidget(badge)
+
+            if secondary_label:
+                layout.addWidget(self._make_chip_label(secondary_label))
+
+            widget.setMinimumHeight(30)
+            size_hint = widget.sizeHint()
+            try:
+                size_hint.setHeight(max(size_hint.height(), 38))
+            except Exception:
+                pass
+
+            item.setText(" + ".join(lbl for lbl in member_labels[:2] if lbl) or primary_label)
+            item.setSizeHint(size_hint)
+            self.setItemWidget(item, widget)
+
+            window = self.window()
+            if window and hasattr(window, "_tooltip_for_1oo2"):
+                try:
+                    m1 = members[0] if len(members) > 0 else {}
+                    m2 = members[1] if len(members) > 1 else {}
+                    tooltip = window._tooltip_for_1oo2(m1, m2, kind)
+                    if tooltip:
+                        item.setToolTip(tooltip)
+                except Exception:
+                    pass
+        else:
+            widget = QWidget()
+            widget.setProperty("kind", kind)
+            layout = QHBoxLayout(widget)
+            layout.setContentsMargins(8, 4, 8, 4)
+            layout.setSpacing(6)
+
+            indicator = self._make_link_indicator()
+            layout.addWidget(indicator)
+            widget._link_indicator = indicator  # type: ignore[attr-defined]
+
+            label = QLabel(str(text))
+            label.setObjectName("ChipLabel")
+            label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+            label.adjustSize()
+            layout.addWidget(label)
+
+            widget.setMinimumHeight(30)
+            size_hint = widget.sizeHint()
+            try:
+                size_hint.setHeight(max(size_hint.height(), 38))
+            except Exception:
+                pass
+            item.setText(str(text))
+            item.setSizeHint(size_hint)
+            self.setItemWidget(item, widget)
+
+        self._apply_link_properties(self.itemWidget(item), d)
 
     # ----- Painting placeholder -----
     def paintEvent(self, event):
@@ -494,6 +555,28 @@ class ChipList(QListWidget):
         m = QtWidgets.QMenu(self)
         act_add = m.addAction("Add Component…")
         act_del = m.addAction("Remove")
+        window = self.window()
+        row_idx = -1
+        lane = None
+        if window and hasattr(window, "_row_lane_for_list"):
+            try:
+                row_idx, lane = window._row_lane_for_list(self)
+            except Exception:
+                row_idx, lane = -1, None
+
+        act_start_link = act_stop_link = act_choose_color = act_clear_lane = act_clear_sifu = None
+        if lane is not None and isinstance(row_idx, int) and row_idx >= 0:
+            m.addSeparator()
+            is_active = bool(window and hasattr(window, "_is_link_active_for") and window._is_link_active_for(row_idx, lane))
+            if is_active:
+                act_choose_color = m.addAction("Choose link colour…")
+                act_stop_link = m.addAction("Stop link mode")
+            else:
+                act_start_link = m.addAction("Start link mode here")
+                act_choose_color = m.addAction("Choose link colour…")
+            act_clear_lane = m.addAction("Clear lane links")
+            act_clear_sifu = m.addAction("Clear SIFU links")
+
         action = m.exec_(self.mapToGlobal(pos))
         if action == act_del:
             for item in self.selectedItems():
@@ -502,6 +585,16 @@ class ChipList(QListWidget):
             self.window().recalculate_all()
         elif action == act_add:
             self.window().open_add_component_dialog(pref_kind=self.allowed_kind, insert_into_row=True)
+        elif action == act_start_link and window:
+            window._activate_link_mode_for(row_idx, lane, self)
+        elif action == act_stop_link and window:
+            window._end_link_session()
+        elif action == act_choose_color and window:
+            window._popup_link_color_menu(QCursor.pos())
+        elif action == act_clear_lane and window:
+            window._clear_lane_links(row_idx, lane)
+        elif action == act_clear_sifu and window:
+            window._clear_sifu_links(row_idx)
 
     # ----- Kind constraint -----
     def _can_accept_item(self, qitem: QListWidgetItem) -> bool:
@@ -588,7 +681,61 @@ class ChipList(QListWidget):
         self.window().recalculate_all()
 
     def mousePressEvent(self, event):
+        window = self.window()
+        if window:
+            setattr(window, "_last_focused_list", self)
         super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        if event.button() == Qt.LeftButton:
+            item = self.itemAt(event.pos())
+            if item:
+                window = self.window()
+                handler = getattr(window, "_handle_link_click", None)
+                if callable(handler):
+                    handler(self, item)
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        window = self.window()
+        if window:
+            setattr(window, "_last_focused_list", self)
+
+    def _apply_link_properties(self, widget: Optional[QWidget], data: Dict[str, Any]) -> None:
+        if widget is None:
+            return
+        window = self.window()
+        color_value = data.get("link_color") if isinstance(data, dict) else None
+        sanitized = None
+        if window and color_value and hasattr(window, "_sanitize_link_color"):
+            sanitized = window._sanitize_link_color(color_value)
+        elif isinstance(color_value, str):
+            sanitized = color_value
+
+        indicator = getattr(widget, "_link_indicator", None)
+        if isinstance(indicator, QLabel):
+            if sanitized:
+                indicator.setVisible(True)
+                indicator.setStyleSheet(
+                    "QLabel{background:%s; border-radius:5px; border:1px solid rgba(15,23,42,0.18);}" % sanitized
+                )
+            else:
+                indicator.setVisible(False)
+                indicator.setStyleSheet(
+                    "QLabel{background: transparent; border-radius:5px; border:1px solid rgba(148,163,184,0.45);}"  # noqa: E501
+                )
+
+        widget.setProperty("linkTag", None)
+
+    def refresh_chip(self, item: QListWidgetItem) -> None:
+        if not item:
+            return
+        widget = self.itemWidget(item)
+        if widget is None:
+            self.attach_chip(item)
+        else:
+            self._apply_link_properties(widget, item.data(Qt.UserRole) or {})
 
     @staticmethod
     def _make_chip_label(text: str) -> QLabel:
@@ -601,6 +748,18 @@ class ChipList(QListWidget):
         lbl.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         lbl.adjustSize()
         return lbl
+
+    @staticmethod
+    def _make_link_indicator() -> QLabel:
+        indicator = QLabel()
+        indicator.setObjectName("ChipLinkDot")
+        indicator.setFixedSize(10, 10)
+        indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        indicator.setStyleSheet(
+            "QLabel{background: transparent; border-radius:5px; border:1px solid rgba(148,163,184,0.45);}"  # noqa: E501
+        )
+        indicator.setVisible(False)
+        return indicator
 
 
 class ActuatorList(ChipList):
@@ -655,40 +814,9 @@ class ActuatorList(ChipList):
                         'instance_id': new_instance_id(),
                     })
 
-                    widget = QWidget()
-                    widget.setProperty("kind", "actuator")  # for accent styling
-                    lay = QHBoxLayout(widget)
-                    lay.setContentsMargins(8, 4, 8, 4)
-                    lay.setSpacing(8)
-
-                    # compact badge between chips
-                    badge = QLabel("← 1oo2 →")
-                    badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-                    badge.setStyleSheet(
-                        "QLabel{color:#555; background:#eee; border:1px solid #ddd; "
-                        "border-radius:10px; padding:4px 10px; font-size:11px;font-weight: bold}"
-                    )
-                    badge.setFixedWidth(badge.sizeHint().width())
-                    badge.adjustSize()  # <-- passt die Größe an den Inhalt an
-
-                    lay.addWidget(self._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self._make_chip_label(s_name))
-
-                    # ensure enough vertical room
-                    widget.setMinimumHeight(30)
-                    sh1 = widget.sizeHint()
-                    try:
-                        h01 = sh1.height()
-                        sh1.setHeight(max(h01, 38))
-                    except Exception:
-                        pass
-                    grp_item.setSizeHint(sh1)
-                    self.setItemWidget(grp_item, widget)
-
                     self.takeItem(target_row)
                     self.insertItem(target_row, grp_item)
-                    self.setItemWidget(grp_item, widget)
+                    self.attach_chip(grp_item)
 
                     if src is self:
                         qrow = self.row(s_item)
@@ -759,35 +887,9 @@ class SensorList(ChipList):
                         'instance_id': new_instance_id(),
                     })
 
-                    widget = QWidget()
-                    widget.setProperty("kind", "sensor")
-                    lay = QHBoxLayout(widget)
-                    lay.setContentsMargins(8, 4, 8, 4)
-                    lay.setSpacing(8)
-
-                    badge = QLabel("← 1oo2 →")
-                    badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-                    badge.setStyleSheet("QLabel{color:#555; background:#eee; border:1px solid #ddd; border-radius:10px; padding:4px 10px; font-size:11px;font-weight: bold}")
-                    badge.setFixedWidth(badge.sizeHint().width())
-                    badge.adjustSize()
-
-                    lay.addWidget(self._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self._make_chip_label(s_name))
-
-                    widget.setMinimumHeight(30)
-                    sh1 = widget.sizeHint()
-                    try:
-                        h01 = sh1.height()
-                        sh1.setHeight(max(h01, 38))
-                    except Exception:
-                        pass
-                    grp_item.setSizeHint(sh1)
-                    self.setItemWidget(grp_item, widget)
-
                     self.takeItem(target_row)
                     self.insertItem(target_row, grp_item)
-                    self.setItemWidget(grp_item, widget)
+                    self.attach_chip(grp_item)
 
                     if src is self:
                         qrow = self.row(s_item)
@@ -803,6 +905,7 @@ class SensorList(ChipList):
         self.setProperty("dragTarget", False)
         self.style().unpolish(self); self.style().polish(self)
         self.window().recalculate_all()
+
 class SifuRowWidgets:
     """Container of column lists + result cell."""
     def __init__(self):
@@ -1482,6 +1585,30 @@ class MainWindow(QMainWindow):
         }
         self.du_dd_ratios = {'sensor': (0.7, 0.3), 'logic': (0.6, 0.4), 'actuator': (0.6, 0.4)}
 
+        self.link_palette: List[Tuple[str, str]] = [
+            ("#FDE68A", "link0"),
+            ("#BFDBFE", "link1"),
+            ("#CFFAFE", "link2"),
+            ("#D9F99D", "link3"),
+            ("#FBCFE8", "link4"),
+            ("#F5D0C5", "link5"),
+        ]
+        self._link_color_tags: Dict[str, str] = {color.lower(): tag for color, tag in self.link_palette}
+        self._link_selected_color: str = self._sanitize_link_color(self.link_palette[0][0]) or self.link_palette[0][0]
+        self._link_color_menu: Optional[QtWidgets.QMenu] = None
+        self._link_color_actions: List[QAction] = []
+        self._link_color_action_group = QActionGroup(self)
+        self._link_color_action_group.setExclusive(True)
+        self._link_session_counters: Dict[str, int] = {}
+        self._link_active = False
+        self._link_active_row_uid: Optional[str] = None
+        self._link_active_lane: Optional[str] = None
+        self._link_active_lanes: Set[str] = set()
+        self._link_active_list = None
+        self._link_active_color: Optional[str] = None
+        self._link_active_group_id: Optional[str] = None
+        self._last_focused_list = None
+
         # --- per-row metadata store ---
         self.rows_meta: List[RowMeta] = []
 
@@ -1509,6 +1636,18 @@ class MainWindow(QMainWindow):
         toggle_actuator.setChecked(True)
         toggle_actuator.triggered.connect(lambda checked: self.act_lib.setVisible(checked))
         view_menu.addAction(toggle_actuator)
+
+        tools_menu = self.menuBar().addMenu("Tools")
+        self.link_mode_action = QAction("Component Link Mode", self)
+        self.link_mode_action.setCheckable(True)
+        self.link_mode_action.setShortcut("Ctrl+L")
+        self.link_mode_action.setToolTip("Highlight related components within the active lane (Ctrl+L)")
+        self.link_mode_action.triggered.connect(self._toggle_link_mode)
+        tools_menu.addAction(self.link_mode_action)
+
+        self._link_color_menu = tools_menu.addMenu("Link colour")
+        self._link_color_menu.setToolTipsVisible(True)
+        self._populate_link_color_menu()
 
         # New Project
         act_new = QAction("New Project", self)
@@ -1722,6 +1861,7 @@ class MainWindow(QMainWindow):
 
         # initial calc & row height
         self.recalculate_all()
+        self._reseed_link_counters()
 
         # theme
         self._apply_qss_theme()  # Light only per preference
@@ -1854,6 +1994,17 @@ class MainWindow(QMainWindow):
         primary = "#3B82F6"; success = "#1B7F3A"; danger = "#B42318"
         bg0 = "#FFFFFF"; bg1 = "#F7F8FA"; border = "#DADCE0"
         sensor_accent = "#0EA5E9"; logic_accent = "#22C55E"; actuator_accent= "#A855F7"
+        link_styles = """
+        QLabel#ChipLinkDot {
+            min-width: 10px;
+            max-width: 10px;
+            min-height: 10px;
+            max-height: 10px;
+            border-radius: 5px;
+            border:1px solid rgba(148,163,184,0.45);
+            background: transparent;
+        }
+        """
 
         self.setStyleSheet(f"""
         * {{ font-size: 11px; }}
@@ -1951,6 +2102,7 @@ class MainWindow(QMainWindow):
         QWidget[kind] {{
             background:{bg0}; border:1px solid #d9d9d9; border-radius:12px;
         }}
+{link_styles}
         QWidget[kind="sensor"] {{ border-left:4px solid {sensor_accent}; padding-left:8px; }}
         QWidget[kind="logic"] {{ border-left:4px solid {logic_accent}; padding-left:8px; }}
         QWidget[kind="actuator"] {{ border-left:4px solid {actuator_accent}; padding-left:8px; }}
@@ -2303,51 +2455,12 @@ class MainWindow(QMainWindow):
                 it = src_list.item(i)
                 if not it:
                     continue
-                d = (it.data(Qt.UserRole) or {}).copy()
-
-                # 1oo2-Gruppe separat behandeln
-                if d.get("group") and d.get("architecture") == "1oo2":
-                    members = d.get("members", [])
-                    m1 = members[0] if len(members) > 0 else {}
-                    m2 = members[1] if len(members) > 1 else {}
-                    # Neues Gruppen-Item
-                    grp_item = QListWidgetItem(f"{m1.get('code','?')} + {m2.get('code','?')}")
-                    grp_item.setData(
-                        Qt.UserRole,
-                        {
-                            "group": True,
-                            "architecture": "1oo2",
-                            "members": [m1.copy(), m2.copy()],
-                            "kind": group_kind,
-                        },
-                    )
-                    # Tooltip + Darstellung ähnlich wie beim Import
-                    grp_item.setToolTip(self._tooltip_for_1oo2(m1, m2, group_kind))
-                    widget = QWidget(); widget.setProperty("kind", group_kind)
-                    lay = QHBoxLayout(widget); lay.setContentsMargins(8,4,8,4); lay.setSpacing(8)
-                    badge = QLabel("1oo2"); badge.setStyleSheet(
-                        "QLabel{font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; border:1px solid #ddd;}"
-                    )
-                    # Reuse ChipList helper for members' labels
-                    lblA = dst_widgets.out_list._make_chip_label(m1.get("code","?")) if group_kind=="actuator" else QLabel(m1.get("code","?"))
-                    lblB = dst_widgets.out_list._make_chip_label(m2.get("code","?")) if group_kind=="actuator" else QLabel(m2.get("code","?"))
-                    lay.addWidget(lblA); lay.addWidget(badge); lay.addWidget(lblB)
-                    grp_item.setSizeHint(widget.sizeHint())
-                    dst_list.addItem(grp_item)
-                    dst_list.setItemWidget(grp_item, widget)
-                else:
-                    # Normales Einzel-Item neu erzeugen
-                    name = d.get("name") or d.get("code") or "Item"
-                    pfd = float(d.get("pfd", d.get("pfd_avg", 0.0)) or 0.0)
-                    pfh = float(d.get("pfh", d.get("pfh_avg", 0.0)) or 0.0)
-                    syscap = d.get("syscap", d.get("sys_cap", ""))
-                    pdm = d.get("pdm_code", "")
-                    pfh_fit = d.get("pfh_fit") if "pfh_fit" in d else None
-                    pfd_fit = d.get("pfd_fit") if "pfd_fit" in d else None
-                    new_item = self._make_item(str(name), pfd, pfh, syscap, pdm_code=pdm,
-                                            kind=group_kind, pfh_fit=pfh_fit, pfd_fit=pfd_fit)
-                    dst_list.addItem(new_item)
-                    dst_list.attach_chip(new_item)
+                payload = it.data(Qt.UserRole) or {}
+                new_payload = self._clone_chip_data(payload, preserve_id=False)
+                new_item = QListWidgetItem(it)
+                new_item.setData(Qt.UserRole, new_payload)
+                dst_list.addItem(new_item)
+                dst_list.attach_chip(new_item)
 
         _clone_list(src_widgets.in_list,    dst_widgets.in_list,    "sensor")
         _clone_list(src_widgets.logic_list, dst_widgets.logic_list, "logic")
@@ -2356,6 +2469,7 @@ class MainWindow(QMainWindow):
         # --- Höhe und Ergebnis neu berechnen
         self._update_row_height(new_row)
         self.recalculate_row(new_row)
+        self._reseed_link_counters()
         self.statusBar().showMessage("SIFU duplicated", 2000)
         
     # ---- HTML Report Export -------------------------------------------------
@@ -2404,7 +2518,427 @@ class MainWindow(QMainWindow):
                     member_copy["instance_id"] = new_instance_id()
                 members.append(member_copy)
             new_data["members"] = members
+        if not preserve_id:
+            new_data.pop("link_color", None)
+            new_data.pop("link_group_id", None)
         return new_data
+
+    def _tag_for_color(self, color: Optional[str]) -> Optional[str]:
+        if not color:
+            return None
+        return self._link_color_tags.get(str(color).lower())
+
+    def _row_uid_for_index(self, row_idx: int) -> Optional[str]:
+        if 0 <= row_idx < len(self.rows_meta):
+            return self._ensure_row_uid(self.rows_meta[row_idx])
+        return None
+
+    def _lane_name_for_column(self, column: int) -> Optional[str]:
+        mapping = {0: "sensor", 1: "logic", 2: "actuator"}
+        return mapping.get(column)
+
+    def _list_for_lane(self, row_idx: int, lane: Optional[str]) -> Optional[ChipList]:
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets or not lane:
+            return None
+        if lane == "sensor":
+            return widgets.in_list
+        if lane == "logic":
+            return widgets.logic_list
+        if lane == "actuator":
+            return widgets.out_list
+        return None
+
+    def _row_lane_for_list(self, list_widget: Optional[ChipList]) -> Tuple[int, Optional[str]]:
+        if list_widget is None:
+            return -1, None
+        for idx, widgets in self.sifu_widgets.items():
+            if list_widget is widgets.in_list:
+                return idx, "sensor"
+            if list_widget is widgets.logic_list:
+                return idx, "logic"
+            if list_widget is widgets.out_list:
+                return idx, "actuator"
+        return -1, None
+
+    @staticmethod
+    def _sanitize_link_color(value: Optional[str]) -> Optional[str]:
+        if not isinstance(value, str):
+            return None
+        candidate = value.strip()
+        if not candidate:
+            return None
+        if re.fullmatch(r'#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})', candidate):
+            # Normalise to lowercase hex for stable comparisons
+            if len(candidate) == 4:  # short form like #abc
+                # Expand to 6-digit for consistency
+                r, g, b = candidate[1], candidate[2], candidate[3]
+                candidate = f"#{r}{r}{g}{g}{b}{b}"
+            return candidate.lower()
+        return None
+
+    @staticmethod
+    def _normalize_link_group_id(group_id: Optional[str]) -> Optional[str]:
+        if not isinstance(group_id, str):
+            return None
+        normalized = group_id.strip()
+        if not normalized:
+            return None
+        parts = normalized.split(":")
+        if len(parts) == 3 and parts[1] in {"sensor", "logic", "actuator"}:
+            return f"{parts[0]}:{parts[2]}"
+        return normalized
+
+    @staticmethod
+    def _group_id_for_color(row_uid: str, color: str) -> str:
+        token = color.lower().lstrip('#') or color.lower()
+        return f"{row_uid}:{token}"
+
+    def _color_icon(self, color: str) -> QIcon:
+        pix = QPixmap(16, 16)
+        pix.fill(QColor(color))
+        painter = QPainter(pix)
+        pen = QPen(QColor(0, 0, 0, 80))
+        pen.setWidth(1)
+        painter.setPen(pen)
+        painter.drawRect(0, 0, pix.width() - 1, pix.height() - 1)
+        painter.end()
+        return QIcon(pix)
+
+    def _populate_link_color_menu(self) -> None:
+        if not self._link_color_menu:
+            return
+        self._link_color_menu.clear()
+        for action in self._link_color_actions:
+            self._link_color_action_group.removeAction(action)
+        self._link_color_actions.clear()
+        for color, tag in self.link_palette:
+            sanitized = self._sanitize_link_color(color) or color
+            title = f"{sanitized.upper()}"
+            action = QAction(title, self)
+            action.setCheckable(True)
+            action.setData(sanitized)
+            action.setIcon(self._color_icon(sanitized))
+            action.setToolTip(f"Assign components to subgroup colour {sanitized.upper()}")
+            action.triggered.connect(lambda checked, c=sanitized: self._apply_link_color_selection(c))
+            self._link_color_action_group.addAction(action)
+            self._link_color_actions.append(action)
+            self._link_color_menu.addAction(action)
+        self._link_color_menu.addSeparator()
+        custom_action = QAction("Custom colour…", self)
+        custom_action.setToolTip("Select any colour for link subgroups")
+        custom_action.triggered.connect(self._choose_custom_link_color)
+        self._link_color_menu.addAction(custom_action)
+        self._update_link_color_checks()
+
+    def _update_link_color_checks(self) -> None:
+        target = (self._link_selected_color or "").lower()
+        for action in self._link_color_actions:
+            action.setChecked(str(action.data()).lower() == target)
+        if self._link_color_menu and self._link_selected_color:
+            self._link_color_menu.setTitle(f"Link colour ({self._link_selected_color.upper()})")
+
+    def _apply_link_color_selection(self, color: str, announce: bool = True) -> None:
+        sanitized = self._sanitize_link_color(color)
+        if not sanitized:
+            return
+        self._link_selected_color = sanitized
+        self._update_link_color_checks()
+        message = None
+        if self._link_active and self._link_active_row_uid:
+            group_id = self._group_id_for_color(self._link_active_row_uid, sanitized)
+            self._link_active_color = sanitized
+            self._link_active_group_id = group_id
+            message = f"Link colour changed to {sanitized}"
+        else:
+            message = f"Link colour set to {sanitized}"
+        if announce and message:
+            self.statusBar().showMessage(message, 2000)
+
+    def _choose_custom_link_color(self) -> None:
+        initial = QColor(self._link_selected_color)
+        chosen = QColorDialog.getColor(initial, self, "Select link colour")
+        if chosen.isValid():
+            self._apply_link_color_selection(chosen.name(), announce=True)
+
+    def _popup_link_color_menu(self, global_pos: QtCore.QPoint) -> None:
+        if self._link_color_menu:
+            self._link_color_menu.popup(global_pos)
+
+    def _toggle_link_mode(self, checked: bool) -> None:
+        if checked:
+            if not self._sanitize_link_color(self._link_selected_color):
+                self._apply_link_color_selection(self.link_palette[0][0], announce=False)
+            target_list = self._last_focused_list
+            row_idx, lane = self._row_lane_for_list(target_list)
+            if lane is None or row_idx < 0:
+                row_idx = self._current_row_index()
+                lane = self._lane_name_for_column(self.table.currentColumn())
+                target_list = self._list_for_lane(row_idx, lane)
+            if lane is None or row_idx < 0 or target_list is None:
+                self.link_mode_action.blockSignals(True)
+                self.link_mode_action.setChecked(False)
+                self.link_mode_action.blockSignals(False)
+                self.statusBar().showMessage("Select a SIFU lane before enabling link mode", 3000)
+                return
+            self._activate_link_mode_for(row_idx, lane, target_list, restart=True)
+        else:
+            self._end_link_session()
+
+    def _activate_link_mode_for(self, row_idx: int, lane: str, list_widget: Optional[ChipList], restart: bool = True) -> None:
+        if list_widget is None or not lane or row_idx < 0:
+            return
+        row_uid = self._row_uid_for_index(row_idx)
+        if not row_uid:
+            return
+        if self._link_active:
+            same_row = self._link_active_row_uid == row_uid
+            lane_known = lane in getattr(self, "_link_active_lanes", set())
+            if same_row and lane_known and not restart:
+                return
+            self._end_link_session(silent=True, keep_action=True)
+        self._begin_link_session(row_idx, row_uid, lane, list_widget)
+
+    def _begin_link_session(self, row_idx: int, row_uid: str, lane: str, list_widget: ChipList) -> None:
+        selected = self._sanitize_link_color(self._link_selected_color)
+        if not selected:
+            selected = self._sanitize_link_color(self.link_palette[0][0]) or self.link_palette[0][0]
+            self._link_selected_color = selected
+        self._link_selected_color = selected
+        self._update_link_color_checks()
+        group_id = self._group_id_for_color(row_uid, selected)
+        color = selected
+
+        self._link_active = True
+        self._link_active_row_uid = row_uid
+        self._link_active_lane = lane
+        self._link_active_lanes = {lane}
+        self._link_active_list = list_widget
+        self._link_active_color = color
+        self._link_active_group_id = group_id
+        self._last_focused_list = list_widget
+
+        if hasattr(self, "link_mode_action"):
+            self.link_mode_action.blockSignals(True)
+            self.link_mode_action.setChecked(True)
+            self.link_mode_action.blockSignals(False)
+
+        sifu_name = "SIFU"
+        if 0 <= row_idx < len(self.rows_meta):
+            sifu_name = self.rows_meta[row_idx].get("sifu_name", sifu_name)
+        lane_label = {"sensor": "Sensors", "logic": "Logic", "actuators": "Outputs", "actuator": "Outputs"}.get(lane, lane)
+        color_label = color.upper() if isinstance(color, str) else color
+        self.statusBar().showMessage(f"Link mode active for {sifu_name} — {lane_label} (colour {color_label})", 4000)
+
+    def _end_link_session(self, silent: bool = False, keep_action: bool = False) -> None:
+        if not self._link_active:
+            if hasattr(self, "link_mode_action") and not keep_action:
+                self.link_mode_action.blockSignals(True)
+                self.link_mode_action.setChecked(False)
+                self.link_mode_action.blockSignals(False)
+            return
+        self._link_active = False
+        self._link_active_row_uid = None
+        self._link_active_lane = None
+        self._link_active_lanes.clear()
+        self._link_active_list = None
+        self._link_active_color = None
+        self._link_active_group_id = None
+        if hasattr(self, "link_mode_action") and not keep_action:
+            self.link_mode_action.blockSignals(True)
+            self.link_mode_action.setChecked(False)
+            self.link_mode_action.blockSignals(False)
+        if not silent:
+            self.statusBar().showMessage("Link mode stopped", 3000)
+
+    def _is_link_active_for(self, row_idx: int, lane: Optional[str]) -> bool:
+        if not self._link_active or lane is None:
+            return False
+        row_uid = self._row_uid_for_index(row_idx)
+        return bool(
+            row_uid
+            and row_uid == self._link_active_row_uid
+            and lane in self._link_active_lanes
+        )
+
+    def _handle_link_click(self, list_widget: ChipList, item: QListWidgetItem) -> None:
+        if not self._link_active or not item:
+            return
+        row_idx, lane = self._row_lane_for_list(list_widget)
+        row_uid = self._row_uid_for_index(row_idx)
+        if row_uid != self._link_active_row_uid:
+            self.statusBar().showMessage("Link mode is active for a different SIFU.", 3000)
+            return
+        if lane not in self._link_active_lanes:
+            self._link_active_lanes.add(lane)
+            self._link_active_lane = lane
+            lane_label = {"sensor": "Sensors", "logic": "Logic", "actuator": "Outputs", "actuators": "Outputs"}.get(lane, lane)
+            self.statusBar().showMessage(
+                f"Link mode extended to {lane_label} lane", 2500
+            )
+        payload = item.data(Qt.UserRole) or {}
+        updated = copy.deepcopy(payload)
+        current_id = updated.get("link_group_id")
+        changed = False
+        if current_id == self._link_active_group_id:
+            removed = False
+            if updated.pop("link_color", None) is not None:
+                removed = True
+            if updated.pop("link_group_id", None) is not None:
+                removed = True or removed
+            if removed:
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                self.statusBar().showMessage("Component removed from link group", 2000)
+                changed = True
+        else:
+            if self._link_active_color and self._link_active_row_uid:
+                active_color = self._sanitize_link_color(self._link_active_color)
+                if not active_color:
+                    return
+                group_id = self._group_id_for_color(self._link_active_row_uid, active_color)
+                self._link_active_group_id = group_id
+                updated["link_color"] = active_color
+                updated["link_group_id"] = group_id
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                self.statusBar().showMessage("Component linked", 2000)
+                changed = True
+
+        if changed:
+            self._reseed_link_counters()
+            self.recalculate_row(row_idx)
+
+    def _clear_lane_links(self, row_idx: int, lane: str, announce: bool = True) -> bool:
+        list_widget = self._list_for_lane(row_idx, lane)
+        if not list_widget:
+            if announce:
+                self.statusBar().showMessage("No lane available to clear", 2000)
+            return False
+        row_uid = self._row_uid_for_index(row_idx)
+        if self._is_link_active_for(row_idx, lane):
+            self._end_link_session(silent=True)
+        changed = False
+        for i in range(list_widget.count()):
+            item = list_widget.item(i)
+            if not item:
+                continue
+            payload = item.data(Qt.UserRole) or {}
+            updated = copy.deepcopy(payload)
+            removed = False
+            if updated.pop("link_color", None) is not None:
+                removed = True
+            if updated.pop("link_group_id", None) is not None:
+                removed = True or removed
+            if removed:
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                changed = True
+        if row_uid:
+            self._reseed_link_counters()
+        if announce:
+            if changed:
+                self.statusBar().showMessage("Cleared link highlights for lane", 2000)
+            else:
+                self.statusBar().showMessage("No link highlights found for lane", 2000)
+        return changed
+
+    def _clear_sifu_links(self, row_idx: int) -> None:
+        if row_idx < 0 or row_idx >= len(self.rows_meta):
+            return
+        any_cleared = False
+        for lane in ("sensor", "logic", "actuator"):
+            if self._clear_lane_links(row_idx, lane, announce=False):
+                any_cleared = True
+        row_uid = self._row_uid_for_index(row_idx)
+        if row_uid:
+            self._reseed_link_counters()
+        if any_cleared:
+            self.statusBar().showMessage("Cleared link highlights for SIFU", 2000)
+        else:
+            self.statusBar().showMessage("No link highlights found for SIFU", 2000)
+
+    def _reseed_link_counters(self) -> None:
+        counters: Dict[str, int] = {}
+        for row_idx, meta in enumerate(self.rows_meta):
+            row_uid = self._ensure_row_uid(meta)
+            if not row_uid:
+                continue
+            widgets = self.sifu_widgets.get(row_idx)
+            if not widgets:
+                continue
+            seen: Set[str] = set()
+            for attr in ("in_list", "logic_list", "out_list"):
+                lw = getattr(widgets, attr, None)
+                if not lw:
+                    continue
+                for i in range(lw.count()):
+                    item = lw.item(i)
+                    if not item:
+                        continue
+                    payload = item.data(Qt.UserRole) or {}
+                    color = self._sanitize_link_color(payload.get("link_color"))
+                    if color:
+                        group_id = self._group_id_for_color(row_uid, color)
+                        if payload.get("link_group_id") != group_id or payload.get("link_color") != color:
+                            updated = copy.deepcopy(payload)
+                            updated["link_color"] = color
+                            updated["link_group_id"] = group_id
+                            item.setData(Qt.UserRole, updated)
+                        seen.add(group_id)
+                    else:
+                        if payload.get("link_group_id"):
+                            updated = copy.deepcopy(payload)
+                            updated.pop("link_group_id", None)
+                            item.setData(Qt.UserRole, updated)
+            if seen:
+                counters[row_uid] = len(seen)
+        self._link_session_counters = counters
+
+    def _create_group_item(self, entry: dict, kind: str) -> QListWidgetItem:
+        members: List[dict] = []
+        for member in entry.get('members', []):
+            if not isinstance(member, dict):
+                continue
+            member_copy = copy.deepcopy(member)
+            inst_id = member_copy.get('instance_id')
+            if not isinstance(inst_id, str) or not inst_id:
+                member_copy['instance_id'] = new_instance_id()
+            members.append(member_copy)
+
+        labels: List[str] = []
+        for idx, member in enumerate(members):
+            label = member.get('code') or member.get('name') or f"Member {idx + 1}"
+            labels.append(str(label))
+        if not labels:
+            fallback = entry.get('code') or entry.get('name') or "1oo2 Group"
+            labels.append(str(fallback))
+
+        item = QListWidgetItem(" + ".join(labels[:2]))
+        payload = {
+            'group': True,
+            'architecture': '1oo2',
+            'members': members,
+            'kind': kind,
+            'instance_id': entry.get('instance_id', new_instance_id()),
+        }
+        color = self._sanitize_link_color(entry.get('link_color'))
+        if color:
+            payload['link_color'] = color
+        group_id = self._normalize_link_group_id(entry.get('link_group_id'))
+        if group_id:
+            payload['link_group_id'] = group_id
+        item.setData(Qt.UserRole, payload)
+
+        try:
+            m1 = members[0] if len(members) > 0 else {}
+            m2 = members[1] if len(members) > 1 else {}
+            tooltip = self._tooltip_for_1oo2(m1, m2, kind)
+        except Exception:
+            tooltip = None
+        if tooltip:
+            item.setToolTip(tooltip)
+        return item
 
     def _build_html_report(self) -> str:
         '''Build a self-contained HTML report (print-friendly) with all SIFUs,
@@ -2415,6 +2949,14 @@ class MainWindow(QMainWindow):
 
         def esc(x):
             return _html.escape('' if x is None else str(x))
+
+        def sanitize_color(value: Any) -> Optional[str]:
+            if not isinstance(value, str):
+                return None
+            candidate = value.strip()
+            if re.fullmatch(r'#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})', candidate):
+                return candidate
+            return None
 
         def fmt_pfd(x):
             try:
@@ -2436,6 +2978,11 @@ class MainWindow(QMainWindow):
 
         # Collect all data using existing helpers
         payload = {"sifus": []}
+        lane_display_map = {
+            'sensor': 'Sensors / Inputs',
+            'logic': 'Logic',
+            'actuator': 'Outputs / Actuators',
+        }
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
@@ -2444,7 +2991,13 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+            pfd_sum, pfh_sum, subgroup_info = self._sum_lists(
+                (widgets.in_list, widgets.logic_list, widgets.out_list),
+                mode_key,
+            )
+            combined_groups: List[Dict[str, Any]] = []
+            if isinstance(subgroup_info, dict):
+                combined_groups = copy.deepcopy(subgroup_info.get('combined', []) or [])
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2466,6 +3019,7 @@ class MainWindow(QMainWindow):
                 "ok": ok,
                 "req_sil": req_sil_str,
                 "uid": uid,
+                "link_subgroups": combined_groups,
             })
 
         # Global assumptions and DU/DD ratios
@@ -2502,7 +3056,7 @@ class MainWindow(QMainWindow):
         table.component-table tbody tr.group-member td:first-child::before { content:'↳'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#6366f1; font-size:12px; }
         table.component-table td.right, table.component-table th.right { font-variant-numeric: tabular-nums; white-space: nowrap; }
         .member-tag { display:inline-flex; align-items:center; padding:1px 6px; border-radius:999px; background:#ede9fe; color:#312e81; font-weight:600; }
-        .member-caption { display:block; color:#6b7280; font-size:11px; margin-top:2px; }
+        .member-caption { display:inline-flex; align-items:center; color:#6b7280; font-size:11px; margin-top:0; }
         .ok { color: #166534; font-weight: 600; }
         .bad { color: #b91c1c; font-weight: 600; }
         .pill { display:inline-flex; align-items:center; padding:2px 7px; border:1px solid #d1d5db; border-radius:999px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.04em; background:#f9fafb; color:#374151; }
@@ -2515,7 +3069,10 @@ class MainWindow(QMainWindow):
         .right { text-align:right; }
         .nowrap { white-space: nowrap; }
         .architecture { margin: 18px 0 24px; }
-        .arch-lanes { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+        .architecture { position: relative; }
+        .arch-lanes-wrapper { position: relative; }
+        .arch-link-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .arch-lanes { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
         .lane-cards { display:flex; flex-direction:column; gap:4px; }
@@ -2525,8 +3082,10 @@ class MainWindow(QMainWindow):
         .lane--sensors .lane-card { border-left-color:#0EA5E9; }
         .lane--logic .lane-card { border-left-color:#22C55E; }
         .lane--actuators .lane-card { border-left-color:#A855F7; }
+        .chip-link-dot { width:10px; height:10px; border-radius:999px; border:1px solid rgba(148,163,184,0.45); background:transparent; display:inline-flex; flex-shrink:0; }
         .lane-card-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .lane-title { font-size:13px; font-weight:600; color:#111827; margin:0; }
+        .lane-title { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:#111827; margin:0; }
+        .lane-title-text { display:inline-flex; align-items:center; }
         .lane-subtitle { font-size:11px; color:#6b7280; margin:0; }
         .lane-metrics { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:#374151; }
         .lane-metrics span { white-space:nowrap; padding:0 6px; border-radius:999px; background:#fff; border:1px solid #e5e7eb; }
@@ -2536,11 +3095,27 @@ class MainWindow(QMainWindow):
         .lane--sensors .lane-member { border-left-color:#0EA5E9; }
         .lane--logic .lane-member { border-left-color:#22C55E; }
         .lane--actuators .lane-member { border-left-color:#A855F7; }
-        .lane-member h4 { font-size:11px; margin:0; color:#1f2937; }
+        .lane-member-title { display:flex; align-items:center; gap:6px; font-size:11px; color:#1f2937; font-weight:600; margin:0; }
+        .lane-member-text { color:#1f2937; }
         .lane-member .lane-metrics { margin:0; gap:4px; font-size:10px; }
         .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
+        .component-label { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+        .component-label-text { font-weight:600; color:#1f2937; }
+        .link-subgroup-box { margin-top:16px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); }
+        .link-subgroup-heading { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#1f2937; margin:0 0 10px; }
+        .link-subgroup-list { display:flex; flex-direction:column; gap:10px; }
+        .link-subgroup-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; }
+        .link-subgroup-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+        .link-subgroup-title { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; }
+        .pill.subgroup { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
+        .link-subgroup-color { width:14px; height:14px; border-radius:999px; border:1px solid rgba(17,24,39,0.18); }
+        .link-subgroup-lanes { font-size:12px; color:#4b5563; }
+        .link-subgroup-metrics { margin-top:6px; font-size:12px; color:#1f2937; font-variant-numeric:tabular-nums; }
+        .link-subgroup-members { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
+        .link-subgroup-member { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#ede9fe; color:#312e81; font-size:12px; }
+        .link-subgroup-member .lane { color:#4338ca; font-size:11px; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
         .formula-column { display:flex; flex-direction:column; gap:16px; }
@@ -2565,7 +3140,12 @@ class MainWindow(QMainWindow):
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
+        def build_architecture_lanes(
+            sensors: List[dict],
+            logic: List[dict],
+            actuators: List[dict],
+            anchor_prefix: str = "",
+        ) -> Tuple[str, List[Dict[str, Any]]]:
             stage_defs = [
                 ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
@@ -2573,17 +3153,22 @@ class MainWindow(QMainWindow):
             ]
 
             stage_payload: List[Tuple[str, str, List[Dict[str, Any]]]] = []
+            connector_targets: Dict[str, List[Dict[str, str]]] = {}
+
+            safe_prefix = re.sub(r"[^a-zA-Z0-9_-]+", "-", anchor_prefix or "sifu").strip("-")
+            if not safe_prefix:
+                safe_prefix = "sifu"
 
             for stage_key, stage_title, entries in stage_defs:
                 cards: List[Dict[str, Any]] = []
                 for idx, entry in enumerate(entries):
                     architecture = entry.get("architecture")
-                    instance_id = entry.get("instance_id") if isinstance(entry.get("instance_id"), str) else None
                     base_label = entry.get("code") or entry.get("name") or f"{stage_title} {idx + 1}"
                     pfd_val = entry.get("pfd_avg", entry.get("pfd"))
                     pfh_val = entry.get("pfh_avg", entry.get("pfh"))
                     sil_val = entry.get("sys_cap", entry.get("syscap", ""))
                     pdm_val = entry.get("pdm_code", "")
+                    color = sanitize_color(entry.get("link_color") or entry.get("color"))
 
                     note_text = self._note_for_provenance(entry.get("provenance"))
 
@@ -2595,6 +3180,7 @@ class MainWindow(QMainWindow):
                                 continue
                             member_label = member.get("code") or member.get("name") or f"Member {m_idx + 1}"
                             member_codes.append(member_label)
+                            member_color = sanitize_color(member.get("link_color") or color)
                             members_payload.append({
                                 "label": member_label,
                                 "name": member.get("name"),
@@ -2603,6 +3189,7 @@ class MainWindow(QMainWindow):
                                 "sil": member.get("sys_cap", member.get("syscap", "")),
                                 "pdm": member.get("pdm_code", ""),
                                 "note": self._note_for_provenance(member.get("provenance")),
+                                "color": member_color,
                             })
                         display_label = " ∥ ".join(c for c in member_codes if c) or base_label
                         subtitle = base_label if display_label != base_label else ""
@@ -2618,6 +3205,7 @@ class MainWindow(QMainWindow):
                             "members": members_payload,
                             "member_count": len(members_payload),
                             "note": note_text,
+                            "color": color,
                         })
                     else:
                         subtitle = ""
@@ -2634,12 +3222,13 @@ class MainWindow(QMainWindow):
                             "sil": sil_val,
                             "pdm": pdm_val,
                             "note": note_text,
+                            "color": color,
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
 
             if all(not cards for _, _, cards in stage_payload):
-                return ""
+                return "", []
 
             def render_metrics(pfd, pfh, sil, pdm) -> str:
                 bits: List[str] = []
@@ -2655,21 +3244,38 @@ class MainWindow(QMainWindow):
                     return ""
                 return '<div class="lane-metrics">' + ''.join(bits) + '</div>'
 
-            html_parts: List[str] = ['<div class="arch-lanes">']
+            html_parts: List[str] = ['<div class="arch-lanes-wrapper">', '<div class="arch-lanes">']
             for stage_key, stage_title, cards in stage_payload:
                 html_parts.append(f'<div class="lane lane--{stage_key}">')
                 html_parts.append(f'<div class="lane-header">{esc(stage_title)}</div>')
                 html_parts.append('<div class="lane-cards">')
                 if not cards:
                     html_parts.append('<div class="lane-card empty">No components listed</div>')
-                for card in cards:
+                for idx, card in enumerate(cards):
                     classes = ["lane-card"]
                     if card["type"] == "group":
                         classes.append("group")
                     class_attr = " ".join(classes)
-                    html_parts.append(f'<div class="{class_attr}">')
+                    card_color = sanitize_color(card.get("color"))
+                    card_anchor = f"{safe_prefix}-lane-{stage_key}-{idx + 1}"
+                    attr_list = [f'class="{class_attr}"']
+                    attr_list.append(f'id="{card_anchor}"')
+                    attr_list.append(f'data-lane="{stage_key}"')
+                    if card_color:
+                        attr_list.append(f'data-link-color="{card_color}"')
+                        connector_targets.setdefault(card_color, []).append({
+                            "id": card_anchor,
+                            "lane": stage_key,
+                        })
+                    attr_str = ' '.join(attr_list)
+                    html_parts.append(f'<div {attr_str}>')
                     html_parts.append('<div class="lane-card-header">')
-                    html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
+                    title_bits = ['<div class="lane-title">']
+                    if card_color:
+                        title_bits.append(f'<span class="chip-link-dot" style="background:{card_color};"></span>')
+                    title_bits.append(f'<span class="lane-title-text">{esc(card["label"])}</span>')
+                    title_bits.append('</div>')
+                    html_parts.append(''.join(title_bits))
                     if card.get("architecture"):
                         html_parts.append(f'<span class="lane-pill arch">{esc(card["architecture"])}</span>')
                     html_parts.append('</div>')
@@ -2697,7 +3303,17 @@ class MainWindow(QMainWindow):
                             html_parts.append('<div class="lane-members">')
                             for member in members:
                                 html_parts.append('<div class="lane-member">')
-                                html_parts.append(f'<h4>{esc(member.get("label", "Member"))}</h4>')
+                                member_color = sanitize_color(member.get("color"))
+                                member_title_bits = ['<div class="lane-member-title">']
+                                if member_color:
+                                    member_title_bits.append(
+                                        f'<span class="chip-link-dot" style="background:{member_color};"></span>'
+                                    )
+                                member_title_bits.append(
+                                    f'<span class="lane-member-text">{esc(member.get("label", "Member"))}</span>'
+                                )
+                                member_title_bits.append('</div>')
+                                html_parts.append(''.join(member_title_bits))
                                 member_metrics = render_metrics(member.get("pfd"), member.get("pfh"), member.get("sil"), member.get("pdm"))
                                 if member_metrics:
                                     html_parts.append(member_metrics)
@@ -2712,8 +3328,101 @@ class MainWindow(QMainWindow):
                     html_parts.append('</div>')
                 html_parts.append('</div>')
                 html_parts.append('</div>')
+
             html_parts.append('</div>')
-            return ''.join(html_parts)
+            html_parts.append('<svg class="arch-link-layer" aria-hidden="true"></svg>')
+            html_parts.append('</div>')
+
+            connector_payload: List[Dict[str, Any]] = []
+            for color, anchors in connector_targets.items():
+                if not color:
+                    continue
+                lanes_present = {a.get("lane") for a in anchors if a.get("lane")}
+                if len(lanes_present) < 2:
+                    continue
+                connector_payload.append({
+                    "color": color,
+                    "targets": anchors,
+                })
+
+            return ''.join(html_parts), connector_payload
+
+        def render_link_subgroups(entries: Optional[List[Dict[str, Any]]]) -> str:
+            if not entries:
+                return ""
+
+            cards: List[str] = []
+            cards.append('<div class="link-subgroup-box">')
+            cards.append('<div class="link-subgroup-heading">Link subgroups</div>')
+            cards.append('<div class="link-subgroup-list">')
+            has_card = False
+            for idx, subgroup in enumerate(entries, 1):
+                if not isinstance(subgroup, dict):
+                    continue
+
+                color = sanitize_color(subgroup.get('color'))
+                lanes = subgroup.get('lanes')
+                lanes_display = ''
+                if isinstance(lanes, (list, tuple)) and lanes:
+                    lanes_display = ', '.join(str(l) for l in lanes if l)
+
+                metrics_bits: List[str] = []
+                pfd_val = subgroup.get('pfd')
+                if pfd_val not in (None, ''):
+                    metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
+                pfh_val = subgroup.get('pfh')
+                if pfh_val not in (None, ''):
+                    metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
+                count_val = subgroup.get('count')
+                if isinstance(count_val, int) and count_val > 0:
+                    metrics_bits.append(f"{count_val} component{'s' if count_val != 1 else ''}")
+
+                cards.append('<div class="link-subgroup-card">')
+                has_card = True
+                cards.append('<div class="link-subgroup-header">')
+                title_parts = [f'<span class="pill subgroup">Subgroup {idx}</span>']
+                if color:
+                    title_parts.append(f'<span class="link-subgroup-color" style="background:{color};"></span>')
+                cards.append(f"<div class=\"link-subgroup-title\">{''.join(title_parts)}</div>")
+                if lanes_display:
+                    cards.append(f'<div class="link-subgroup-lanes">Lanes: {esc(lanes_display)}</div>')
+                else:
+                    cards.append('<div class="link-subgroup-lanes muted">Lanes: —</div>')
+                cards.append('</div>')
+
+                if metrics_bits:
+                    cards.append(f"<div class=\"link-subgroup-metrics\">{' | '.join(metrics_bits)}</div>")
+
+                components = [comp for comp in subgroup.get('components', []) if isinstance(comp, dict)]
+                if components:
+                    cards.append('<div class="link-subgroup-members">')
+                    for comp in components:
+                        label_val = comp.get('label') or 'Component'
+                        if comp.get('architecture') == '1oo2':
+                            label_val = f"{label_val} (1oo2)"
+                        lane_title = comp.get('lane_title') or lane_display_map.get(comp.get('lane'), comp.get('lane', ''))
+                        lane_caption = esc(lane_title) if lane_title else ''
+                        member_labels = [lbl for lbl in comp.get('member_labels', []) if lbl]
+                        tooltip_attr = ''
+                        if member_labels:
+                            tooltip_attr = f' title="{esc("Members: " + ", ".join(member_labels))}"'
+                        comp_color = sanitize_color(comp.get('color') or subgroup.get('color'))
+                        cards.append(f'<div class="link-subgroup-member"{tooltip_attr}>')
+                        if comp_color:
+                            cards.append(f'<span class="chip-link-dot" style="background:{comp_color};"></span>')
+                        cards.append(f'<span class="member-tag">{esc(label_val)}</span>')
+                        if lane_caption:
+                            cards.append(f'<span class="lane">{lane_caption}</span>')
+                        cards.append('</div>')
+                    cards.append('</div>')
+
+                cards.append('</div>')
+
+            cards.append('</div>')
+            cards.append('</div>')
+            if not has_card:
+                return ""
+            return ''.join(cards)
 
         def build_formula_reference() -> str:
             section_parts: List[str] = []
@@ -2874,11 +3583,28 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'])
-            if arch_html:
+            anchor_token = uid or "sifu"
+            anchor_prefix = f"{anchor_token}-{i}"
+            arch_html, arch_connectors = build_architecture_lanes(
+                s['sensors'],
+                s['logic'],
+                s['actuators'],
+                anchor_prefix=anchor_prefix,
+            )
+            subgroup_html = render_link_subgroups(s.get('link_subgroups'))
+            if arch_html or subgroup_html:
                 parts.append('<div class="architecture">')
-                parts.append('<h3>Architecture overview</h3>')
-                parts.append(arch_html)
+                if arch_html:
+                    parts.append('<h3>Architecture overview</h3>')
+                    parts.append(arch_html)
+                    if arch_connectors:
+                        data_json = json.dumps(arch_connectors)
+                        safe_json = data_json.replace('</', '<\\/')
+                        parts.append('<script type="application/json" class="link-connector-data">')
+                        parts.append(safe_json)
+                        parts.append('</script>')
+                if subgroup_html:
+                    parts.append(subgroup_html)
                 parts.append('</div>')
 
             def render_group(title, items):
@@ -2894,9 +3620,15 @@ class MainWindow(QMainWindow):
                         members = it.get('members', [])
                         member_codes = [m.get('code') or m.get('name') or f'Member {idx + 1}' for idx, m in enumerate(members)]
                         group_title = ' ∥ '.join([c for c in member_codes if c]) or '1oo2 redundant set'
+                        group_color = sanitize_color(it.get('link_color') or it.get('color'))
+                        group_label_bits = ['<div class="group-label">', '<span class="pill arch">1oo2</span>']
+                        if group_color:
+                            group_label_bits.append(f'<span class="chip-link-dot" style="background:{group_color};"></span>')
+                        group_label_bits.append(f'<span class="group-title">{esc(group_title)}</span>')
+                        group_label_bits.append('</div>')
+                        group_label_html = ''.join(group_label_bits)
                         parts.append('<tr class="group-row">'
-                                     f'<td><div class="group-label"><span class="pill arch">1oo2</span>'
-                                     f'<span class="group-title">{esc(group_title)}</span></div></td>'
+                                     f'<td>{group_label_html}</td>'
                                      f'<td class="right">{fmt_pfd(pfd_g)}</td>'
                                      f'<td class="right">{fmt_pfh(pfh_g)}</td>'
                                      f'<td class="right">{fmt_fit(pfh_g)}</td>'
@@ -2904,12 +3636,18 @@ class MainWindow(QMainWindow):
                         for m_idx, m in enumerate(members, 1):
                             code_val = m.get('code') or m.get('name') or f'Member {m_idx}'
                             name_val = m.get('name')
-                            label_html = f'<span class="member-tag">{esc(code_val)}</span>'
+                            member_color = sanitize_color(m.get('link_color') or m.get('color') or group_color)
+                            label_bits = ['<div class="component-label">']
+                            if member_color:
+                                label_bits.append(f'<span class="chip-link-dot" style="background:{member_color};"></span>')
+                            label_bits.append(f'<span class="member-tag">{esc(code_val)}</span>')
                             if name_val and name_val != code_val:
-                                label_html += f'<span class="member-caption">{esc(name_val)}</span>'
+                                label_bits.append(f'<span class="member-caption">{esc(name_val)}</span>')
+                            label_bits.append('</div>')
                             note = self._note_for_provenance(m.get('provenance'))
                             if note:
-                                label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
+                                label_bits.append(f"<div class=\"lane-note\">{esc(note)}</div>")
+                            label_html = ''.join(label_bits)
                             parts.append('<tr class="group-member">'
                                          f'<td>{label_html}</td>'
                                          f'<td class="right">{fmt_pfd(m.get("pfd_avg", m.get("pfd")))}</td>'
@@ -2919,10 +3657,17 @@ class MainWindow(QMainWindow):
                                          f'<td>{esc(m.get("pdm_code", "") or "—")}</td>'
                                          '</tr>')
                     else:
-                        label_html = esc(it.get("code", it.get("name","?")))
+                        item_color = sanitize_color(it.get('link_color') or it.get('color'))
+                        label_bits = ['<div class="component-label">']
+                        if item_color:
+                            label_bits.append(f'<span class="chip-link-dot" style="background:{item_color};"></span>')
+                        code_label = esc(it.get("code", it.get("name", "?")))
+                        label_bits.append(f'<span class="component-label-text">{code_label}</span>')
+                        label_bits.append('</div>')
                         note = self._note_for_provenance(it.get('provenance'))
                         if note:
-                            label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
+                            label_bits.append(f"<div class=\"lane-note\">{esc(note)}</div>")
+                        label_html = ''.join(label_bits)
                         parts.append('<tr>'
                                      f'<td>{label_html}</td>'
                                      f'<td class="right">{fmt_pfd(it.get("pfd_avg", it.get("pfd")))}</td>'
@@ -2933,12 +3678,120 @@ class MainWindow(QMainWindow):
                                      '</tr>')
                 parts.append('</tbody></table>')
 
+
             render_group('Sensors / Inputs', s['sensors'])
             render_group('Logic', s['logic'])
             render_group('Outputs / Actuators', s['actuators'])
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div>')
+        parts.append('''<script>
+(function() {
+  const laneOrder = ['sensors','logic','actuators'];
+  function average(points) {
+    if (!points || !points.length) {
+      return null;
+    }
+    const total = points.reduce(function(acc, pt) {
+      return { x: acc.x + pt.x, y: acc.y + pt.y };
+    }, { x: 0, y: 0 });
+    return { x: total.x / points.length, y: total.y / points.length };
+  }
+  function draw(block) {
+    const dataTag = block.querySelector('script.link-connector-data');
+    const svg = block.querySelector('.arch-link-layer');
+    const lanesWrapper = block.querySelector('.arch-lanes-wrapper');
+    if (!svg || !lanesWrapper) {
+      return;
+    }
+    svg.innerHTML = '';
+    if (!dataTag) {
+      svg.setAttribute('width', 0);
+      svg.setAttribute('height', 0);
+      return;
+    }
+    let groups;
+    try {
+      groups = JSON.parse(dataTag.textContent || '[]');
+    } catch (err) {
+      return;
+    }
+    if (!Array.isArray(groups) || !groups.length) {
+      svg.setAttribute('width', 0);
+      svg.setAttribute('height', 0);
+      return;
+    }
+    const bounds = lanesWrapper.getBoundingClientRect();
+    const width = bounds.width;
+    const height = bounds.height;
+    if (!width || !height) {
+      return;
+    }
+    svg.setAttribute('width', width);
+    svg.setAttribute('height', height);
+    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+    const svgNS = 'http://www.w3.org/2000/svg';
+    groups.forEach(function(group) {
+      if (!group || !group.color || !Array.isArray(group.targets)) {
+        return;
+      }
+      const lanePoints = new Map();
+      group.targets.forEach(function(target) {
+        if (!target || !target.id) {
+          return;
+        }
+        const el = document.getElementById(target.id);
+        if (!el) {
+          return;
+        }
+        const rect = el.getBoundingClientRect();
+        const point = {
+          x: rect.left + rect.width / 2 - bounds.left,
+          y: rect.top + rect.height / 2 - bounds.top
+        };
+        const laneKey = target.lane || el.getAttribute('data-lane');
+        if (!lanePoints.has(laneKey)) {
+          lanePoints.set(laneKey, []);
+        }
+        lanePoints.get(laneKey).push(point);
+      });
+      const orderedPoints = laneOrder
+        .map(function(lane) { return average(lanePoints.get(lane)); })
+        .filter(Boolean);
+      if (orderedPoints.length < 2) {
+        return;
+      }
+      for (let i = 0; i < orderedPoints.length - 1; i += 1) {
+        const start = orderedPoints[i];
+        const end = orderedPoints[i + 1];
+        const midX = (start.x + end.x) / 2;
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', 'M ' + start.x + ' ' + start.y + ' C ' + midX + ' ' + start.y + ' ' + midX + ' ' + end.y + ' ' + end.x + ' ' + end.y);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', group.color);
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        path.setAttribute('stroke-opacity', '0.65');
+        svg.appendChild(path);
+      }
+    });
+  }
+  function renderAll() {
+    document.querySelectorAll('.architecture').forEach(draw);
+  }
+  function scheduleRender() {
+    window.requestAnimationFrame(renderAll);
+  }
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    scheduleRender();
+  } else {
+    document.addEventListener('DOMContentLoaded', scheduleRender, { once: true });
+  }
+  window.addEventListener('load', scheduleRender);
+  window.addEventListener('resize', scheduleRender);
+})();
+</script>''')
         parts.append('</body></html>')
 
         return '\n'.join(parts)
@@ -2953,7 +3806,10 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic   = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+            pfd_sum, pfh_sum, _ = self._sum_lists(
+                (widgets.in_list, widgets.logic_list, widgets.out_list),
+                mode_key,
+            )
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -3002,9 +3858,14 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row_idx, 3, widgets.result)
 
             for sensor in sifu_data.get("sensors", []):
-                item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor", extra_fields=sensor)
-                widgets.in_list.addItem(item)
-                widgets.in_list.attach_chip(item)
+                if sensor.get("architecture") == "1oo2":
+                    item = self._create_group_item(sensor, "sensor")
+                    widgets.in_list.addItem(item)
+                    widgets.in_list.attach_chip(item)
+                else:
+                    item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor", extra_fields=sensor)
+                    widgets.in_list.addItem(item)
+                    widgets.in_list.attach_chip(item)
 
             for logic in sifu_data.get("logic", []):
                 name = logic.get("code", logic.get("name", "Logic"))
@@ -3014,28 +3875,9 @@ class MainWindow(QMainWindow):
 
             for act in sifu_data.get("actuators", []):
                 if act.get("architecture") == "1oo2":
-                    m1, m2 = act.get("members", [{}, {}])
-                    t_name = m1.get("code", "?"); s_name = m2.get("code", "?")
-                    members: List[dict] = []
-                    for payload in (m1, m2):
-                        payload = copy.deepcopy(payload)
-                        if not isinstance(payload.get('instance_id'), str) or not payload.get('instance_id'):
-                            payload['instance_id'] = new_instance_id()
-                        members.append(payload)
-                    grp_item = QListWidgetItem(f"{t_name} + {s_name}")
-                    grp_item.setData(Qt.UserRole, {'group': True, 'architecture': '1oo2', 'members': members, 'kind': 'actuator', 'instance_id': act.get('instance_id', new_instance_id())})
-                    # Tooltip
-                    tooltip_m1 = members[0] if members else {}
-                    tooltip_m2 = members[1] if len(members) > 1 else {}
-                    grp_item.setToolTip(self._tooltip_for_1oo2(tooltip_m1, tooltip_m2, "actuator"))
-                    widget = QWidget(); widget.setProperty("kind", "actuator")
-                    lay = QHBoxLayout(widget); lay.setContentsMargins(8,4,8,4); lay.setSpacing(8)
-                    badge = QLabel("1oo2"); badge.setStyleSheet("QLabel{font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; border:1px solid #ddd;}")
-                    lay.addWidget(self.sifu_widgets[row_idx].out_list._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self.sifu_widgets[row_idx].out_list._make_chip_label(s_name))
-                    grp_item.setSizeHint(widget.sizeHint())
-                    widgets.out_list.addItem(grp_item); widgets.out_list.setItemWidget(grp_item, widget)
+                    grp_item = self._create_group_item(act, "actuator")
+                    widgets.out_list.addItem(grp_item)
+                    widgets.out_list.attach_chip(grp_item)
                 else:
                     item = self._make_item(act.get("code", "?"), act.get("pfd_avg", 0.0), act.get("pfh_avg", 0.0), act.get("sys_cap", ""), act.get("pdm_code", ""), kind="actuator", extra_fields=act)
                     widgets.out_list.addItem(item)
@@ -3047,12 +3889,15 @@ class MainWindow(QMainWindow):
             self.table.setColumnWidth(0, 360); self.table.setColumnWidth(1, 300); self.table.setColumnWidth(2, 360)
 
         self.recalculate_all()
+        self._reseed_link_counters()
 
     # ----- collect list items -----
     def _collect_list_items(self, lw: QListWidget, group_kind: str, mode_key: str) -> List[dict]:
         items: List[dict] = []
         assumptions = self._current_assumptions()
         du_ratio, dd_ratio = self._ratios(group_kind)
+        row_idx, _ = self._row_lane_for_list(lw)
+        row_uid = self._row_uid_for_index(row_idx) if row_idx >= 0 else None
 
         for i in range(lw.count()):
             item = lw.item(i)
@@ -3061,6 +3906,7 @@ class MainWindow(QMainWindow):
             payload = item.data(Qt.UserRole) or {}
             if payload.get('group') and payload.get('architecture') == '1oo2':
                 normalized_members: List[dict] = []
+                group_link_color = self._sanitize_link_color(payload.get('link_color'))
                 for member in payload.get('members', []):
                     if isinstance(member, dict):
                         member_copy = copy.deepcopy(member)
@@ -3092,7 +3938,7 @@ class MainWindow(QMainWindow):
                     if not isinstance(member_id, str) or not member_id:
                         member_id = new_instance_id()
                         member_payload['instance_id'] = member_id
-                    members_payload.append({
+                    member_entry = {
                         'code': member_payload.get('code'),
                         'name': member_payload.get('name'),
                         'pfd_avg': float(member_payload.get('pfd', member_payload.get('pfd_avg', 0.0)) or 0.0),
@@ -3101,15 +3947,24 @@ class MainWindow(QMainWindow):
                         'pdm_code': member_payload.get('pdm_code'),
                         'instance_id': member_id,
                         'provenance': info['provenance'],
-                    })
+                    }
+                    if group_link_color:
+                        member_entry['link_color'] = group_link_color
+                    members_payload.append(member_entry)
 
-                items.append({
+                entry = {
                     'architecture': '1oo2',
                     'members': members_payload,
                     'pfd_avg': float(metrics.pfd),
                     'pfh_avg': float(metrics.pfh),
                     'instance_id': payload.get('instance_id'),
-                })
+                    'kind': payload.get('kind', group_kind),
+                }
+                if group_link_color:
+                    entry['link_color'] = group_link_color
+                    if row_uid:
+                        entry['link_group_id'] = self._group_id_for_color(row_uid, group_link_color)
+                items.append(entry)
             else:
                 inst_id = payload.get('instance_id')
                 if not isinstance(inst_id, str) or not inst_id:
@@ -3129,7 +3984,7 @@ class MainWindow(QMainWindow):
                     self._handle_conversion_error(error)
                     continue
 
-                items.append({
+                entry = {
                     'code': payload.get('code') or payload.get('name'),
                     'name': payload.get('name'),
                     'pfd_avg': float(payload.get('pfd', payload.get('pfd_avg', 0.0)) or 0.0),
@@ -3139,7 +3994,13 @@ class MainWindow(QMainWindow):
                     'kind': payload.get('kind'),
                     'instance_id': inst_id,
                     'provenance': provenance,
-                })
+                }
+                link_color = self._sanitize_link_color(payload.get('link_color'))
+                if link_color:
+                    entry['link_color'] = link_color
+                    if row_uid:
+                        entry['link_group_id'] = self._group_id_for_color(row_uid, link_color)
+                items.append(entry)
         return items
 
     # ----- effective mode -----
@@ -3294,8 +4155,11 @@ class MainWindow(QMainWindow):
             "</qt>"
         )
 
-    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget],
-                   mode_key: str) -> Tuple[float, float]:
+    def _sum_lists(
+        self,
+        lists: Tuple[QListWidget, QListWidget, QListWidget],
+        mode_key: str,
+    ) -> Tuple[float, float, Dict[str, List[Dict[str, Any]]]]:
         pfd_sum = 0.0
         pfh_sum = 0.0
         assumptions = self._current_assumptions()
@@ -3303,13 +4167,82 @@ class MainWindow(QMainWindow):
         def group_of(idx: int) -> str:
             return ('sensor', 'logic', 'actuator')[idx]
 
+        lane_title_map = {
+            'sensor': 'Sensors / Inputs',
+            'logic': 'Logic',
+            'actuator': 'Outputs / Actuators',
+        }
+
+        subgroup_totals: Dict[str, Dict[str, Any]] = {}
+        lane_totals: Dict[str, Dict[str, float]] = {
+            'sensor': {'pfd': 0.0, 'pfh': 0.0},
+            'logic': {'pfd': 0.0, 'pfh': 0.0},
+            'actuator': {'pfd': 0.0, 'pfh': 0.0},
+        }
+
+        def describe_payload(payload: dict, default_label: str) -> Tuple[str, List[str]]:
+            if payload.get('group') and payload.get('architecture') == '1oo2':
+                member_labels: List[str] = []
+                for m_idx, member in enumerate(payload.get('members', [])):
+                    if not isinstance(member, dict):
+                        continue
+                    label = member.get('code') or member.get('name') or f"Member {m_idx + 1}"
+                    member_labels.append(str(label))
+                label = " ∥ ".join(lbl for lbl in member_labels if lbl) or default_label
+                return label, member_labels
+            label = payload.get('code') or payload.get('name') or default_label
+            return str(label), []
+
         for idx, lw in enumerate(lists):
             group = group_of(idx)
             du_ratio, dd_ratio = self._ratios(group)
+            lane_row_idx, _ = self._row_lane_for_list(lw)
+            row_uid = self._row_uid_for_index(lane_row_idx) if lane_row_idx >= 0 else None
             for i in range(lw.count()):
                 item = lw.item(i)
-                if item is None: continue
+                if item is None:
+                    continue
                 ud = item.data(Qt.UserRole) or {}
+                raw_group_id = ud.get('link_group_id')
+                link_group_id = self._normalize_link_group_id(raw_group_id)
+                if link_group_id and raw_group_id != link_group_id:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload['link_group_id'] = link_group_id
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                elif raw_group_id and not link_group_id:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload.pop('link_group_id', None)
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+
+                link_color = self._sanitize_link_color(ud.get('link_color'))
+                if link_color and ud.get('link_color') != link_color:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload['link_color'] = link_color
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                elif ud.get('link_color') and not link_color:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload.pop('link_color', None)
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                if link_color and row_uid:
+                    expected_group_id = self._group_id_for_color(row_uid, link_color)
+                    if link_group_id != expected_group_id:
+                        updated_payload = copy.deepcopy(ud)
+                        updated_payload['link_group_id'] = expected_group_id
+                        updated_payload['link_color'] = link_color
+                        item.setData(Qt.UserRole, updated_payload)
+                        ud = updated_payload
+                        link_group_id = expected_group_id
+                elif not link_color and link_group_id:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload.pop('link_group_id', None)
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                    link_group_id = None
+
                 if ud.get('group') and ud.get('architecture') == '1oo2':
                     members = [m for m in ud.get('members', []) if isinstance(m, dict)]
                     metrics, tooltip, _, errors = self._group_metrics(
@@ -3321,26 +4254,133 @@ class MainWindow(QMainWindow):
                     )
                     for err in errors:
                         self._handle_conversion_error(err)
-                    pfd_sum += metrics.pfd
-                    pfh_sum += metrics.pfh
-                    item.setToolTip(tooltip)
-                else:
-                    metrics, _, tooltip, error = self._component_metrics(
-                        ud,
-                        du_ratio,
-                        dd_ratio,
-                        mode_key,
-                        assumptions,
-                    )
-                    if error:
-                        self._handle_conversion_error(error)
-                        continue
-                    pfd_sum += metrics.pfd
-                    pfh_sum += metrics.pfh
-                    if tooltip:
-                        item.setToolTip(tooltip)
 
-        return pfd_sum, pfh_sum
+                    metrics_pfd = float(metrics.pfd)
+                    metrics_pfh = float(metrics.pfh)
+                    label, member_labels = describe_payload(ud, item.text() or 'Component')
+                    component_info = {
+                        'label': label,
+                        'member_labels': member_labels,
+                        'architecture': '1oo2',
+                        'kind': ud.get('kind', group),
+                        'lane': group,
+                        'lane_title': lane_title_map.get(group, group.title()),
+                        'color': link_color,
+                    }
+
+                    if link_group_id:
+                        entry = subgroup_totals.setdefault(
+                            link_group_id,
+                            {
+                                'color': link_color,
+                                'pfd': 0.0,
+                                'pfh': 0.0,
+                                'components': [],
+                                'lanes': set(),
+                            },
+                        )
+                        if link_color and not entry.get('color'):
+                            entry['color'] = link_color
+                        entry['pfd'] += metrics_pfd
+                        entry['pfh'] += metrics_pfh
+                        entry['components'].append(component_info)
+                        entry['lanes'].add(group)
+                    else:
+                        lane_totals[group]['pfd'] += metrics_pfd
+                        lane_totals[group]['pfh'] += metrics_pfh
+
+                    item.setToolTip(tooltip)
+                    continue
+
+                metrics, _, tooltip, error = self._component_metrics(
+                    ud,
+                    du_ratio,
+                    dd_ratio,
+                    mode_key,
+                    assumptions,
+                )
+                if error:
+                    self._handle_conversion_error(error)
+                    continue
+
+                metrics_pfd = float(metrics.pfd)
+                metrics_pfh = float(metrics.pfh)
+                label, member_labels = describe_payload(ud, item.text() or 'Component')
+                component_info = {
+                    'label': label,
+                    'member_labels': member_labels,
+                    'architecture': ud.get('architecture'),
+                    'kind': ud.get('kind', group),
+                    'lane': group,
+                    'lane_title': lane_title_map.get(group, group.title()),
+                    'color': link_color,
+                }
+
+                if link_group_id:
+                    entry = subgroup_totals.setdefault(
+                        link_group_id,
+                        {
+                            'color': link_color,
+                            'pfd': 0.0,
+                            'pfh': 0.0,
+                            'components': [],
+                            'lanes': set(),
+                        },
+                    )
+                    if link_color and not entry.get('color'):
+                        entry['color'] = link_color
+                    entry['pfd'] += metrics_pfd
+                    entry['pfh'] += metrics_pfh
+                    entry['components'].append(component_info)
+                    entry['lanes'].add(group)
+                else:
+                    lane_totals[group]['pfd'] += metrics_pfd
+                    lane_totals[group]['pfh'] += metrics_pfh
+
+                if tooltip:
+                    item.setToolTip(tooltip)
+
+        subgroup_payload: Dict[str, List[Dict[str, Any]]] = {}
+        if subgroup_totals:
+            combined_payload: List[Dict[str, Any]] = []
+            for group_id, info in subgroup_totals.items():
+                pfd_sum += info['pfd']
+                pfh_sum += info['pfh']
+                comp_entries: List[Dict[str, Any]] = []
+                labels: List[str] = []
+                for comp in info['components']:
+                    if not isinstance(comp, dict):
+                        continue
+                    label_val = comp.get('label')
+                    if label_val:
+                        labels.append(label_val)
+                    comp_entries.append({
+                        'label': label_val,
+                        'lane': comp.get('lane'),
+                        'lane_title': comp.get('lane_title') or lane_title_map.get(comp.get('lane'), comp.get('lane', '')),
+                        'architecture': comp.get('architecture'),
+                        'member_labels': comp.get('member_labels', []),
+                        'kind': comp.get('kind'),
+                        'color': comp.get('color', info.get('color')),
+                    })
+                lanes = sorted(info.get('lanes', set()))
+                combined_payload.append({
+                    'id': group_id,
+                    'color': info.get('color'),
+                    'pfd': float(info['pfd']),
+                    'pfh': float(info['pfh']),
+                    'components': comp_entries,
+                    'member_labels': labels,
+                    'lanes': [lane_title_map.get(lane, lane) for lane in lanes],
+                    'count': len(comp_entries),
+                })
+            subgroup_payload['combined'] = combined_payload
+
+        for lane_metrics in lane_totals.values():
+            pfd_sum += lane_metrics['pfd']
+            pfh_sum += lane_metrics['pfh']
+
+        return pfd_sum, pfh_sum, subgroup_payload
 
     # ----- recalc & UI update -----
     def recalculate_row(self, row_idx: int):
@@ -3349,7 +4389,10 @@ class MainWindow(QMainWindow):
         if not widgets: return  # can happen after remove
         mode = self._effective_demand_mode(row_idx)
         mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
-        pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+        pfd_sum, pfh_sum, subgroup_info = self._sum_lists(
+            (widgets.in_list, widgets.logic_list, widgets.out_list),
+            mode_key,
+        )
         is_high = (mode_key == "high_demand")
         if is_high:
             sil_calc = classify_sil_from_pfh(pfh_sum)
@@ -3375,9 +4418,68 @@ class MainWindow(QMainWindow):
         widgets.result.calc_value.setText(sil_calc)
         widgets.result.metric_caption.setText(metric_caption)
         widgets.result.metric_value.setText(metric_value)
-        widgets.result.setToolTip(
-            f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric_caption}: {metric_value}"
-        )
+        tooltip_lines: List[str] = [
+            demand_txt,
+            f"Required: {req_sil_str}",
+            f"Calculated: {sil_calc}",
+            f"{metric_caption}: {metric_value}",
+        ]
+
+        combined_groups = []
+        if isinstance(subgroup_info, dict):
+            combined_groups = subgroup_info.get('combined', []) or []
+
+        if combined_groups:
+            def fmt_optional_pfd(value: Optional[float]) -> str:
+                if value is None:
+                    return ""
+                try:
+                    return f"PFDavg {float(value):.6f}"
+                except Exception:
+                    return ""
+
+            def fmt_optional_pfh(value: Optional[float]) -> str:
+                if value is None:
+                    return ""
+                try:
+                    return f"PFHavg {float(value):.3e} 1/h"
+                except Exception:
+                    return ""
+
+            tooltip_lines.append("")
+            tooltip_lines.append("Link subgroups:")
+            for idx, subgroup in enumerate(combined_groups, 1):
+                if not isinstance(subgroup, dict):
+                    continue
+                header_bits = [f"  Subgroup {idx}"]
+                lanes = subgroup.get('lanes')
+                if isinstance(lanes, (list, tuple)) and lanes:
+                    header_bits.append(f"[{', '.join(str(l) for l in lanes if l)}]")
+                tooltip_lines.append(" ".join(header_bits))
+
+                metric_bits: List[str] = []
+                pfd_txt = fmt_optional_pfd(subgroup.get('pfd'))
+                if pfd_txt:
+                    metric_bits.append(pfd_txt)
+                pfh_txt = fmt_optional_pfh(subgroup.get('pfh'))
+                if pfh_txt:
+                    metric_bits.append(pfh_txt)
+                if metric_bits:
+                    tooltip_lines.append("    " + " | ".join(metric_bits))
+
+                members = subgroup.get('member_labels')
+                if not members:
+                    members = [
+                        comp.get('label')
+                        for comp in subgroup.get('components', [])
+                        if isinstance(comp, dict) and comp.get('label')
+                    ]
+                if members:
+                    tooltip_lines.append(
+                        "    Members: " + ", ".join(str(lbl) for lbl in members if lbl)
+                    )
+
+        widgets.result.setToolTip("\n".join(tooltip_lines))
 
         self._update_row_height(row_idx)
         # refresh 1oo2 tooltips
@@ -3558,10 +4660,13 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.Yes:
             return
+        self._end_link_session(silent=True)
+        self._link_session_counters.clear()
         # Clear table & metadata (keep libraries)
         self.table.clearContents(); self.table.setRowCount(0)
         self.rows_meta.clear(); self.sifu_widgets.clear()
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("Project cleared", 1500)
 
     def _action_new_project_fallback(self):
@@ -3575,10 +4680,13 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.Yes:
             return
+        self._end_link_session(silent=True)
+        self._link_session_counters.clear()
         # Clear table & metadata (keep libraries)
         self.table.clearContents(); self.table.setRowCount(0)
         self.rows_meta.clear(); self.sifu_widgets.clear()
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("Project cleared", 1500)
 
     def _action_new_project(self):
@@ -3622,6 +4730,11 @@ class MainWindow(QMainWindow):
             )
             if r != QMessageBox.Yes:
                 return
+        row_uid = self._row_uid_for_index(row)
+        if row_uid and self._link_active_row_uid == row_uid:
+            self._end_link_session(silent=True)
+        if row_uid:
+            self._link_session_counters.pop(row_uid, None)
         # Remove row from UI and metadata
         self.table.removeRow(row)
         self.rows_meta.pop(row)
@@ -3647,6 +4760,7 @@ class MainWindow(QMainWindow):
                 self.table.setVerticalHeaderItem(i, QTableWidgetItem(header))
         self.sifu_widgets = new_map
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("SIFU removed", 1500)
 
     def _action_edit_sifu(self):
