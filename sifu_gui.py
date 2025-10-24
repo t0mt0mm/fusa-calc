@@ -339,7 +339,7 @@ class ResultCell(QWidget):
         self.req_caption.setObjectName("ResultCaption")
         self.calc_caption = QLabel("Calculated SIL")
         self.calc_caption.setObjectName("ResultCaption")
-        self.metric_caption = QLabel("Dominant metric")
+        self.metric_caption = QLabel("Metric")
         self.metric_caption.setObjectName("ResultCaption")
 
         self.req_value = QLabel("–")
@@ -348,10 +348,11 @@ class ResultCell(QWidget):
         for lbl in (self.req_value, self.calc_value, self.metric_value):
             lbl.setObjectName("ResultValue")
             lbl.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
-            lbl.setWordWrap(True)
+            lbl.setWordWrap(False)
             lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
 
         self.metric_value.setProperty("variant", "metric")
+        self.metric_value.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         card = QFrame()
         card.setObjectName("ResultCard")
@@ -1973,15 +1974,13 @@ class MainWindow(QMainWindow):
         }}
 
         QLabel#ResultCaption {{
-            font-size: 10px;
+            font-size: 12px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: #6b7280;
+            color: #4b5563;
         }}
 
         QLabel#ResultValue {{
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             color: #111827;
         }}
@@ -1989,7 +1988,7 @@ class MainWindow(QMainWindow):
         QLabel#ResultValue[variant="metric"] {{
             font-family: "Source Code Pro", "Fira Code", monospace;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
             color: #1f2937;
         }}
 
@@ -3354,11 +3353,13 @@ class MainWindow(QMainWindow):
         is_high = (mode_key == "high_demand")
         if is_high:
             sil_calc = classify_sil_from_pfh(pfh_sum)
-            metric = f"PFHsum = {pfh_sum:.3e} 1/h"
+            metric_caption = "PFH"
+            metric_value = f"{pfh_sum:.3e} 1/h"
             demand_txt = "High demand"
         else:
             sil_calc = classify_sil_from_pfd(pfd_sum)
-            metric = f"PFDsum = {pfd_sum:.6f} (–)"
+            metric_caption = "PFD"
+            metric_value = f"{pfd_sum:.6f} (–)"
             demand_txt = "Low demand"
 
         req_sil_str, req_rank_raw = normalize_required_sil(self.rows_meta[row_idx].get('sil_required', 'n.a.'))
@@ -3372,8 +3373,11 @@ class MainWindow(QMainWindow):
         widgets.result.combo.setCurrentText(demand_txt)
         widgets.result.req_value.setText(req_sil_str)
         widgets.result.calc_value.setText(sil_calc)
-        widgets.result.metric_value.setText(metric)
-        widgets.result.setToolTip(f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric}")
+        widgets.result.metric_caption.setText(metric_caption)
+        widgets.result.metric_value.setText(metric_value)
+        widgets.result.setToolTip(
+            f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric_caption}: {metric_value}"
+        )
 
         self._update_row_height(row_idx)
         # refresh 1oo2 tooltips
