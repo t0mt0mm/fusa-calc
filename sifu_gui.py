@@ -17,7 +17,7 @@ from typing import Dict, Tuple, List, Optional, Union, Any
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView
+    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView, QGridLayout
 )
 from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage
 from datetime import datetime
@@ -298,8 +298,11 @@ SIL_BADGE_STYLES: Dict[str, Tuple[str, str, str]] = {
 
 class ResultCell(QWidget):
     override_changed = QtCore.pyqtSignal(str)  # 'High demand' or 'Low demand'
+
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName("ResultCell")
+
         self.lbl_summary = QLabel("")
         self.lbl_summary.setObjectName("ResultSummary")
         self.lbl_summary.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
@@ -310,14 +313,6 @@ class ResultCell(QWidget):
         self.sil_badge.setAlignment(Qt.AlignCenter)
         self.sil_badge.setMinimumWidth(64)
         self.sil_badge.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        # Subtext lines
-        self.lbl_demand = QLabel("–")
-        self.lbl_req = QLabel("–")
-        self.lbl_calc = QLabel("–")
-        self.lbl_metric = QLabel("–")
-        for lbl in (self.lbl_demand, self.lbl_req, self.lbl_calc, self.lbl_metric):
-            lbl.setObjectName("ResultSubtext")
 
         # Demand-mode selector (kompakt)
         self.combo = QComboBox()
@@ -330,38 +325,73 @@ class ResultCell(QWidget):
         def _shrink_to_content():
             # +10 px für Innenabstand / Rahmen
             self.combo.setMaximumWidth(self.combo.sizeHint().width() + 10)
-        _shrink_to_content()
-        self.combo.currentTextChanged.connect(lambda _t: (_shrink_to_content(), self.override_changed.emit(self.combo.currentText())))
 
-        # Layout
-        left = QVBoxLayout()
-        left.setContentsMargins(0, 0, 0, 0)
-        left.setSpacing(3)
+        _shrink_to_content()
+        self.combo.currentTextChanged.connect(
+            lambda _t: (_shrink_to_content(), self.override_changed.emit(self.combo.currentText()))
+        )
+
+        # Caption + value labels
+        self.demand_caption = QLabel("Demand mode")
+        self.demand_caption.setObjectName("ResultCaption")
+
+        self.req_caption = QLabel("Required SIL")
+        self.req_caption.setObjectName("ResultCaption")
+        self.calc_caption = QLabel("Calculated SIL")
+        self.calc_caption.setObjectName("ResultCaption")
+        self.metric_caption = QLabel("Dominant metric")
+        self.metric_caption.setObjectName("ResultCaption")
+
+        self.req_value = QLabel("–")
+        self.calc_value = QLabel("–")
+        self.metric_value = QLabel("–")
+        for lbl in (self.req_value, self.calc_value, self.metric_value):
+            lbl.setObjectName("ResultValue")
+            lbl.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+            lbl.setWordWrap(True)
+            lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+
+        self.metric_value.setProperty("variant", "metric")
+
+        card = QFrame()
+        card.setObjectName("ResultCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(18, 16, 18, 18)
+        card_layout.setSpacing(12)
 
         summary_row = QHBoxLayout()
         summary_row.setContentsMargins(0, 0, 0, 0)
-        summary_row.setSpacing(8)
+        summary_row.setSpacing(12)
+        summary_row.addWidget(self.sil_badge, 0, Qt.AlignLeft)
         summary_row.addStretch(1)
-        summary_row.addWidget(self.sil_badge, 0)
-        left.addLayout(summary_row)
+        card_layout.addLayout(summary_row)
 
         demand_row = QHBoxLayout()
         demand_row.setContentsMargins(0, 0, 0, 0)
-        demand_row.setSpacing(6)
-        demand_row.addWidget(self.lbl_demand)
+        demand_row.setSpacing(8)
+        demand_row.addWidget(self.demand_caption)
         demand_row.addWidget(self.combo)
-        demand_row.addStretch(1)  # Combo klebt am Label, Rest filler
-        left.addLayout(demand_row)
+        demand_row.addStretch(1)
+        card_layout.addLayout(demand_row)
 
-        left.addWidget(self.lbl_req)
-        left.addWidget(self.lbl_calc)
-        left.addWidget(self.lbl_metric)
-        left.addStretch(1)
+        info_grid = QGridLayout()
+        info_grid.setContentsMargins(0, 0, 0, 0)
+        info_grid.setHorizontalSpacing(16)
+        info_grid.setVerticalSpacing(8)
+        info_grid.addWidget(self.req_caption, 0, 0, Qt.AlignLeft | Qt.AlignTop)
+        info_grid.addWidget(self.req_value, 0, 1)
+        info_grid.addWidget(self.calc_caption, 1, 0, Qt.AlignLeft | Qt.AlignTop)
+        info_grid.addWidget(self.calc_value, 1, 1)
+        info_grid.addWidget(self.metric_caption, 2, 0, Qt.AlignLeft | Qt.AlignTop)
+        info_grid.addWidget(self.metric_value, 2, 1)
+        info_grid.setColumnStretch(1, 1)
+        card_layout.addLayout(info_grid)
+        card_layout.addStretch(1)
 
         root = QHBoxLayout(self)
-        root.setContentsMargins(6, 6, 6, 6)
-        root.setSpacing(10)
-        root.addLayout(left, 1)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        root.addWidget(card, 1)
 
         self.set_sil_badge("n.a.", None)
 
@@ -1928,8 +1958,47 @@ class MainWindow(QMainWindow):
             font-weight:700;
         }}
 
+        QWidget#ResultCell {{
+            background: transparent;
+        }}
+
+        QFrame#ResultCard {{
+            background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 {bg0}, stop:1 {bg1});
+            border: 1px solid {border};
+            border-radius: 18px;
+        }}
+
+        QFrame#ResultCard:hover {{
+            border-color: {primary};
+        }}
+
+        QLabel#ResultCaption {{
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            color: #6b7280;
+        }}
+
+        QLabel#ResultValue {{
+            font-size: 13px;
+            font-weight: 600;
+            color: #111827;
+        }}
+
+        QLabel#ResultValue[variant="metric"] {{
+            font-family: "Source Code Pro", "Fira Code", monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1f2937;
+        }}
+
         QComboBox#DemandCombo {{
-            padding: 1px 6px; border: 1px solid #cfcfcf; border-radius: 6px; background: {bg0};
+            padding: 1px 10px;
+            border: 1px solid #cfcfcf;
+            border-radius: 8px;
+            background: {bg0};
+            font-weight: 600;
         }}
         QComboBox#DemandCombo:focus {{ border-color: {primary}; }}
         """)
@@ -3299,11 +3368,11 @@ class MainWindow(QMainWindow):
 
         widgets.result.set_sil_badge(sil_calc, ok if calc_rank > 0 else None)
 
-        widgets.result.lbl_demand.setText(f"Demand mode:")
+        widgets.result.demand_caption.setText("Demand mode")
         widgets.result.combo.setCurrentText(demand_txt)
-        widgets.result.lbl_req.setText(f"Required: {req_sil_str}")
-        widgets.result.lbl_calc.setText(f"Calculated: {sil_calc}")
-        widgets.result.lbl_metric.setText(metric)
+        widgets.result.req_value.setText(req_sil_str)
+        widgets.result.calc_value.setText(sil_calc)
+        widgets.result.metric_value.setText(metric)
         widgets.result.setToolTip(f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric}")
 
         self._update_row_height(row_idx)
