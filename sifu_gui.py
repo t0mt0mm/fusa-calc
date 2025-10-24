@@ -3071,7 +3071,7 @@ class MainWindow(QMainWindow):
         .architecture { margin: 18px 0 24px; }
         .architecture { position: relative; }
         .arch-lanes-wrapper { position: relative; }
-        .arch-link-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .arch-link-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
         .arch-lanes { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
         .lane { border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); display:flex; flex-direction:column; }
         .lane-header { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color:#1f2937; margin-bottom:10px; }
@@ -3772,7 +3772,7 @@ class MainWindow(QMainWindow):
         path.setAttribute('stroke-width', '2');
         path.setAttribute('stroke-linecap', 'round');
         path.setAttribute('stroke-linejoin', 'round');
-        path.setAttribute('stroke-opacity', '0.65');
+        path.setAttribute('stroke-opacity', '0.55');
         svg.appendChild(path);
       }
     });
