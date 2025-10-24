@@ -17,9 +17,9 @@ from typing import Dict, Tuple, List, Optional, Union, Any, Set
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView, QGridLayout
+    QApplication, QMainWindow, QWidget, QTableWidget, QTableWidgetItem, QListWidget, QListWidgetItem, QLabel, QDockWidget, QLineEdit, QToolBar, QAction, QActionGroup, QToolButton, QFileDialog, QMessageBox, QHBoxLayout, QVBoxLayout, QFrame, QStyle, QDialog, QFormLayout, QDialogButtonBox, QDoubleSpinBox, QAbstractSpinBox, QComboBox, QSpinBox, QShortcut, QSizePolicy, QHeaderView, QAbstractItemView, QGridLayout, QColorDialog
 )
-from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage
+from PyQt5.QtGui import QPainter, QColor, QFont, QPen, QKeySequence, QPixmap, QImage, QCursor, QIcon
 from datetime import datetime
 import yaml
 import numpy as np
@@ -555,15 +555,16 @@ class ChipList(QListWidget):
             except Exception:
                 row_idx, lane = -1, None
 
-        act_start_link = act_stop_link = act_next_link = act_clear_lane = act_clear_sifu = None
+        act_start_link = act_stop_link = act_choose_color = act_clear_lane = act_clear_sifu = None
         if lane is not None and isinstance(row_idx, int) and row_idx >= 0:
             m.addSeparator()
             is_active = bool(window and hasattr(window, "_is_link_active_for") and window._is_link_active_for(row_idx, lane))
             if is_active:
-                act_next_link = m.addAction("Next link color")
+                act_choose_color = m.addAction("Choose link colour…")
                 act_stop_link = m.addAction("Stop link mode")
             else:
                 act_start_link = m.addAction("Start link mode here")
+                act_choose_color = m.addAction("Choose link colour…")
             act_clear_lane = m.addAction("Clear lane links")
             act_clear_sifu = m.addAction("Clear SIFU links")
 
@@ -579,8 +580,8 @@ class ChipList(QListWidget):
             window._activate_link_mode_for(row_idx, lane, self)
         elif action == act_stop_link and window:
             window._end_link_session()
-        elif action == act_next_link and window:
-            window._activate_link_mode_for(row_idx, lane, self, restart=True)
+        elif action == act_choose_color and window:
+            window._popup_link_color_menu(QCursor.pos())
         elif action == act_clear_lane and window:
             window._clear_lane_links(row_idx, lane)
         elif action == act_clear_sifu and window:
@@ -1560,6 +1561,11 @@ class MainWindow(QMainWindow):
             ("#F5D0C5", "link5"),
         ]
         self._link_color_tags: Dict[str, str] = {color.lower(): tag for color, tag in self.link_palette}
+        self._link_selected_color: str = self._sanitize_link_color(self.link_palette[0][0]) or self.link_palette[0][0]
+        self._link_color_menu: Optional[QtWidgets.QMenu] = None
+        self._link_color_actions: List[QAction] = []
+        self._link_color_action_group = QActionGroup(self)
+        self._link_color_action_group.setExclusive(True)
         self._link_session_counters: Dict[str, int] = {}
         self._link_active = False
         self._link_active_row_uid: Optional[str] = None
@@ -1605,6 +1611,10 @@ class MainWindow(QMainWindow):
         self.link_mode_action.setToolTip("Highlight related components within the active lane (Ctrl+L)")
         self.link_mode_action.triggered.connect(self._toggle_link_mode)
         tools_menu.addAction(self.link_mode_action)
+
+        self._link_color_menu = tools_menu.addMenu("Link colour")
+        self._link_color_menu.setToolTipsVisible(True)
+        self._populate_link_color_menu()
 
         # New Project
         act_new = QAction("New Project", self)
@@ -2512,6 +2522,22 @@ class MainWindow(QMainWindow):
         return -1, None
 
     @staticmethod
+    def _sanitize_link_color(value: Optional[str]) -> Optional[str]:
+        if not isinstance(value, str):
+            return None
+        candidate = value.strip()
+        if not candidate:
+            return None
+        if re.fullmatch(r'#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})', candidate):
+            # Normalise to lowercase hex for stable comparisons
+            if len(candidate) == 4:  # short form like #abc
+                # Expand to 6-digit for consistency
+                r, g, b = candidate[1], candidate[2], candidate[3]
+                candidate = f"#{r}{r}{g}{g}{b}{b}"
+            return candidate.lower()
+        return None
+
+    @staticmethod
     def _normalize_link_group_id(group_id: Optional[str]) -> Optional[str]:
         if not isinstance(group_id, str):
             return None
@@ -2523,8 +2549,86 @@ class MainWindow(QMainWindow):
             return f"{parts[0]}:{parts[2]}"
         return normalized
 
+    @staticmethod
+    def _group_id_for_color(row_uid: str, color: str) -> str:
+        token = color.lower().lstrip('#') or color.lower()
+        return f"{row_uid}:{token}"
+
+    def _color_icon(self, color: str) -> QIcon:
+        pix = QPixmap(16, 16)
+        pix.fill(QColor(color))
+        painter = QPainter(pix)
+        pen = QPen(QColor(0, 0, 0, 80))
+        pen.setWidth(1)
+        painter.setPen(pen)
+        painter.drawRect(0, 0, pix.width() - 1, pix.height() - 1)
+        painter.end()
+        return QIcon(pix)
+
+    def _populate_link_color_menu(self) -> None:
+        if not self._link_color_menu:
+            return
+        self._link_color_menu.clear()
+        for action in self._link_color_actions:
+            self._link_color_action_group.removeAction(action)
+        self._link_color_actions.clear()
+        for color, tag in self.link_palette:
+            sanitized = self._sanitize_link_color(color) or color
+            title = f"{sanitized.upper()}"
+            action = QAction(title, self)
+            action.setCheckable(True)
+            action.setData(sanitized)
+            action.setIcon(self._color_icon(sanitized))
+            action.setToolTip(f"Assign components to subgroup colour {sanitized.upper()}")
+            action.triggered.connect(lambda checked, c=sanitized: self._apply_link_color_selection(c))
+            self._link_color_action_group.addAction(action)
+            self._link_color_actions.append(action)
+            self._link_color_menu.addAction(action)
+        self._link_color_menu.addSeparator()
+        custom_action = QAction("Custom colour…", self)
+        custom_action.setToolTip("Select any colour for link subgroups")
+        custom_action.triggered.connect(self._choose_custom_link_color)
+        self._link_color_menu.addAction(custom_action)
+        self._update_link_color_checks()
+
+    def _update_link_color_checks(self) -> None:
+        target = (self._link_selected_color or "").lower()
+        for action in self._link_color_actions:
+            action.setChecked(str(action.data()).lower() == target)
+        if self._link_color_menu and self._link_selected_color:
+            self._link_color_menu.setTitle(f"Link colour ({self._link_selected_color.upper()})")
+
+    def _apply_link_color_selection(self, color: str, announce: bool = True) -> None:
+        sanitized = self._sanitize_link_color(color)
+        if not sanitized:
+            return
+        self._link_selected_color = sanitized
+        self._update_link_color_checks()
+        message = None
+        if self._link_active and self._link_active_row_uid:
+            group_id = self._group_id_for_color(self._link_active_row_uid, sanitized)
+            self._link_active_color = sanitized
+            self._link_active_group_id = group_id
+            message = f"Link colour changed to {sanitized}"
+        else:
+            message = f"Link colour set to {sanitized}"
+        if announce and message:
+            self.statusBar().showMessage(message, 2000)
+
+    def _choose_custom_link_color(self) -> None:
+        initial = QColor(self._link_selected_color)
+        chosen = QColorDialog.getColor(initial, self, "Select link colour")
+        if chosen.isValid():
+            self._apply_link_color_selection(chosen.name(), announce=True)
+
+    def _popup_link_color_menu(self, global_pos: QtCore.QPoint) -> None:
+        if self._link_color_menu:
+            self._link_color_menu.popup(global_pos)
+
     def _toggle_link_mode(self, checked: bool) -> None:
         if checked:
+            if not self._sanitize_link_color(self._link_selected_color):
+                self._apply_link_color_selection(self.link_palette[0][0], announce=False)
             target_list = self._last_focused_list
             row_idx, lane = self._row_lane_for_list(target_list)
             if lane is None or row_idx < 0:
@@ -2556,10 +2660,14 @@ class MainWindow(QMainWindow):
         self._begin_link_session(row_idx, row_uid, lane, list_widget)
 
     def _begin_link_session(self, row_idx: int, row_uid: str, lane: str, list_widget: ChipList) -> None:
-        count = self._link_session_counters.get(row_uid, 0)
-        color = self.link_palette[count % len(self.link_palette)][0]
-        self._link_session_counters[row_uid] = count + 1
-        group_id = f"{row_uid}:g{count}"
+        selected = self._sanitize_link_color(self._link_selected_color)
+        if not selected:
+            selected = self._sanitize_link_color(self.link_palette[0][0]) or self.link_palette[0][0]
+            self._link_selected_color = selected
+        self._link_selected_color = selected
+        self._update_link_color_checks()
+        group_id = self._group_id_for_color(row_uid, selected)
+        color = selected
 
         self._link_active = True
         self._link_active_row_uid = row_uid
@@ -2579,7 +2687,8 @@ class MainWindow(QMainWindow):
         if 0 <= row_idx < len(self.rows_meta):
             sifu_name = self.rows_meta[row_idx].get("sifu_name", sifu_name)
         lane_label = {"sensor": "Sensors", "logic": "Logic", "actuators": "Outputs", "actuator": "Outputs"}.get(lane, lane)
-        self.statusBar().showMessage(f"Link mode active for {sifu_name} — {lane_label} (color {color})", 4000)
+        color_label = color.upper() if isinstance(color, str) else color
+        self.statusBar().showMessage(f"Link mode active for {sifu_name} — {lane_label} (colour {color_label})", 4000)
 
     def _end_link_session(self, silent: bool = False, keep_action: bool = False) -> None:
         if not self._link_active:
@@ -2630,6 +2739,7 @@ class MainWindow(QMainWindow):
         payload = item.data(Qt.UserRole) or {}
         updated = copy.deepcopy(payload)
         current_id = updated.get("link_group_id")
+        changed = False
         if current_id == self._link_active_group_id:
             removed = False
             if updated.pop("link_color", None) is not None:
@@ -2640,13 +2750,24 @@ class MainWindow(QMainWindow):
                 item.setData(Qt.UserRole, updated)
                 list_widget.refresh_chip(item)
                 self.statusBar().showMessage("Component removed from link group", 2000)
+                changed = True
         else:
-            if self._link_active_color and self._link_active_group_id:
-                updated["link_color"] = self._link_active_color
-                updated["link_group_id"] = self._link_active_group_id
+            if self._link_active_color and self._link_active_row_uid:
+                active_color = self._sanitize_link_color(self._link_active_color)
+                if not active_color:
+                    return
+                group_id = self._group_id_for_color(self._link_active_row_uid, active_color)
+                self._link_active_group_id = group_id
+                updated["link_color"] = active_color
+                updated["link_group_id"] = group_id
                 item.setData(Qt.UserRole, updated)
                 list_widget.refresh_chip(item)
                 self.statusBar().showMessage("Component linked", 2000)
+                changed = True
+
+        if changed:
+            self._reseed_link_counters()
+            self.recalculate_row(row_idx)
 
     def _clear_lane_links(self, row_idx: int, lane: str, announce: bool = True) -> bool:
         list_widget = self._list_for_lane(row_idx, lane)
@@ -2716,9 +2837,20 @@ class MainWindow(QMainWindow):
                     if not item:
                         continue
                     payload = item.data(Qt.UserRole) or {}
-                    group_id = self._normalize_link_group_id(payload.get("link_group_id"))
-                    if group_id:
+                    color = self._sanitize_link_color(payload.get("link_color"))
+                    if color:
+                        group_id = self._group_id_for_color(row_uid, color)
+                        if payload.get("link_group_id") != group_id or payload.get("link_color") != color:
+                            updated = copy.deepcopy(payload)
+                            updated["link_color"] = color
+                            updated["link_group_id"] = group_id
+                            item.setData(Qt.UserRole, updated)
                         seen.add(group_id)
+                    else:
+                        if payload.get("link_group_id"):
+                            updated = copy.deepcopy(payload)
+                            updated.pop("link_group_id", None)
+                            item.setData(Qt.UserRole, updated)
             if seen:
                 counters[row_uid] = len(seen)
         self._link_session_counters = counters
@@ -2750,8 +2882,9 @@ class MainWindow(QMainWindow):
             'kind': kind,
             'instance_id': entry.get('instance_id', new_instance_id()),
         }
-        if entry.get('link_color'):
-            payload['link_color'] = entry['link_color']
+        color = self._sanitize_link_color(entry.get('link_color'))
+        if color:
+            payload['link_color'] = color
         group_id = self._normalize_link_group_id(entry.get('link_group_id'))
         if group_id:
             payload['link_group_id'] = group_id
@@ -3517,6 +3650,8 @@ class MainWindow(QMainWindow):
         items: List[dict] = []
         assumptions = self._current_assumptions()
         du_ratio, dd_ratio = self._ratios(group_kind)
+        row_idx, _ = self._row_lane_for_list(lw)
+        row_uid = self._row_uid_for_index(row_idx) if row_idx >= 0 else None
 
         for i in range(lw.count()):
             item = lw.item(i)
@@ -3575,12 +3710,11 @@ class MainWindow(QMainWindow):
                     'instance_id': payload.get('instance_id'),
                     'kind': payload.get('kind', group_kind),
                 }
-                link_color = payload.get('link_color')
+                link_color = self._sanitize_link_color(payload.get('link_color'))
                 if link_color:
                     entry['link_color'] = link_color
-                link_group = self._normalize_link_group_id(payload.get('link_group_id'))
-                if link_group:
-                    entry['link_group_id'] = link_group
+                    if row_uid:
+                        entry['link_group_id'] = self._group_id_for_color(row_uid, link_color)
                 items.append(entry)
             else:
                 inst_id = payload.get('instance_id')
@@ -3612,12 +3746,11 @@ class MainWindow(QMainWindow):
                     'instance_id': inst_id,
                     'provenance': provenance,
                 }
-                link_color = payload.get('link_color')
+                link_color = self._sanitize_link_color(payload.get('link_color'))
                 if link_color:
                     entry['link_color'] = link_color
-                link_group = self._normalize_link_group_id(payload.get('link_group_id'))
-                if link_group:
-                    entry['link_group_id'] = link_group
+                    if row_uid:
+                        entry['link_group_id'] = self._group_id_for_color(row_uid, link_color)
                 items.append(entry)
         return items
 
@@ -3814,6 +3947,8 @@ class MainWindow(QMainWindow):
         for idx, lw in enumerate(lists):
             group = group_of(idx)
             du_ratio, dd_ratio = self._ratios(group)
+            lane_row_idx, _ = self._row_lane_for_list(lw)
+            row_uid = self._row_uid_for_index(lane_row_idx) if lane_row_idx >= 0 else None
             for i in range(lw.count()):
                 item = lw.item(i)
                 if item is None:
@@ -3832,7 +3967,32 @@ class MainWindow(QMainWindow):
                     item.setData(Qt.UserRole, updated_payload)
                     ud = updated_payload
 
-                link_color = ud.get('link_color') if isinstance(ud.get('link_color'), str) else None
+                link_color = self._sanitize_link_color(ud.get('link_color'))
+                if link_color and ud.get('link_color') != link_color:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload['link_color'] = link_color
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                elif ud.get('link_color') and not link_color:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload.pop('link_color', None)
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                if link_color and row_uid:
+                    expected_group_id = self._group_id_for_color(row_uid, link_color)
+                    if link_group_id != expected_group_id:
+                        updated_payload = copy.deepcopy(ud)
+                        updated_payload['link_group_id'] = expected_group_id
+                        updated_payload['link_color'] = link_color
+                        item.setData(Qt.UserRole, updated_payload)
+                        ud = updated_payload
+                        link_group_id = expected_group_id
+                elif not link_color and link_group_id:
+                    updated_payload = copy.deepcopy(ud)
+                    updated_payload.pop('link_group_id', None)
+                    item.setData(Qt.UserRole, updated_payload)
+                    ud = updated_payload
+                    link_group_id = None
 
                 if ud.get('group') and ud.get('architecture') == '1oo2':
                     members = [m for m in ud.get('members', []) if isinstance(m, dict)]
