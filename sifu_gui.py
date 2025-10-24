@@ -3073,37 +3073,56 @@ class MainWindow(QMainWindow):
                             html_parts.append('<div class="lane-note">Group members unavailable</div>')
                     html_parts.append('</div>')
                 html_parts.append('</div>')
-                lane_subgroups = []
-                if subgroup_totals:
-                    lane_subgroups = subgroup_totals.get(lane_lookup.get(stage_key, stage_key), [])
-                if lane_subgroups:
-                    html_parts.append('<div class="lane-subgroups">')
-                    html_parts.append('<div class="lane-subgroups-title">Link subgroups</div>')
-                    for sg_idx, subgroup in enumerate(lane_subgroups, 1):
-                        color_style = ''
-                        color_val = subgroup.get('color')
-                        if color_val:
-                            color_style = f' style="background:{esc(color_val)};"'
-                        count = subgroup.get('count')
-                        header = f'Subgroup {sg_idx}'
-                        if isinstance(count, int) and count > 0:
-                            comp_word = "component" if count == 1 else "components"
-                            header = f"{header} — {count} {comp_word}"
-                        html_parts.append('<div class="lane-subgroup">')
-                        html_parts.append('<div class="lane-subgroup-header">')
-                        html_parts.append(f'<span class="lane-subgroup-color"{color_style}></span>')
-                        html_parts.append(f'<span>{esc(header)}</span>')
-                        html_parts.append('</div>')
-                        member_labels = subgroup.get('member_labels') or [comp.get('label') for comp in subgroup.get('components', [])]
-                        member_text = ', '.join(lbl for lbl in member_labels if lbl)
-                        if member_text:
-                            html_parts.append(f'<div class="lane-subgroup-members">{esc(member_text)}</div>')
-                        metrics_html = render_metrics(subgroup.get('pfd'), subgroup.get('pfh'), None, None)
-                        if metrics_html:
-                            html_parts.append(metrics_html)
-                        html_parts.append('</div>')
+
+            combined_subgroups: List[Dict[str, Any]] = []
+            if subgroup_totals:
+                combined_subgroups = subgroup_totals.get('combined', []) or []
+
+            if combined_subgroups:
+                html_parts.append('<div class="lane-subgroups">')
+                html_parts.append('<div class="lane-subgroups-title">Link subgroup totals</div>')
+                for sg_idx, subgroup in enumerate(combined_subgroups, 1):
+                    if not isinstance(subgroup, dict):
+                        continue
+                    color_style = ''
+                    color_val = subgroup.get('color')
+                    if color_val:
+                        color_style = f' style="background:{esc(color_val)};"'
+                    count = subgroup.get('count')
+                    header = f'Subgroup {sg_idx}'
+                    if isinstance(count, int) and count > 0:
+                        comp_word = "component" if count == 1 else "components"
+                        header = f"{header} — {count} {comp_word}"
+                    html_parts.append('<div class="lane-subgroup">')
+                    html_parts.append('<div class="lane-subgroup-header">')
+                    html_parts.append(f'<span class="lane-subgroup-color"{color_style}></span>')
+                    html_parts.append(f'<span>{esc(header)}</span>')
+                    html_parts.append('</div>')
+                    member_labels = subgroup.get('member_labels') or [
+                        comp.get('label')
+                        for comp in subgroup.get('components', [])
+                        if isinstance(comp, dict) and comp.get('label')
+                    ]
+                    lanes = subgroup.get('lanes')
+                    desc_bits: List[str] = []
+                    member_text = ', '.join(lbl for lbl in member_labels if lbl)
+                    if member_text:
+                        desc_bits.append(member_text)
+                    if isinstance(lanes, (list, tuple)) and lanes:
+                        lane_text = ', '.join(str(l) for l in lanes if l)
+                        if lane_text:
+                            desc_bits.append(f"Lanes: {lane_text}")
+                    if desc_bits:
+                        html_parts.append(
+                            f'<div class="lane-subgroup-members">{esc(" • ".join(desc_bits))}</div>'
+                        )
+                    metrics_html = render_metrics(subgroup.get('pfd'), subgroup.get('pfh'), None, None)
+                    if metrics_html:
+                        html_parts.append(metrics_html)
                     html_parts.append('</div>')
                 html_parts.append('</div>')
+
+            html_parts.append('</div>')
             html_parts.append('</div>')
             return ''.join(html_parts)
 
@@ -3336,47 +3355,59 @@ class MainWindow(QMainWindow):
                                      '</tr>')
                 parts.append('</tbody></table>')
 
-                lane_groups = (s.get('link_subgroups') or {}).get(lane_key, [])
-                if lane_groups:
-                    parts.append('<div class="link-subgroup-summary">')
-                    parts.append('<div class="link-subgroup-summary-title">Link subgroups</div>')
-                    parts.append('<ul>')
-                    for sg_idx, subgroup in enumerate(lane_groups, 1):
-                        color_val = subgroup.get('color')
-                        dot_style = ' style="background:#d1d5db;"'
-                        if color_val:
-                            dot_style = f' style="background:{esc(color_val)};"'
-                        count = subgroup.get('count')
-                        header = f'Subgroup {sg_idx}'
-                        if isinstance(count, int) and count > 0:
-                            word = "component" if count == 1 else "components"
-                            header = f"{header} ({count} {word})"
-                        member_labels = subgroup.get('member_labels') or [comp.get('label') for comp in subgroup.get('components', [])]
-                        member_text = ', '.join(lbl for lbl in member_labels if lbl)
-                        metrics_bits: List[str] = []
-                        pfd_val = subgroup.get('pfd')
-                        if pfd_val is not None:
-                            metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
-                        pfh_val = subgroup.get('pfh')
-                        if pfh_val is not None:
-                            metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
-                        metrics_text = ' | '.join(metrics_bits)
-                        parts.append('<li>')
-                        parts.append(f'<span class="link-subgroup-dot"{dot_style}></span>')
-                        parts.append('<div>')
-                        parts.append(f'<div><strong>{esc(header)}</strong></div>')
-                        if member_text:
-                            parts.append(f'<div>{esc(member_text)}</div>')
-                        if metrics_text:
-                            parts.append(f'<div class="muted small">{esc(metrics_text)}</div>')
-                        parts.append('</div>')
-                        parts.append('</li>')
-                    parts.append('</ul>')
-                    parts.append('</div>')
 
             render_group('Sensors / Inputs', s['sensors'], 'sensor')
             render_group('Logic', s['logic'], 'logic')
             render_group('Outputs / Actuators', s['actuators'], 'actuator')
+
+        combined_groups = (s.get('link_subgroups') or {}).get('combined', [])
+        if combined_groups:
+            parts.append('<div class="link-subgroup-summary">')
+            parts.append('<div class="link-subgroup-summary-title">Link subgroup totals</div>')
+            parts.append('<ul>')
+            for sg_idx, subgroup in enumerate(combined_groups, 1):
+                if not isinstance(subgroup, dict):
+                    continue
+                color_val = subgroup.get('color')
+                dot_style = ' style="background:#d1d5db;"'
+                if color_val:
+                    dot_style = f' style="background:{esc(color_val)};"'
+                count = subgroup.get('count')
+                header = f'Subgroup {sg_idx}'
+                if isinstance(count, int) and count > 0:
+                    word = "component" if count == 1 else "components"
+                    header = f"{header} ({count} {word})"
+                parts.append('<li>')
+                parts.append(f'<span class="link-subgroup-dot"{dot_style}></span>')
+                parts.append('<div>')
+                parts.append(f'<div><strong>{esc(header)}</strong></div>')
+                lanes = subgroup.get('lanes')
+                lane_text = ''
+                if isinstance(lanes, (list, tuple)) and lanes:
+                    lane_text = ', '.join(str(l) for l in lanes if l)
+                member_labels = subgroup.get('member_labels') or [
+                    comp.get('label')
+                    for comp in subgroup.get('components', [])
+                    if isinstance(comp, dict) and comp.get('label')
+                ]
+                member_text = ', '.join(lbl for lbl in member_labels if lbl)
+                if member_text:
+                    parts.append(f'<div>{esc(member_text)}</div>')
+                if lane_text:
+                    parts.append(f'<div class="muted small">Lanes: {esc(lane_text)}</div>')
+                metrics_bits: List[str] = []
+                pfd_val = subgroup.get('pfd')
+                if pfd_val is not None:
+                    metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
+                pfh_val = subgroup.get('pfh')
+                if pfh_val is not None:
+                    metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
+                if metrics_bits:
+                    parts.append(f'<div class="muted small">{" | ".join(metrics_bits)}</div>')
+                parts.append('</div>')
+                parts.append('</li>')
+            parts.append('</ul>')
+            parts.append('</div>')
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div>')
@@ -3757,6 +3788,7 @@ class MainWindow(QMainWindow):
             'logic': {},
             'actuator': {},
         }
+        combined_group_totals: Dict[str, Dict[str, Any]] = {}
 
         def describe_payload(payload: dict, default_label: str) -> Tuple[str, List[str]]:
             if payload.get('group') and payload.get('architecture') == '1oo2':
@@ -3806,12 +3838,30 @@ class MainWindow(QMainWindow):
                         lane_entry['pfd'] += float(metrics.pfd)
                         lane_entry['pfh'] += float(metrics.pfh)
                         label, member_labels = describe_payload(ud, item.text() or 'Component')
-                        lane_entry['components'].append({
+                        component_info = {
                             'label': label,
                             'member_labels': member_labels,
                             'architecture': '1oo2',
                             'kind': ud.get('kind', group),
-                        })
+                            'lane': group,
+                        }
+                        lane_entry['components'].append(component_info)
+                        combined_entry = combined_group_totals.setdefault(
+                            link_group_id,
+                            {
+                                'color': link_color,
+                                'pfd': 0.0,
+                                'pfh': 0.0,
+                                'components': [],
+                                'lanes': set(),
+                            },
+                        )
+                        if link_color and not combined_entry.get('color'):
+                            combined_entry['color'] = link_color
+                        combined_entry['pfd'] += float(metrics.pfd)
+                        combined_entry['pfh'] += float(metrics.pfh)
+                        combined_entry['components'].append(component_info.copy())
+                        combined_entry['lanes'].add(group)
                     else:
                         pfd_sum += metrics.pfd
                         pfh_sum += metrics.pfh
@@ -3842,12 +3892,30 @@ class MainWindow(QMainWindow):
                         lane_entry['pfd'] += float(metrics.pfd)
                         lane_entry['pfh'] += float(metrics.pfh)
                         label, member_labels = describe_payload(ud, item.text() or 'Component')
-                        lane_entry['components'].append({
+                        component_info = {
                             'label': label,
                             'member_labels': member_labels,
                             'architecture': ud.get('architecture'),
                             'kind': ud.get('kind', group),
-                        })
+                            'lane': group,
+                        }
+                        lane_entry['components'].append(component_info)
+                        combined_entry = combined_group_totals.setdefault(
+                            link_group_id,
+                            {
+                                'color': link_color,
+                                'pfd': 0.0,
+                                'pfh': 0.0,
+                                'components': [],
+                                'lanes': set(),
+                            },
+                        )
+                        if link_color and not combined_entry.get('color'):
+                            combined_entry['color'] = link_color
+                        combined_entry['pfd'] += float(metrics.pfd)
+                        combined_entry['pfh'] += float(metrics.pfh)
+                        combined_entry['components'].append(component_info.copy())
+                        combined_entry['lanes'].add(group)
                     else:
                         pfd_sum += metrics.pfd
                         pfh_sum += metrics.pfh
@@ -3859,9 +3927,7 @@ class MainWindow(QMainWindow):
             if not groups:
                 continue
             subgroup_payload[lane] = []
-            for idx, (group_id, info) in enumerate(groups.items(), 1):
-                pfd_sum += info['pfd']
-                pfh_sum += info['pfh']
+            for _, (group_id, info) in enumerate(groups.items(), 1):
                 labels = [comp.get('label') for comp in info['components'] if comp.get('label')]
                 subgroup_payload[lane].append({
                     'id': group_id,
@@ -3873,6 +3939,30 @@ class MainWindow(QMainWindow):
                     'count': len(info['components']),
                 })
 
+        if combined_group_totals:
+            combined_payload: List[Dict[str, Any]] = []
+            lane_title_map = {
+                'sensor': 'Sensors',
+                'logic': 'Logic',
+                'actuator': 'Outputs',
+            }
+            for group_id, info in combined_group_totals.items():
+                pfd_sum += info['pfd']
+                pfh_sum += info['pfh']
+                labels = [comp.get('label') for comp in info['components'] if comp.get('label')]
+                lanes = sorted(info.get('lanes', set()))
+                combined_payload.append({
+                    'id': group_id,
+                    'color': info.get('color'),
+                    'pfd': float(info['pfd']),
+                    'pfh': float(info['pfh']),
+                    'components': info['components'],
+                    'member_labels': labels,
+                    'lanes': [lane_title_map.get(lane, lane) for lane in lanes],
+                    'count': len(info['components']),
+                })
+            subgroup_payload['combined'] = combined_payload
+
         return pfd_sum, pfh_sum, subgroup_payload
 
     # ----- recalc & UI update -----
@@ -3882,7 +3972,7 @@ class MainWindow(QMainWindow):
         if not widgets: return  # can happen after remove
         mode = self._effective_demand_mode(row_idx)
         mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
-        pfd_sum, pfh_sum, _ = self._sum_lists(
+        pfd_sum, pfh_sum, subgroup_info = self._sum_lists(
             (widgets.in_list, widgets.logic_list, widgets.out_list),
             mode_key,
         )
@@ -3911,9 +4001,68 @@ class MainWindow(QMainWindow):
         widgets.result.calc_value.setText(sil_calc)
         widgets.result.metric_caption.setText(metric_caption)
         widgets.result.metric_value.setText(metric_value)
-        widgets.result.setToolTip(
-            f"{demand_txt}\nRequired: {req_sil_str}\nCalculated: {sil_calc}\n{metric_caption}: {metric_value}"
-        )
+        tooltip_lines: List[str] = [
+            demand_txt,
+            f"Required: {req_sil_str}",
+            f"Calculated: {sil_calc}",
+            f"{metric_caption}: {metric_value}",
+        ]
+
+        combined_groups = []
+        if isinstance(subgroup_info, dict):
+            combined_groups = subgroup_info.get('combined', []) or []
+
+        if combined_groups:
+            def fmt_optional_pfd(value: Optional[float]) -> str:
+                if value is None:
+                    return ""
+                try:
+                    return f"PFDavg {float(value):.6f}"
+                except Exception:
+                    return ""
+
+            def fmt_optional_pfh(value: Optional[float]) -> str:
+                if value is None:
+                    return ""
+                try:
+                    return f"PFHavg {float(value):.3e} 1/h"
+                except Exception:
+                    return ""
+
+            tooltip_lines.append("")
+            tooltip_lines.append("Link subgroups:")
+            for idx, subgroup in enumerate(combined_groups, 1):
+                if not isinstance(subgroup, dict):
+                    continue
+                header_bits = [f"  Subgroup {idx}"]
+                lanes = subgroup.get('lanes')
+                if isinstance(lanes, (list, tuple)) and lanes:
+                    header_bits.append(f"[{', '.join(str(l) for l in lanes if l)}]")
+                tooltip_lines.append(" ".join(header_bits))
+
+                metric_bits: List[str] = []
+                pfd_txt = fmt_optional_pfd(subgroup.get('pfd'))
+                if pfd_txt:
+                    metric_bits.append(pfd_txt)
+                pfh_txt = fmt_optional_pfh(subgroup.get('pfh'))
+                if pfh_txt:
+                    metric_bits.append(pfh_txt)
+                if metric_bits:
+                    tooltip_lines.append("    " + " | ".join(metric_bits))
+
+                members = subgroup.get('member_labels')
+                if not members:
+                    members = [
+                        comp.get('label')
+                        for comp in subgroup.get('components', [])
+                        if isinstance(comp, dict) and comp.get('label')
+                    ]
+                if members:
+                    tooltip_lines.append(
+                        "    Members: " + ", ".join(str(lbl) for lbl in members if lbl)
+                    )
+
+        widgets.result.setToolTip("\n".join(tooltip_lines))
 
         self._update_row_height(row_idx)
         # refresh 1oo2 tooltips
