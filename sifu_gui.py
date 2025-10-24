@@ -290,11 +290,9 @@ class RowMeta(dict):
 # ==========================
 
 SIL_BADGE_STYLES: Dict[str, Tuple[str, str, str]] = {
-    "SIL 1": ("#14532d", "#dcfce7", "#86efac"),
-    "SIL 2": ("#0f766e", "#ccfbf1", "#5eead4"),
-    "SIL 3": ("#1d4ed8", "#dbeafe", "#93c5fd"),
-    "SIL 4": ("#6d28d9", "#ede9fe", "#c4b5fd"),
-    "SIL –": ("#374151", "#e5e7eb", "#d1d5db"),
+    "met": ("#0f5132", "#d1f7e1", "#2ecc71"),
+    "not_met": ("#7f1d1d", "#fde2e1", "#f87171"),
+    "neutral": ("#374151", "#f3f4f6", "#d1d5db"),
 }
 
 
@@ -302,9 +300,10 @@ class ResultCell(QWidget):
     override_changed = QtCore.pyqtSignal(str)  # 'High demand' or 'Low demand'
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.lbl_summary = QLabel("Calculated SIL: –")
+        self.lbl_summary = QLabel("")
         self.lbl_summary.setObjectName("ResultSummary")
         self.lbl_summary.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.lbl_summary.hide()
 
         self.sil_badge = QLabel("SIL –")
         self.sil_badge.setObjectName("SilBadge")
@@ -342,7 +341,6 @@ class ResultCell(QWidget):
         summary_row = QHBoxLayout()
         summary_row.setContentsMargins(0, 0, 0, 0)
         summary_row.setSpacing(8)
-        summary_row.addWidget(self.lbl_summary, 1)
         summary_row.addStretch(1)
         summary_row.addWidget(self.sil_badge, 0)
         left.addLayout(summary_row)
@@ -371,14 +369,19 @@ class ResultCell(QWidget):
         sil_normalized = (sil_text or "").strip().upper()
         if sil_rank(sil_normalized) == 0:
             sil_normalized = "SIL –"
-        styles = SIL_BADGE_STYLES.get(sil_normalized, SIL_BADGE_STYLES["SIL –"])
-        fg, bg, border = styles
-        if requirement_met is False and sil_normalized != "SIL –":
-            border = "#dc2626"
+
+        if requirement_met is True:
+            palette_key = "met"
+        elif requirement_met is False:
+            palette_key = "not_met"
+        else:
+            palette_key = "neutral"
+
+        fg, bg, border = SIL_BADGE_STYLES[palette_key]
         self.sil_badge.setText(sil_normalized)
         self.sil_badge.setStyleSheet(
             f"QLabel#SilBadge{{"
-            f"padding:2px 10px; border-radius:12px; font-weight:600;"
+            f"padding:4px 16px; border-radius:18px; font-weight:600;"
             f"text-transform:uppercase; letter-spacing:0.05em;"
             f"color:{fg}; background:{bg}; border:1px solid {border};"
             f"}}"
@@ -3293,11 +3296,6 @@ class MainWindow(QMainWindow):
         req_rank = int(req_rank_raw)
         calc_rank = sil_rank(sil_calc)
         ok = (calc_rank >= req_rank) and (calc_rank > 0)
-
-        summary = f"Calculated SIL: {sil_calc}"
-        if calc_rank > 0:
-            summary += " — requirement met" if ok else " — requirement not met"
-        widgets.result.lbl_summary.setText(summary)
 
         widgets.result.set_sil_badge(sil_calc, ok if calc_rank > 0 else None)
 
