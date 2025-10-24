@@ -25,6 +25,15 @@ import yaml
 import numpy as np
 import html
 from pathlib import Path
+
+from sifu_core import (
+    Assumptions,
+    ChannelMetrics,
+    ConversionError,
+    calculate_one_out_of_two,
+    calculate_single_channel,
+    compute_lambda_total,
+)
 # ==========================
 
 
@@ -38,7 +47,8 @@ def new_instance_id() -> str:
 def make_html_tooltip(title: str, pfd: Optional[float], pfh: Optional[float], syscap: Any,
                       pdm_code: str = "", pfh_entered_fit: Optional[float] = None,
                       pfd_entered_fit: Optional[float] = None,
-                      extra_fields: Optional[Dict[str, Any]] = None) -> str:
+                      extra_fields: Optional[Dict[str, Any]] = None,
+                      note: Optional[str] = None) -> str:
     def esc(x: Any) -> str:
         return html.escape("" if x is None else str(x))
 
@@ -65,7 +75,11 @@ def make_html_tooltip(title: str, pfd: Optional[float], pfh: Optional[float], sy
                 continue  # bereits dargestellt
             rows.append(f"<tr><td>{esc(key)}:</td><td>{esc(val)}</td></tr>")
 
-    return f"<html><b>{esc(title)}</b><br><table>{''.join(rows)}</table></html>"
+    note_html = ""
+    if note:
+        note_html = f"<div style='margin-top:6px; font-size:11px; color:#555;'>{esc(note)}</div>"
+
+    return f"<html><b>{esc(title)}</b><br><table>{''.join(rows)}</table>{note_html}</html>"
 
 # ==========================
 # ConfigDialog (modern, Tabs)
@@ -84,7 +98,10 @@ class ConfigDialog(QDialog):
         self.setObjectName("ModernConfigDialog")
 
         self._defaults = {
-            'TI': 8760.0, 'MTTR': 8.0, 'beta': 0.1, 'beta_D': 0.02, 'C_PST': 0.3, 'T_PST': 168.0
+            'TI': 8760.0,
+            'MTTR': 8.0,
+            'beta': 0.1,
+            'beta_D': 0.02,
         }
 
         vroot = QVBoxLayout(self)
@@ -122,8 +139,6 @@ class ConfigDialog(QDialog):
         add_param('MTTR', "MTTR — Mean time to repair", 0, 1e6, 2, 0.5,"Average repair time.", "h")
         add_param('beta',  "β — Common-cause fraction (DU)", 0, 1.0, 4, 0.001, "Common-cause share for DU.")
         add_param('beta_D',"β_D — Common-cause fraction (DD)",0, 1.0, 4, 0.001, "Common-cause share for DD.")
-        add_param('C_PST',"C_PST", 0, 1.0, 3, 0.01, "Proof test coverage constant.")
-        add_param('T_PST',"T_PST", 0, 1e6, 2, 1.0, "Proof test duration.", "h")
         tabs.addTab(pg_ass, "Assumptions")
 
         # --- Tab 2: DU/DD ratios ---
@@ -177,8 +192,6 @@ class ConfigDialog(QDialog):
             self.fields['MTTR'].setValue(self._defaults['MTTR'])
             self.fields['beta'].setValue(self._defaults['beta'])
             self.fields['beta_D'].setValue(self._defaults['beta_D'])
-            self.fields['C_PST'].setValue(self._defaults['C_PST'])
-            self.fields['T_PST'].setValue(self._defaults['T_PST'])
             for g, (du_sp, dd_sp) in self.du_dd_fields.items():
                 du, dd = (0.7, 0.3) if g == "sensor" else (0.6, 0.4)
                 du_sp.setValue(du * 100.0)
@@ -273,16 +286,16 @@ class RowMeta(dict):
     pass
 
 # ==========================
-# Result cell (badge + subtext + demand-mode combo)
+# Result cell (summary + subtext + demand-mode combo)
 # ==========================
 
 class ResultCell(QWidget):
     override_changed = QtCore.pyqtSignal(str)  # 'High demand' or 'Low demand'
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.badge = QLabel("–")
-        self.badge.setObjectName("SilBadge")
-        self.badge.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.lbl_summary = QLabel("Calculated SIL: –")
+        self.lbl_summary.setObjectName("ResultSummary")
+        self.lbl_summary.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
         # Subtext lines
         self.lbl_demand = QLabel("–")
@@ -310,7 +323,7 @@ class ResultCell(QWidget):
         left = QVBoxLayout()
         left.setContentsMargins(0, 0, 0, 0)
         left.setSpacing(3)
-        left.addWidget(self.badge)
+        left.addWidget(self.lbl_summary)
 
         demand_row = QHBoxLayout()
         demand_row.setContentsMargins(0, 0, 0, 0)
@@ -1391,8 +1404,6 @@ class MainWindow(QMainWindow):
             'MTTR': 8.0,   # [h]
             'beta': 0.1,   # [–]
             'beta_D': 0.02,# [–]
-            'C_PST': 0.3,  # [–]
-            'T_PST': 168.0 # [h]
         }
         self.du_dd_ratios = {'sensor': (0.7, 0.3), 'logic': (0.6, 0.4), 'actuator': (0.6, 0.4)}
 
@@ -1869,11 +1880,9 @@ class MainWindow(QMainWindow):
         QWidget[kind="logic"] {{ border-left:4px solid {logic_accent}; padding-left:8px; }}
         QWidget[kind="actuator"] {{ border-left:4px solid {actuator_accent}; padding-left:8px; }}
 
-        QLabel#SilBadge {{
-            font-weight:700; border:1px solid #cfcfcf; border-radius: 8px; padding: 6px 8px; background: {bg0}; color: #111;
+        QLabel#ResultSummary {{
+            font-weight:700;
         }}
-        QLabel#SilBadge[state="ok"] {{ background: #E6F4EA; border-color: #98D8A4; color: {success}; }}
-        QLabel#SilBadge[state="bad"]{{ background: #FEECEE; border-color: #F1B3B3; color: {danger}; }}
 
         QComboBox#DemandCombo {{
             padding: 1px 6px; border: 1px solid #cfcfcf; border-radius: 6px; background: {bg0};
@@ -1943,37 +1952,19 @@ class MainWindow(QMainWindow):
     
     def _tooltip_for_1oo2(self, m1: dict, m2: dict, group: str = "actuator",
                           mode_key: str = "low_demand") -> str:
-        """Build an HTML tooltip for a 1oo2 group. Starts with <qt> so Qt renders it as HTML."""
-        def esc(x: Any) -> str:
-            s = "" if x is None else str(x)
-            return html.escape(s)
-        def fp(x):
-            return "–" if x is None else f"{float(x):.6f}"
-        def fh(x):
-            return "–" if x is None else f"{float(x):.3e} 1/h"
-        c1 = esc(m1.get("code", "?")); c2 = esc(m2.get("code", "?"))
-        pfd1 = m1.get("pfd", m1.get("pfd_avg", None)); pfh1 = m1.get("pfh", m1.get("pfh_avg", None))
-        pfd2 = m2.get("pfd", m2.get("pfd_avg", None)); pfh2 = m2.get("pfh", m2.get("pfh_avg", None))
-        pfd_g = self._group_pfd_1oo2_grouped(m1, m2, group, mode_key)
-        pfh_g = self._group_pfh_1oo2_grouped(m1, m2, group, mode_key)
-        return (
-            "<qt>"
-            f"<div style='font-weight:600;'>1oo2 Group — {c1} ∥ {c2}</div>"
-            "<table style='border-collapse:collapse; margin-top:4px;'>"
-            "<tr><td style='padding-right:8px;'><b>PFDavg (group):</b></td>"
-            f"<td>{fp(pfd_g)}</td></tr>"
-            "<tr><td style='padding-right:8px;'><b>PFHavg (group):</b></td>"
-            f"<td>{fh(pfh_g)}</td></tr>"
-            "</table>"
-            "<table style='border-collapse:collapse; margin-top:6px;'>"
-            "<tr><th style='text-align:left;padding-right:10px;'>Member</th>"
-            "<th style='text-align:left;padding-right:10px;'>PFDavg</th>"
-            "<th style='text-align:left;'>PFHavg</th></tr>"
-            f"<tr><td>{c1}</td><td>{fp(pfd1)}</td><td>{fh(pfh1)}</td></tr>"
-            f"<tr><td>{c2}</td><td>{fp(pfd2)}</td><td>{fh(pfh2)}</td></tr>"
-            "</table>"
-            "</qt>"
+        members = [m for m in (m1, m2) if isinstance(m, dict)]
+        assumptions = self._current_assumptions()
+        du_ratio, dd_ratio = self._ratios(group)
+        _, tooltip, _, errors = self._group_metrics(
+            members,
+            du_ratio,
+            dd_ratio,
+            mode_key,
+            assumptions,
         )
+        for err in errors:
+            self._handle_conversion_error(err)
+        return tooltip
 
     def _refresh_group_tooltips_in_row(self, row_idx: int) -> None:
         """Update tooltips for all 1oo2 groups in Output/Actuator of the given row."""
@@ -2336,9 +2327,9 @@ class MainWindow(QMainWindow):
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
-            sensors = self._collect_list_items(widgets.in_list)
-            logic = self._collect_list_items(widgets.logic_list)
-            outputs = self._collect_list_items(widgets.out_list)
+            sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
+            logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
+            outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
             mode = self._effective_demand_mode(row_idx)
             mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
             pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
@@ -2482,6 +2473,8 @@ class MainWindow(QMainWindow):
                     sil_val = entry.get("sys_cap", entry.get("syscap", ""))
                     pdm_val = entry.get("pdm_code", "")
 
+                    note_text = self._note_for_provenance(entry.get("provenance"))
+
                     if architecture == "1oo2" and entry.get("members"):
                         members_payload: List[Dict[str, Any]] = []
                         member_codes: List[str] = []
@@ -2497,6 +2490,7 @@ class MainWindow(QMainWindow):
                                 "pfh": member.get("pfh_avg", member.get("pfh")),
                                 "sil": member.get("sys_cap", member.get("syscap", "")),
                                 "pdm": member.get("pdm_code", ""),
+                                "note": self._note_for_provenance(member.get("provenance")),
                             })
                         display_label = " ∥ ".join(c for c in member_codes if c) or base_label
                         subtitle = base_label if display_label != base_label else ""
@@ -2511,6 +2505,7 @@ class MainWindow(QMainWindow):
                             "pdm": pdm_val,
                             "members": members_payload,
                             "member_count": len(members_payload),
+                            "note": note_text,
                         })
                     else:
                         subtitle = ""
@@ -2526,6 +2521,7 @@ class MainWindow(QMainWindow):
                             "pfh": pfh_val,
                             "sil": sil_val,
                             "pdm": pdm_val,
+                            "note": note_text,
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -2580,6 +2576,8 @@ class MainWindow(QMainWindow):
                     metrics_html = render_metrics(card.get("pfd"), card.get("pfh"), card.get("sil"), card.get("pdm"))
                     if metrics_html:
                         html_parts.append(metrics_html)
+                    if card.get("note"):
+                        html_parts.append(f'<div class="lane-note">{esc(card.get("note"))}</div>')
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
@@ -2593,6 +2591,8 @@ class MainWindow(QMainWindow):
                                     html_parts.append(member_metrics)
                                 else:
                                     html_parts.append('<div class="lane-note">No reliability data</div>')
+                                if member.get("note"):
+                                    html_parts.append(f'<div class="lane-note">{esc(member.get("note"))}</div>')
                                 html_parts.append('</div>')
                             html_parts.append('</div>')
                         else:
@@ -2735,8 +2735,6 @@ class MainWindow(QMainWindow):
         parts.append(f'<tr><th>MTTR — Mean time to repair [h]</th><td class="right">{asm.get("MTTR", 0):.2f}</td></tr>')
         parts.append(f'<tr><th>beta — CCF (DU) [–]</th><td class="right">{asm.get("beta", 0):.4f}</td></tr>')
         parts.append(f'<tr><th>beta_D — CCF (DD) [–]</th><td class="right">{asm.get("beta_D", 0):.4f}</td></tr>')
-        parts.append(f'<tr><th>C_PST [–]</th><td class="right">{asm.get("C_PST", 0):.3f}</td></tr>')
-        parts.append(f'<tr><th>T_PST [h]</th><td class="right">{asm.get("T_PST", 0):.2f}</td></tr>')
         parts.append('</tbody></table>')
         parts.append('</div>')
 
@@ -2797,6 +2795,9 @@ class MainWindow(QMainWindow):
                             label_html = f'<span class="member-tag">{esc(code_val)}</span>'
                             if name_val and name_val != code_val:
                                 label_html += f'<span class="member-caption">{esc(name_val)}</span>'
+                            note = self._note_for_provenance(m.get('provenance'))
+                            if note:
+                                label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
                             parts.append('<tr class="group-member">'
                                          f'<td>{label_html}</td>'
                                          f'<td class="right">{fmt_pfd(m.get("pfd_avg", m.get("pfd")))}</td>'
@@ -2806,8 +2807,12 @@ class MainWindow(QMainWindow):
                                          f'<td>{esc(m.get("pdm_code", "") or "—")}</td>'
                                          '</tr>')
                     else:
+                        label_html = esc(it.get("code", it.get("name","?")))
+                        note = self._note_for_provenance(it.get('provenance'))
+                        if note:
+                            label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
                         parts.append('<tr>'
-                                     f'<td>{esc(it.get("code", it.get("name","?")))}</td>'
+                                     f'<td>{label_html}</td>'
                                      f'<td class="right">{fmt_pfd(it.get("pfd_avg", it.get("pfd")))}</td>'
                                      f'<td class="right">{fmt_pfh(it.get("pfh_avg", it.get("pfh")))}</td>'
                                      f'<td class="right">{fmt_fit(it.get("pfh_avg", it.get("pfh")))}</td>'
@@ -2831,11 +2836,11 @@ class MainWindow(QMainWindow):
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
-            sensors = self._collect_list_items(widgets.in_list)
-            logic   = self._collect_list_items(widgets.logic_list)
-            outputs = self._collect_list_items(widgets.out_list)
             mode = self._effective_demand_mode(row_idx)
             mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+            sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
+            logic   = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
+            outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
             pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
@@ -2932,66 +2937,96 @@ class MainWindow(QMainWindow):
         self.recalculate_all()
 
     # ----- collect list items -----
-    def _collect_list_items(self, lw: QListWidget) -> List[dict]:
+    def _collect_list_items(self, lw: QListWidget, group_kind: str, mode_key: str) -> List[dict]:
         items: List[dict] = []
+        assumptions = self._current_assumptions()
+        du_ratio, dd_ratio = self._ratios(group_kind)
+
         for i in range(lw.count()):
             item = lw.item(i)
             if not item:
                 continue
-            d = item.data(Qt.UserRole) or {}
-            if d.get('group') and d.get('architecture') == '1oo2':
+            payload = item.data(Qt.UserRole) or {}
+            if payload.get('group') and payload.get('architecture') == '1oo2':
                 normalized_members: List[dict] = []
-                members_payload: List[dict] = []
-                for member in d.get('members', []):
-                    if not isinstance(member, dict):
-                        continue
-                    member_copy = copy.deepcopy(member)
-                    member_id = member_copy.get('instance_id')
-                    if not isinstance(member_id, str) or not member_id:
-                        member_id = new_instance_id()
-                        member_copy['instance_id'] = member_id
-                    normalized_members.append(member_copy)
-                    members_payload.append({
-                        'code': member_copy.get('code'),
-                        'name': member_copy.get('name'),
-                        'pfd_avg': float(member_copy.get('pfd', member_copy.get('pfd_avg', 0.0)) or 0.0),
-                        'pfh_avg': float(member_copy.get('pfh', member_copy.get('pfh_avg', 0.0)) or 0.0),
-                        'sys_cap': member_copy.get('sys_cap', member_copy.get('syscap', '')),
-                        'pdm_code': member_copy.get('pdm_code'),
-                        'instance_id': member_id,
-                    })
-                if normalized_members != d.get('members'):
-                    new_payload = copy.deepcopy(d)
+                for member in payload.get('members', []):
+                    if isinstance(member, dict):
+                        member_copy = copy.deepcopy(member)
+                        member_id = member_copy.get('instance_id')
+                        if not isinstance(member_id, str) or not member_id:
+                            member_id = new_instance_id()
+                            member_copy['instance_id'] = member_id
+                        normalized_members.append(member_copy)
+                if normalized_members != payload.get('members'):
+                    new_payload = copy.deepcopy(payload)
                     new_payload['members'] = normalized_members
                     item.setData(Qt.UserRole, new_payload)
-                    d = new_payload
-                member_a = normalized_members[0] if normalized_members else {}
-                member_b = normalized_members[1] if len(normalized_members) > 1 else {}
-                pfd_grp = self._group_pfd_1oo2_grouped(member_a, member_b, 'actuator')
-                pfh_grp = self._group_pfh_1oo2_grouped(member_a, member_b, 'actuator')
+                    payload = new_payload
+
+                metrics, _, member_infos, errors = self._group_metrics(
+                    normalized_members,
+                    du_ratio,
+                    dd_ratio,
+                    mode_key,
+                    assumptions,
+                )
+                for err in errors:
+                    self._handle_conversion_error(err)
+
+                members_payload: List[dict] = []
+                for info in member_infos:
+                    member_payload = copy.deepcopy(info['payload'])
+                    member_id = member_payload.get('instance_id')
+                    if not isinstance(member_id, str) or not member_id:
+                        member_id = new_instance_id()
+                        member_payload['instance_id'] = member_id
+                    members_payload.append({
+                        'code': member_payload.get('code'),
+                        'name': member_payload.get('name'),
+                        'pfd_avg': float(member_payload.get('pfd', member_payload.get('pfd_avg', 0.0)) or 0.0),
+                        'pfh_avg': float(member_payload.get('pfh', member_payload.get('pfh_avg', 0.0)) or 0.0),
+                        'sys_cap': member_payload.get('sys_cap', member_payload.get('syscap', '')),
+                        'pdm_code': member_payload.get('pdm_code'),
+                        'instance_id': member_id,
+                        'provenance': info['provenance'],
+                    })
+
                 items.append({
                     'architecture': '1oo2',
                     'members': members_payload,
-                    'pfd_avg': float(pfd_grp),
-                    'pfh_avg': float(pfh_grp),
-                    'instance_id': d.get('instance_id'),
+                    'pfd_avg': float(metrics.pfd),
+                    'pfh_avg': float(metrics.pfh),
+                    'instance_id': payload.get('instance_id'),
                 })
             else:
-                inst_id = d.get('instance_id')
+                inst_id = payload.get('instance_id')
                 if not isinstance(inst_id, str) or not inst_id:
                     inst_id = new_instance_id()
-                    d = copy.deepcopy(d)
-                    d['instance_id'] = inst_id
-                    item.setData(Qt.UserRole, d)
+                    payload = copy.deepcopy(payload)
+                    payload['instance_id'] = inst_id
+                    item.setData(Qt.UserRole, payload)
+
+                metrics, provenance, _, error = self._component_metrics(
+                    payload,
+                    du_ratio,
+                    dd_ratio,
+                    mode_key,
+                    assumptions,
+                )
+                if error:
+                    self._handle_conversion_error(error)
+                    continue
+
                 items.append({
-                    'code': d.get('code') or d.get('name'),
-                    'name': d.get('name'),
-                    'pfd_avg': float(d.get('pfd', 0.0)),
-                    'pfh_avg': float(d.get('pfh', 0.0)),
-                    'sys_cap': d.get('syscap', d.get('sys_cap', '')),
-                    'pdm_code': d.get('pdm_code', ''),
-                    'kind': d.get('kind'),
+                    'code': payload.get('code') or payload.get('name'),
+                    'name': payload.get('name'),
+                    'pfd_avg': float(payload.get('pfd', payload.get('pfd_avg', 0.0)) or 0.0),
+                    'pfh_avg': float(payload.get('pfh', payload.get('pfh_avg', 0.0)) or 0.0),
+                    'sys_cap': payload.get('syscap', payload.get('sys_cap', '')),
+                    'pdm_code': payload.get('pdm_code', ''),
+                    'kind': payload.get('kind'),
                     'instance_id': inst_id,
+                    'provenance': provenance,
                 })
         return items
 
@@ -3001,107 +3036,197 @@ class MainWindow(QMainWindow):
         return meta.get("demand_mode_override") or meta.get("demand_mode_required", "High demand")
 
     # ----- sums + display (math unchanged) -----
-    def _lambda_from_component(self, d: dict, mode_key: str) -> float:
-        TI = float(self.assumptions['TI'])
-        pfd = float(d.get('pfd', d.get('pfd_avg', 0.0)))
-        pfh = float(d.get('pfh', d.get('pfh_avg', 0.0)))
-        if mode_key == "low_demand":
-            return (2.0 * pfd / TI) if TI > 0 else 0.0
-        return pfh
-
     def _ratios(self, group: str) -> Tuple[float, float]:
         du, dd = self.du_dd_ratios.get(group, (0.6, 0.4))
         tot = du + dd
         if tot <= 0: return 0.6, 0.4
         return du / tot, dd / tot
 
-    def _estimate_lambda_dd(self, pfd: float, pfh: float, group: str,
-                            mode_key: str = "low_demand") -> float:
-        TI = float(self.assumptions['TI'])
-        if mode_key == "low_demand":
-            lam = (2.0 * pfd / TI) if TI > 0 else 0.0
-        else:
-            lam = float(pfh)
-        du_ratio, dd_ratio = self._ratios(group)
-        return lam * (dd_ratio if du_ratio == 0 else (dd_ratio / du_ratio))
+    def _current_assumptions(self) -> Assumptions:
+        return Assumptions(
+            TI=float(self.assumptions['TI']),
+            MTTR=float(self.assumptions['MTTR']),
+            beta=float(self.assumptions['beta']),
+            beta_D=float(self.assumptions['beta_D']),
+        )
 
-    def _group_pfd_1oo2_grouped(self, d1: dict, d2: dict, group: str,
-                                mode_key: str = "low_demand") -> float:
-        beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
-        TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
-        du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1, mode_key)
-        lam2 = self._lambda_from_component(d2, mode_key)
-        lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
-        lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
-        lam_du_total = lam_du_1 + lam_du_2
-        lam_dd_total = lam_dd_1 + lam_dd_2
-        lam_du_ind = (1.0 - beta) * lam_du_total
-        lam_dd_ind = (1.0 - beta_D) * lam_dd_total
-        lam_d_ind = lam_du_ind + lam_dd_ind
-        if lam_d_ind <= 0.0:
-            pfd_ind = 0.0
-            tCE = 0.0
-            tGE = 0.0
-        else:
-            w_DU = lam_du_ind / lam_d_ind
-            w_DD = lam_dd_ind / lam_d_ind
-            tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
-            tGE = w_DU * (TI / 3.0 + MTTR) + w_DD * MTTR
-            pfd_ind = 2.0 * (lam_d_ind ** 2) * tCE * tGE
-        pfd_du_ccf = beta * lam_du_total * (TI / 2.0 + MTTR)
-        pfd_dd_ccf = beta_D * lam_dd_total * MTTR
-        return pfd_ind + pfd_du_ccf + pfd_dd_ccf
+    @staticmethod
+    def _note_for_provenance(provenance: Optional[str]) -> Optional[str]:
+        if provenance == "derived_from_pfh":
+            return "Data source: λ_total derived from PFH; DU/DD use the current settings."
+        if provenance == "derived_from_pfd":
+            return "Data source: λ_total derived from 2·PFD/TI using the current TI; DU/DD use the current settings."
+        return None
 
-    def _group_pfh_1oo2_grouped(self, d1: dict, d2: dict, group: str,
-                                mode_key: str = "low_demand") -> float:
-        beta = float(self.assumptions['beta']); beta_D = float(self.assumptions['beta_D'])
-        MTTR = float(self.assumptions['MTTR']); TI = float(self.assumptions.get('TI', 0.0))
-        du_ratio, dd_ratio = self._ratios(group)
-        lam1 = self._lambda_from_component(d1, mode_key)
-        lam2 = self._lambda_from_component(d2, mode_key)
-        lam_du_1 = du_ratio * lam1; lam_du_2 = du_ratio * lam2
-        lam_dd_1 = dd_ratio * lam1; lam_dd_2 = dd_ratio * lam2
-        lam_du_total = lam_du_1 + lam_du_2
-        lam_dd_total = lam_dd_1 + lam_dd_2
-        lam_du_ind = (1.0 - beta) * lam_du_total
-        lam_dd_ind = (1.0 - beta_D) * lam_dd_total
-        lam_d_ind = lam_du_ind + lam_dd_ind
-        if lam_d_ind <= 0.0:
-            pfh_ind = 0.0
-            tCE = 0.0
-        else:
-            w_DU = lam_du_ind / lam_d_ind
-            w_DD = lam_dd_ind / lam_d_ind
-            tCE = w_DU * (TI / 2.0 + MTTR) + w_DD * MTTR
-            pfh_ind = 2.0 * lam_d_ind * lam_du_ind * tCE
-        pfh_ccf = beta * lam_du_total
-        return pfh_ind + pfh_ccf
+    def _handle_conversion_error(self, message: str) -> None:
+        if not message:
+            return
+        print(message, file=sys.stderr)
+        if hasattr(self, 'statusBar'):
+            self.statusBar().showMessage(message, 5000)
+
+    def _component_metrics(
+        self,
+        payload: dict,
+        du_ratio: float,
+        dd_ratio: float,
+        mode_key: str,
+        assumptions: Assumptions,
+    ) -> Tuple[Optional[ChannelMetrics], Optional[str], Optional[str], Optional[str]]:
+        try:
+            lambda_total, provenance = compute_lambda_total(payload, mode_key, assumptions)
+        except ConversionError as exc:
+            return None, None, None, str(exc)
+
+        metrics = calculate_single_channel(lambda_total, du_ratio, dd_ratio, assumptions)
+        note = self._note_for_provenance(provenance)
+        title = payload.get('code') or payload.get('name') or "Component"
+        pfd_val = payload.get('pfd', payload.get('pfd_avg'))
+        pfh_val = payload.get('pfh', payload.get('pfh_avg'))
+        syscap = payload.get('syscap', payload.get('sys_cap', ''))
+        tooltip = make_html_tooltip(
+            str(title),
+            pfd_val,
+            pfh_val,
+            syscap,
+            pdm_code=payload.get('pdm_code', ''),
+            pfh_entered_fit=payload.get('pfh_fit'),
+            pfd_entered_fit=payload.get('pfd_fit'),
+            extra_fields={k: v for k, v in payload.items() if isinstance(k, str)},
+            note=note,
+        )
+        return metrics, provenance, tooltip, None
+
+    def _group_metrics(
+        self,
+        members: List[dict],
+        du_ratio: float,
+        dd_ratio: float,
+        mode_key: str,
+        assumptions: Assumptions,
+    ) -> Tuple[ChannelMetrics, str, List[Dict[str, Any]], List[str]]:
+        member_infos: List[Dict[str, Any]] = []
+        lambda_values: List[float] = []
+        errors: List[str] = []
+        for member in members:
+            if not isinstance(member, dict):
+                continue
+            try:
+                lam, provenance = compute_lambda_total(member, mode_key, assumptions)
+            except ConversionError as exc:
+                lam = 0.0
+                provenance = None
+                errors.append(str(exc))
+            lambda_values.append(lam)
+            member_infos.append({'payload': member, 'provenance': provenance, 'lambda_total': lam})
+
+        metrics = calculate_one_out_of_two(lambda_values, du_ratio, dd_ratio, assumptions)
+        tooltip = self._format_group_tooltip(member_infos, metrics)
+        return metrics, tooltip, member_infos, errors
+
+    def _format_group_tooltip(self, member_infos: List[Dict[str, Any]], metrics: ChannelMetrics) -> str:
+        def esc(x: Any) -> str:
+            return html.escape('' if x is None else str(x))
+
+        def fmt_pfd(x: Optional[float]) -> str:
+            try:
+                return f"{float(x):.6f}"
+            except Exception:
+                return "–"
+
+        def fmt_pfh(x: Optional[float]) -> str:
+            try:
+                return f"{float(x):.3e} 1/h"
+            except Exception:
+                return "–"
+
+        labels = [
+            member.get('payload', {}).get('code') or member.get('payload', {}).get('name') or f"Member {idx + 1}"
+            for idx, member in enumerate(member_infos)
+        ]
+        title = " ∥ ".join(esc(lbl) for lbl in labels if lbl)
+
+        rows = []
+        for idx, info in enumerate(member_infos):
+            member_payload = info.get('payload', {})
+            pfd_val = member_payload.get('pfd', member_payload.get('pfd_avg'))
+            pfh_val = member_payload.get('pfh', member_payload.get('pfh_avg'))
+            note = self._note_for_provenance(info.get('provenance'))
+            rows.append(
+                f"<tr><td>{esc(labels[idx])}</td><td>{fmt_pfd(pfd_val)}</td><td>{fmt_pfh(pfh_val)}</td></tr>"
+            )
+            if note:
+                rows.append(
+                    f"<tr><td colspan='3' style='font-size:11px; color:#555;'>{esc(note)}</td></tr>"
+                )
+
+        member_table = (
+            "<table style='border-collapse:collapse; margin-top:6px;'>"
+            "<tr><th style='text-align:left;padding-right:10px;'>Member</th>"
+            "<th style='text-align:left;padding-right:10px;'>PFDavg</th>"
+            "<th style='text-align:left;'>PFHavg</th></tr>"
+            f"{''.join(rows)}"
+            "</table>"
+        )
+
+        return (
+            "<qt>"
+            f"<div style='font-weight:600;'>1oo2 Group — {title or 'Members'}</div>"
+            "<table style='border-collapse:collapse; margin-top:4px;'>"
+            "<tr><td style='padding-right:8px;'><b>PFDavg (group):</b></td>"
+            f"<td>{fmt_pfd(metrics.pfd)}</td></tr>"
+            "<tr><td style='padding-right:8px;'><b>PFHavg (group):</b></td>"
+            f"<td>{fmt_pfh(metrics.pfh)}</td></tr>"
+            "</table>"
+            f"{member_table}"
+            "</qt>"
+        )
 
     def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget],
                    mode_key: str) -> Tuple[float, float]:
-        pfd_sum = 0.0; pfh_sum = 0.0
-        TI = float(self.assumptions['TI']); MTTR = float(self.assumptions['MTTR'])
+        pfd_sum = 0.0
+        pfh_sum = 0.0
+        assumptions = self._current_assumptions()
 
         def group_of(idx: int) -> str:
             return ('sensor', 'logic', 'actuator')[idx]
 
         for idx, lw in enumerate(lists):
             group = group_of(idx)
+            du_ratio, dd_ratio = self._ratios(group)
             for i in range(lw.count()):
                 item = lw.item(i)
                 if item is None: continue
                 ud = item.data(Qt.UserRole) or {}
                 if ud.get('group') and ud.get('architecture') == '1oo2':
-                    m1, m2 = ud.get('members', [{}, {}])
-                    pfd_sum += self._group_pfd_1oo2_grouped(m1, m2, group, mode_key)
-                    pfh_sum += self._group_pfh_1oo2_grouped(m1, m2, group, mode_key)
+                    members = [m for m in ud.get('members', []) if isinstance(m, dict)]
+                    metrics, tooltip, _, errors = self._group_metrics(
+                        members,
+                        du_ratio,
+                        dd_ratio,
+                        mode_key,
+                        assumptions,
+                    )
+                    for err in errors:
+                        self._handle_conversion_error(err)
+                    pfd_sum += metrics.pfd
+                    pfh_sum += metrics.pfh
+                    item.setToolTip(tooltip)
                 else:
-                    lam = self._lambda_from_component(ud, mode_key)
-                    du_ratio, dd_ratio = self._ratios(group)
-                    lam_DU = du_ratio * lam; lam_DD = dd_ratio * lam
-                    pfh_sum += lam_DU
-                    pfd_sum += lam_DU * (TI / 2.0 + MTTR) + lam_DD * MTTR
+                    metrics, _, tooltip, error = self._component_metrics(
+                        ud,
+                        du_ratio,
+                        dd_ratio,
+                        mode_key,
+                        assumptions,
+                    )
+                    if error:
+                        self._handle_conversion_error(error)
+                        continue
+                    pfd_sum += metrics.pfd
+                    pfh_sum += metrics.pfh
+                    if tooltip:
+                        item.setToolTip(tooltip)
 
         return pfd_sum, pfh_sum
 
@@ -3128,9 +3253,10 @@ class MainWindow(QMainWindow):
         calc_rank = sil_rank(sil_calc)
         ok = (calc_rank >= req_rank) and (calc_rank > 0)
 
-        widgets.result.badge.setText(f"{sil_calc} {'✓' if ok else '✕'}")
-        widgets.result.badge.setProperty("state", "ok" if ok else "bad")
-        widgets.result.badge.style().unpolish(widgets.result.badge); widgets.result.badge.style().polish(widgets.result.badge)
+        summary = f"Calculated SIL: {sil_calc}"
+        if calc_rank > 0:
+            summary += " — requirement met" if ok else " — requirement not met"
+        widgets.result.lbl_summary.setText(summary)
 
         widgets.result.lbl_demand.setText(f"Demand mode:")
         widgets.result.combo.setCurrentText(demand_txt)
