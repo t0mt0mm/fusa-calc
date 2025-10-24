@@ -2777,7 +2777,10 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+            pfd_sum, pfh_sum, subgroup_totals = self._sum_lists(
+                (widgets.in_list, widgets.logic_list, widgets.out_list),
+                mode_key,
+            )
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -2799,6 +2802,7 @@ class MainWindow(QMainWindow):
                 "ok": ok,
                 "req_sil": req_sil_str,
                 "uid": uid,
+                "link_subgroups": subgroup_totals,
             })
 
         # Global assumptions and DU/DD ratios
@@ -2874,6 +2878,18 @@ class MainWindow(QMainWindow):
         .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
+        .lane-subgroups { margin-top:10px; padding:10px 12px; border-radius:10px; background:rgba(15,23,42,0.03); border:1px dashed rgba(99,102,241,0.4); display:flex; flex-direction:column; gap:10px; }
+        .lane-subgroups-title { font-size:12px; font-weight:600; color:#312e81; letter-spacing:0.04em; text-transform:uppercase; }
+        .lane-subgroup { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; box-shadow:0 2px 6px rgba(15,23,42,0.08); }
+        .lane-subgroup-header { display:flex; align-items:center; gap:8px; font-weight:600; color:#1f2937; font-size:12px; }
+        .lane-subgroup-color { width:12px; height:12px; border-radius:999px; border:1px solid rgba(15,23,42,0.15); }
+        .lane-subgroup-members { font-size:11px; color:#4b5563; }
+        .lane-subgroup .lane-metrics { margin-top:2px; }
+        .link-subgroup-summary { margin:12px 0 6px; padding:10px 12px; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0; }
+        .link-subgroup-summary-title { font-size:12px; font-weight:600; color:#0f172a; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
+        .link-subgroup-summary ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12px; color:#374151; }
+        .link-subgroup-summary li { display:flex; align-items:flex-start; gap:8px; }
+        .link-subgroup-dot { width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,0.1); margin-top:4px; flex:0 0 10px; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
         .formula-column { display:flex; flex-direction:column; gap:16px; }
@@ -2898,7 +2914,14 @@ class MainWindow(QMainWindow):
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
+        def build_architecture_lanes(
+            sensors: List[dict],
+            logic: List[dict],
+            actuators: List[dict],
+            subgroup_totals: Optional[Dict[str, List[Dict[str, Any]]]] = None,
+        ) -> str:
+            lane_lookup = {'sensors': 'sensor', 'logic': 'logic', 'actuators': 'actuator'}
+
             stage_defs = [
                 ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
@@ -3050,6 +3073,36 @@ class MainWindow(QMainWindow):
                             html_parts.append('<div class="lane-note">Group members unavailable</div>')
                     html_parts.append('</div>')
                 html_parts.append('</div>')
+                lane_subgroups = []
+                if subgroup_totals:
+                    lane_subgroups = subgroup_totals.get(lane_lookup.get(stage_key, stage_key), [])
+                if lane_subgroups:
+                    html_parts.append('<div class="lane-subgroups">')
+                    html_parts.append('<div class="lane-subgroups-title">Link subgroups</div>')
+                    for sg_idx, subgroup in enumerate(lane_subgroups, 1):
+                        color_style = ''
+                        color_val = subgroup.get('color')
+                        if color_val:
+                            color_style = f' style="background:{esc(color_val)};"'
+                        count = subgroup.get('count')
+                        header = f'Subgroup {sg_idx}'
+                        if isinstance(count, int) and count > 0:
+                            comp_word = "component" if count == 1 else "components"
+                            header = f"{header} — {count} {comp_word}"
+                        html_parts.append('<div class="lane-subgroup">')
+                        html_parts.append('<div class="lane-subgroup-header">')
+                        html_parts.append(f'<span class="lane-subgroup-color"{color_style}></span>')
+                        html_parts.append(f'<span>{esc(header)}</span>')
+                        html_parts.append('</div>')
+                        member_labels = subgroup.get('member_labels') or [comp.get('label') for comp in subgroup.get('components', [])]
+                        member_text = ', '.join(lbl for lbl in member_labels if lbl)
+                        if member_text:
+                            html_parts.append(f'<div class="lane-subgroup-members">{esc(member_text)}</div>')
+                        metrics_html = render_metrics(subgroup.get('pfd'), subgroup.get('pfh'), None, None)
+                        if metrics_html:
+                            html_parts.append(metrics_html)
+                        html_parts.append('</div>')
+                    html_parts.append('</div>')
                 html_parts.append('</div>')
             html_parts.append('</div>')
             return ''.join(html_parts)
@@ -3213,14 +3266,19 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'])
+            arch_html = build_architecture_lanes(
+                s['sensors'],
+                s['logic'],
+                s['actuators'],
+                s.get('link_subgroups'),
+            )
             if arch_html:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
                 parts.append(arch_html)
                 parts.append('</div>')
 
-            def render_group(title, items):
+            def render_group(title, items, lane_key: str):
                 parts.append(f'<h3>{esc(title)}</h3>')
                 if not items:
                     parts.append('<div class="muted small">No items</div>')
@@ -3278,9 +3336,47 @@ class MainWindow(QMainWindow):
                                      '</tr>')
                 parts.append('</tbody></table>')
 
-            render_group('Sensors / Inputs', s['sensors'])
-            render_group('Logic', s['logic'])
-            render_group('Outputs / Actuators', s['actuators'])
+                lane_groups = (s.get('link_subgroups') or {}).get(lane_key, [])
+                if lane_groups:
+                    parts.append('<div class="link-subgroup-summary">')
+                    parts.append('<div class="link-subgroup-summary-title">Link subgroups</div>')
+                    parts.append('<ul>')
+                    for sg_idx, subgroup in enumerate(lane_groups, 1):
+                        color_val = subgroup.get('color')
+                        dot_style = ' style="background:#d1d5db;"'
+                        if color_val:
+                            dot_style = f' style="background:{esc(color_val)};"'
+                        count = subgroup.get('count')
+                        header = f'Subgroup {sg_idx}'
+                        if isinstance(count, int) and count > 0:
+                            word = "component" if count == 1 else "components"
+                            header = f"{header} ({count} {word})"
+                        member_labels = subgroup.get('member_labels') or [comp.get('label') for comp in subgroup.get('components', [])]
+                        member_text = ', '.join(lbl for lbl in member_labels if lbl)
+                        metrics_bits: List[str] = []
+                        pfd_val = subgroup.get('pfd')
+                        if pfd_val is not None:
+                            metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
+                        pfh_val = subgroup.get('pfh')
+                        if pfh_val is not None:
+                            metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
+                        metrics_text = ' | '.join(metrics_bits)
+                        parts.append('<li>')
+                        parts.append(f'<span class="link-subgroup-dot"{dot_style}></span>')
+                        parts.append('<div>')
+                        parts.append(f'<div><strong>{esc(header)}</strong></div>')
+                        if member_text:
+                            parts.append(f'<div>{esc(member_text)}</div>')
+                        if metrics_text:
+                            parts.append(f'<div class="muted small">{esc(metrics_text)}</div>')
+                        parts.append('</div>')
+                        parts.append('</li>')
+                    parts.append('</ul>')
+                    parts.append('</div>')
+
+            render_group('Sensors / Inputs', s['sensors'], 'sensor')
+            render_group('Logic', s['logic'], 'logic')
+            render_group('Outputs / Actuators', s['actuators'], 'actuator')
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div>')
@@ -3298,7 +3394,10 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic   = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+            pfd_sum, pfh_sum, _ = self._sum_lists(
+                (widgets.in_list, widgets.logic_list, widgets.out_list),
+                mode_key,
+            )
             sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -3641,14 +3740,36 @@ class MainWindow(QMainWindow):
             "</qt>"
         )
 
-    def _sum_lists(self, lists: Tuple[QListWidget, QListWidget, QListWidget],
-                   mode_key: str) -> Tuple[float, float]:
+    def _sum_lists(
+        self,
+        lists: Tuple[QListWidget, QListWidget, QListWidget],
+        mode_key: str,
+    ) -> Tuple[float, float, Dict[str, List[Dict[str, Any]]]]:
         pfd_sum = 0.0
         pfh_sum = 0.0
         assumptions = self._current_assumptions()
 
         def group_of(idx: int) -> str:
             return ('sensor', 'logic', 'actuator')[idx]
+
+        lane_group_totals: Dict[str, Dict[str, Dict[str, Any]]] = {
+            'sensor': {},
+            'logic': {},
+            'actuator': {},
+        }
+
+        def describe_payload(payload: dict, default_label: str) -> Tuple[str, List[str]]:
+            if payload.get('group') and payload.get('architecture') == '1oo2':
+                member_labels: List[str] = []
+                for m_idx, member in enumerate(payload.get('members', [])):
+                    if not isinstance(member, dict):
+                        continue
+                    label = member.get('code') or member.get('name') or f"Member {m_idx + 1}"
+                    member_labels.append(str(label))
+                label = " ∥ ".join(lbl for lbl in member_labels if lbl) or default_label
+                return label, member_labels
+            label = payload.get('code') or payload.get('name') or default_label
+            return str(label), []
 
         for idx, lw in enumerate(lists):
             group = group_of(idx)
@@ -3657,6 +3778,8 @@ class MainWindow(QMainWindow):
                 item = lw.item(i)
                 if item is None: continue
                 ud = item.data(Qt.UserRole) or {}
+                link_group_id = ud.get('link_group_id') if isinstance(ud.get('link_group_id'), str) else None
+                link_color = ud.get('link_color') if isinstance(ud.get('link_color'), str) else None
                 if ud.get('group') and ud.get('architecture') == '1oo2':
                     members = [m for m in ud.get('members', []) if isinstance(m, dict)]
                     metrics, tooltip, _, errors = self._group_metrics(
@@ -3668,8 +3791,30 @@ class MainWindow(QMainWindow):
                     )
                     for err in errors:
                         self._handle_conversion_error(err)
-                    pfd_sum += metrics.pfd
-                    pfh_sum += metrics.pfh
+                    if link_group_id:
+                        lane_entry = lane_group_totals[group].setdefault(
+                            link_group_id,
+                            {
+                                'color': link_color,
+                                'pfd': 0.0,
+                                'pfh': 0.0,
+                                'components': [],
+                            },
+                        )
+                        if link_color and not lane_entry.get('color'):
+                            lane_entry['color'] = link_color
+                        lane_entry['pfd'] += float(metrics.pfd)
+                        lane_entry['pfh'] += float(metrics.pfh)
+                        label, member_labels = describe_payload(ud, item.text() or 'Component')
+                        lane_entry['components'].append({
+                            'label': label,
+                            'member_labels': member_labels,
+                            'architecture': '1oo2',
+                            'kind': ud.get('kind', group),
+                        })
+                    else:
+                        pfd_sum += metrics.pfd
+                        pfh_sum += metrics.pfh
                     item.setToolTip(tooltip)
                 else:
                     metrics, _, tooltip, error = self._component_metrics(
@@ -3682,12 +3827,53 @@ class MainWindow(QMainWindow):
                     if error:
                         self._handle_conversion_error(error)
                         continue
-                    pfd_sum += metrics.pfd
-                    pfh_sum += metrics.pfh
+                    if link_group_id:
+                        lane_entry = lane_group_totals[group].setdefault(
+                            link_group_id,
+                            {
+                                'color': link_color,
+                                'pfd': 0.0,
+                                'pfh': 0.0,
+                                'components': [],
+                            },
+                        )
+                        if link_color and not lane_entry.get('color'):
+                            lane_entry['color'] = link_color
+                        lane_entry['pfd'] += float(metrics.pfd)
+                        lane_entry['pfh'] += float(metrics.pfh)
+                        label, member_labels = describe_payload(ud, item.text() or 'Component')
+                        lane_entry['components'].append({
+                            'label': label,
+                            'member_labels': member_labels,
+                            'architecture': ud.get('architecture'),
+                            'kind': ud.get('kind', group),
+                        })
+                    else:
+                        pfd_sum += metrics.pfd
+                        pfh_sum += metrics.pfh
                     if tooltip:
                         item.setToolTip(tooltip)
 
-        return pfd_sum, pfh_sum
+        subgroup_payload: Dict[str, List[Dict[str, Any]]] = {}
+        for lane, groups in lane_group_totals.items():
+            if not groups:
+                continue
+            subgroup_payload[lane] = []
+            for idx, (group_id, info) in enumerate(groups.items(), 1):
+                pfd_sum += info['pfd']
+                pfh_sum += info['pfh']
+                labels = [comp.get('label') for comp in info['components'] if comp.get('label')]
+                subgroup_payload[lane].append({
+                    'id': group_id,
+                    'color': info.get('color'),
+                    'pfd': float(info['pfd']),
+                    'pfh': float(info['pfh']),
+                    'components': info['components'],
+                    'member_labels': labels,
+                    'count': len(info['components']),
+                })
+
+        return pfd_sum, pfh_sum, subgroup_payload
 
     # ----- recalc & UI update -----
     def recalculate_row(self, row_idx: int):
@@ -3696,7 +3882,10 @@ class MainWindow(QMainWindow):
         if not widgets: return  # can happen after remove
         mode = self._effective_demand_mode(row_idx)
         mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
-        pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
+        pfd_sum, pfh_sum, _ = self._sum_lists(
+            (widgets.in_list, widgets.logic_list, widgets.out_list),
+            mode_key,
+        )
         is_high = (mode_key == "high_demand")
         if is_high:
             sil_calc = classify_sil_from_pfh(pfh_sum)
