@@ -560,6 +560,25 @@ class ChipList(QListWidget):
         self._link_mode_active = False
         self.setProperty('linkMode', False)
 
+    def _can_accept_item(self, item: Optional[QListWidgetItem]) -> bool:
+        """Return True if the target list may accept ``item`` based on its kind."""
+        if item is None:
+            return False
+
+        if not self.allowed_kind:
+            return True
+
+        payload = item.data(Qt.UserRole) or {}
+        kind = payload.get('kind')
+
+        if not kind and payload.get('group'):
+            # legacy grouped payloads keep the member kinds inside ``members``
+            members = payload.get('members') or []
+            if members:
+                kind = (members[0] or {}).get('kind')
+
+        return kind == self.allowed_kind
+
     # ----- Item presentation helper -----
     def attach_chip(self, item: QListWidgetItem) -> None:
         d = item.data(Qt.UserRole) or {}
