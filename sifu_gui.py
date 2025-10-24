@@ -1564,6 +1564,7 @@ class MainWindow(QMainWindow):
         self._link_active = False
         self._link_active_row_uid: Optional[str] = None
         self._link_active_lane: Optional[str] = None
+        self._link_active_lanes: Set[str] = set()
         self._link_active_list = None
         self._link_active_color: Optional[str] = None
         self._link_active_group_id: Optional[str] = None
@@ -2547,8 +2548,9 @@ class MainWindow(QMainWindow):
         if not row_uid:
             return
         if self._link_active:
-            same_lane = self._link_active_row_uid == row_uid and self._link_active_lane == lane
-            if same_lane and not restart:
+            same_row = self._link_active_row_uid == row_uid
+            lane_known = lane in getattr(self, "_link_active_lanes", set())
+            if same_row and lane_known and not restart:
                 return
             self._end_link_session(silent=True, keep_action=True)
         self._begin_link_session(row_idx, row_uid, lane, list_widget)
@@ -2562,6 +2564,7 @@ class MainWindow(QMainWindow):
         self._link_active = True
         self._link_active_row_uid = row_uid
         self._link_active_lane = lane
+        self._link_active_lanes = {lane}
         self._link_active_list = list_widget
         self._link_active_color = color
         self._link_active_group_id = group_id
@@ -2588,6 +2591,7 @@ class MainWindow(QMainWindow):
         self._link_active = False
         self._link_active_row_uid = None
         self._link_active_lane = None
+        self._link_active_lanes.clear()
         self._link_active_list = None
         self._link_active_color = None
         self._link_active_group_id = None
@@ -2602,16 +2606,27 @@ class MainWindow(QMainWindow):
         if not self._link_active or lane is None:
             return False
         row_uid = self._row_uid_for_index(row_idx)
-        return bool(row_uid and row_uid == self._link_active_row_uid and lane == self._link_active_lane)
+        return bool(
+            row_uid
+            and row_uid == self._link_active_row_uid
+            and lane in self._link_active_lanes
+        )
 
     def _handle_link_click(self, list_widget: ChipList, item: QListWidgetItem) -> None:
         if not self._link_active or not item:
             return
         row_idx, lane = self._row_lane_for_list(list_widget)
         row_uid = self._row_uid_for_index(row_idx)
-        if row_uid != self._link_active_row_uid or lane != self._link_active_lane:
-            self.statusBar().showMessage("Link mode is active for a different lane.", 3000)
+        if row_uid != self._link_active_row_uid:
+            self.statusBar().showMessage("Link mode is active for a different SIFU.", 3000)
             return
+        if lane not in self._link_active_lanes:
+            self._link_active_lanes.add(lane)
+            self._link_active_lane = lane
+            lane_label = {"sensor": "Sensors", "logic": "Logic", "actuator": "Outputs", "actuators": "Outputs"}.get(lane, lane)
+            self.statusBar().showMessage(
+                f"Link mode extended to {lane_label} lane", 2500
+            )
         payload = item.data(Qt.UserRole) or {}
         updated = copy.deepcopy(payload)
         current_id = updated.get("link_group_id")
