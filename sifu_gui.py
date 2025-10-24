@@ -289,6 +289,15 @@ class RowMeta(dict):
 # Result cell (summary + subtext + demand-mode combo)
 # ==========================
 
+SIL_BADGE_STYLES: Dict[str, Tuple[str, str, str]] = {
+    "SIL 1": ("#14532d", "#dcfce7", "#86efac"),
+    "SIL 2": ("#0f766e", "#ccfbf1", "#5eead4"),
+    "SIL 3": ("#1d4ed8", "#dbeafe", "#93c5fd"),
+    "SIL 4": ("#6d28d9", "#ede9fe", "#c4b5fd"),
+    "SIL –": ("#374151", "#e5e7eb", "#d1d5db"),
+}
+
+
 class ResultCell(QWidget):
     override_changed = QtCore.pyqtSignal(str)  # 'High demand' or 'Low demand'
     def __init__(self, parent=None):
@@ -296,6 +305,12 @@ class ResultCell(QWidget):
         self.lbl_summary = QLabel("Calculated SIL: –")
         self.lbl_summary.setObjectName("ResultSummary")
         self.lbl_summary.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        self.sil_badge = QLabel("SIL –")
+        self.sil_badge.setObjectName("SilBadge")
+        self.sil_badge.setAlignment(Qt.AlignCenter)
+        self.sil_badge.setMinimumWidth(64)
+        self.sil_badge.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
         # Subtext lines
         self.lbl_demand = QLabel("–")
@@ -323,7 +338,14 @@ class ResultCell(QWidget):
         left = QVBoxLayout()
         left.setContentsMargins(0, 0, 0, 0)
         left.setSpacing(3)
-        left.addWidget(self.lbl_summary)
+
+        summary_row = QHBoxLayout()
+        summary_row.setContentsMargins(0, 0, 0, 0)
+        summary_row.setSpacing(8)
+        summary_row.addWidget(self.lbl_summary, 1)
+        summary_row.addStretch(1)
+        summary_row.addWidget(self.sil_badge, 0)
+        left.addLayout(summary_row)
 
         demand_row = QHBoxLayout()
         demand_row.setContentsMargins(0, 0, 0, 0)
@@ -342,6 +364,25 @@ class ResultCell(QWidget):
         root.setContentsMargins(6, 6, 6, 6)
         root.setSpacing(10)
         root.addLayout(left, 1)
+
+        self.set_sil_badge("n.a.", None)
+
+    def set_sil_badge(self, sil_text: str, requirement_met: Optional[bool]) -> None:
+        sil_normalized = (sil_text or "").strip().upper()
+        if sil_rank(sil_normalized) == 0:
+            sil_normalized = "SIL –"
+        styles = SIL_BADGE_STYLES.get(sil_normalized, SIL_BADGE_STYLES["SIL –"])
+        fg, bg, border = styles
+        if requirement_met is False and sil_normalized != "SIL –":
+            border = "#dc2626"
+        self.sil_badge.setText(sil_normalized)
+        self.sil_badge.setStyleSheet(
+            f"QLabel#SilBadge{{"
+            f"padding:2px 10px; border-radius:12px; font-weight:600;"
+            f"text-transform:uppercase; letter-spacing:0.05em;"
+            f"color:{fg}; background:{bg}; border:1px solid {border};"
+            f"}}"
+        )
 
 # ==========================
 # Chip lists with kind constraints (visual accents + drag highlight)
@@ -2327,11 +2368,11 @@ class MainWindow(QMainWindow):
         for row_idx in range(len(self.rows_meta)):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
+            mode = self._effective_demand_mode(row_idx)
+            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            mode = self._effective_demand_mode(row_idx)
-            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
             pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key)
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
@@ -3257,6 +3298,8 @@ class MainWindow(QMainWindow):
         if calc_rank > 0:
             summary += " — requirement met" if ok else " — requirement not met"
         widgets.result.lbl_summary.setText(summary)
+
+        widgets.result.set_sil_badge(sil_calc, ok if calc_rank > 0 else None)
 
         widgets.result.lbl_demand.setText(f"Demand mode:")
         widgets.result.combo.setCurrentText(demand_txt)
