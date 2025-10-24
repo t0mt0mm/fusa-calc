@@ -3997,68 +3997,81 @@ class MainWindow(QMainWindow):
             self._row_link_summaries[uid] = {'subgroups': subgroup_details, 'ungrouped': ungrouped_details}
 
         return total_pfd, total_pfh
+
     # ----- recalc & UI update -----
 
-        def recalculate_row(self, row_idx: int):
-            if row_idx < 0 or row_idx >= len(self.rows_meta): return
-            widgets = self.sifu_widgets.get(row_idx)
-            if not widgets: return  # can happen after remove
-            mode = self._effective_demand_mode(row_idx)
-            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
-            pfd_sum, pfh_sum = self._sum_lists((widgets.in_list, widgets.logic_list, widgets.out_list), mode_key, row_idx=row_idx)
-            details = {}
-            uid = self._ensure_row_uid(self.rows_meta[row_idx])
-            if uid:
-                details = self._row_link_summaries.get(uid, {})
-            is_high = (mode_key == "high_demand")
-            if is_high:
-                sil_calc = classify_sil_from_pfh(pfh_sum)
-                metric_caption = "PFH"
-                metric_value = f"{pfh_sum:.3e} 1/h"
-                demand_txt = "High demand"
-            else:
-                sil_calc = classify_sil_from_pfd(pfd_sum)
-                metric_caption = "PFD"
-                metric_value = f"{pfd_sum:.6f} (–)"
-                demand_txt = "Low demand"
+    def recalculate_row(self, row_idx: int):
+        if row_idx < 0 or row_idx >= len(self.rows_meta):
+            return
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets:
+            return  # can happen after remove
+        mode = self._effective_demand_mode(row_idx)
+        mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+        pfd_sum, pfh_sum = self._sum_lists(
+            (widgets.in_list, widgets.logic_list, widgets.out_list),
+            mode_key,
+            row_idx=row_idx,
+        )
+        details = {}
+        uid = self._ensure_row_uid(self.rows_meta[row_idx])
+        if uid:
+            details = self._row_link_summaries.get(uid, {})
+        is_high = (mode_key == "high_demand")
+        if is_high:
+            sil_calc = classify_sil_from_pfh(pfh_sum)
+            metric_caption = "PFH"
+            metric_value = f"{pfh_sum:.3e} 1/h"
+            demand_txt = "High demand"
+        else:
+            sil_calc = classify_sil_from_pfd(pfd_sum)
+            metric_caption = "PFD"
+            metric_value = f"{pfd_sum:.6f} (–)"
+            demand_txt = "Low demand"
 
-            req_sil_str, req_rank_raw = normalize_required_sil(self.rows_meta[row_idx].get('sil_required', 'n.a.'))
-            req_rank = int(req_rank_raw)
-            calc_rank = sil_rank(sil_calc)
-            ok = (calc_rank >= req_rank) and (calc_rank > 0)
+        req_sil_str, req_rank_raw = normalize_required_sil(
+            self.rows_meta[row_idx].get('sil_required', 'n.a.')
+        )
+        req_rank = int(req_rank_raw)
+        calc_rank = sil_rank(sil_calc)
+        ok = (calc_rank >= req_rank) and (calc_rank > 0)
 
-            widgets.result.set_sil_badge(sil_calc, ok if calc_rank > 0 else None)
+        widgets.result.set_sil_badge(sil_calc, ok if calc_rank > 0 else None)
 
-            widgets.result.demand_caption.setText("Demand mode")
-            widgets.result.combo.setCurrentText(demand_txt)
-            widgets.result.req_value.setText(req_sil_str)
-            widgets.result.calc_value.setText(sil_calc)
-            widgets.result.metric_caption.setText(metric_caption)
-            widgets.result.metric_value.setText(metric_value)
+        widgets.result.demand_caption.setText("Demand mode")
+        widgets.result.combo.setCurrentText(demand_txt)
+        widgets.result.req_value.setText(req_sil_str)
+        widgets.result.calc_value.setText(sil_calc)
+        widgets.result.metric_caption.setText(metric_caption)
+        widgets.result.metric_value.setText(metric_value)
 
-            tooltip_lines = [
-                demand_txt,
-                f"Required: {req_sil_str}",
-                f"Calculated: {sil_calc}",
-                f"{metric_caption}: {metric_value}",
-            ]
-            subgroups = details.get('subgroups') if isinstance(details, dict) else None
-            if subgroups:
-                tooltip_lines.append('Subgroups:')
-                for subgroup in subgroups:
-                    lane_label = LANE_TITLES.get(subgroup.get('lane'), subgroup.get('lane'))
-                    if is_high:
-                        value = subgroup.get('pfh', 0.0)
-                        tooltip_lines.append(f"  • {subgroup.get('name')} ({lane_label}): PFH {value:.3e} 1/h")
-                    else:
-                        value = subgroup.get('pfd', 0.0)
-                        tooltip_lines.append(f"  • {subgroup.get('name')} ({lane_label}): PFD {value:.6f}")
-            widgets.result.setToolTip("\n".join(tooltip_lines))
+        tooltip_lines = [
+            demand_txt,
+            f"Required: {req_sil_str}",
+            f"Calculated: {sil_calc}",
+            f"{metric_caption}: {metric_value}",
+        ]
+        subgroups = details.get('subgroups') if isinstance(details, dict) else None
+        if subgroups:
+            tooltip_lines.append('Subgroups:')
+            for subgroup in subgroups:
+                lane_label = LANE_TITLES.get(subgroup.get('lane'), subgroup.get('lane'))
+                if is_high:
+                    value = subgroup.get('pfh', 0.0)
+                    tooltip_lines.append(
+                        f"  • {subgroup.get('name')} ({lane_label}): PFH {value:.3e} 1/h"
+                    )
+                else:
+                    value = subgroup.get('pfd', 0.0)
+                    tooltip_lines.append(
+                        f"  • {subgroup.get('name')} ({lane_label}): PFD {value:.6f}"
+                    )
+        widgets.result.setToolTip("\n".join(tooltip_lines))
 
-            self._update_row_height(row_idx)
-            # refresh 1oo2 tooltips
-            self._refresh_group_tooltips_in_row(row_idx)
-            self._schedule_filter_update()
+        self._update_row_height(row_idx)
+        # refresh 1oo2 tooltips
+        self._refresh_group_tooltips_in_row(row_idx)
+        self._schedule_filter_update()
     def recalculate_all(self):
         for row_idx in range(self.table.rowCount()):
             self.recalculate_row(row_idx)
