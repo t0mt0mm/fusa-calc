@@ -2790,7 +2790,7 @@ class MainWindow(QMainWindow):
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
-            pfd_sum, pfh_sum, subgroup_totals = self._sum_lists(
+            pfd_sum, pfh_sum, _ = self._sum_lists(
                 (widgets.in_list, widgets.logic_list, widgets.out_list),
                 mode_key,
             )
@@ -2815,7 +2815,6 @@ class MainWindow(QMainWindow):
                 "ok": ok,
                 "req_sil": req_sil_str,
                 "uid": uid,
-                "link_subgroups": subgroup_totals,
             })
 
         # Global assumptions and DU/DD ratios
@@ -2876,7 +2875,7 @@ class MainWindow(QMainWindow):
         .lane--logic .lane-card { border-left-color:#22C55E; }
         .lane--actuators .lane-card { border-left-color:#A855F7; }
         .lane-card-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .lane-title { font-size:13px; font-weight:600; color:#111827; margin:0; display:flex; align-items:center; gap:6px; }
+        .lane-title { font-size:13px; font-weight:600; color:#111827; margin:0; }
         .lane-subtitle { font-size:11px; color:#6b7280; margin:0; }
         .lane-metrics { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:#374151; }
         .lane-metrics span { white-space:nowrap; padding:0 6px; border-radius:999px; background:#fff; border:1px solid #e5e7eb; }
@@ -2891,14 +2890,6 @@ class MainWindow(QMainWindow):
         .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
-        .link-dot { display:inline-flex; width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,0.2); flex:0 0 10px; }
-        table.component-table tbody tr.group-row td .group-title { font-size:13px; display:inline-flex; align-items:center; gap:6px; }
-        .link-label { display:inline-flex; align-items:center; gap:6px; }
-        .link-subgroup-summary { margin:12px 0 6px; padding:10px 12px; border-radius:8px; background:#f8fafc; border:1px solid #e2e8f0; }
-        .link-subgroup-summary-title { font-size:12px; font-weight:600; color:#0f172a; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px; }
-        .link-subgroup-summary ul { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12px; color:#374151; }
-        .link-subgroup-summary li { display:flex; align-items:flex-start; gap:8px; }
-        .link-subgroup-dot { width:10px; height:10px; border-radius:999px; border:1px solid rgba(15,23,42,0.1); margin-top:4px; flex:0 0 10px; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
         .formula-column { display:flex; flex-direction:column; gap:16px; }
@@ -2923,14 +2914,7 @@ class MainWindow(QMainWindow):
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
-        def build_architecture_lanes(
-            sensors: List[dict],
-            logic: List[dict],
-            actuators: List[dict],
-            subgroup_totals: Optional[Dict[str, List[Dict[str, Any]]]] = None,
-        ) -> str:
-            lane_lookup = {'sensors': 'sensor', 'logic': 'logic', 'actuators': 'actuator'}
-
+        def build_architecture_lanes(sensors: List[dict], logic: List[dict], actuators: List[dict]) -> str:
             stage_defs = [
                 ("sensors", "Sensors / Inputs", sensors or []),
                 ("logic", "Logic", logic or []),
@@ -2983,7 +2967,6 @@ class MainWindow(QMainWindow):
                             "members": members_payload,
                             "member_count": len(members_payload),
                             "note": note_text,
-                            "link_color": entry.get("link_color"),
                         })
                     else:
                         subtitle = ""
@@ -3000,7 +2983,6 @@ class MainWindow(QMainWindow):
                             "sil": sil_val,
                             "pdm": pdm_val,
                             "note": note_text,
-                            "link_color": entry.get("link_color"),
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -3034,16 +3016,9 @@ class MainWindow(QMainWindow):
                     if card["type"] == "group":
                         classes.append("group")
                     class_attr = " ".join(classes)
-                    card_color = card.get("link_color")
                     html_parts.append(f'<div class="{class_attr}">')
                     html_parts.append('<div class="lane-card-header">')
-                    title_html = esc(card["label"])
-                    if card_color:
-                        title_html = (
-                            f'<span class="link-dot" style="background:{esc(card_color)};"></span>'
-                            + title_html
-                        )
-                    html_parts.append(f'<div class="lane-title">{title_html}</div>')
+                    html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
                     if card.get("architecture"):
                         html_parts.append(f'<span class="lane-pill arch">{esc(card["architecture"])}</span>')
                     html_parts.append('</div>')
@@ -3249,19 +3224,14 @@ class MainWindow(QMainWindow):
             parts.append(f'<tr><th>Totals</th><td>PFDsum = {fmt_pfd(s["pfd_sum"])} | PFHsum = {fmt_pfh(s["pfh_sum"])} 1/h</td></tr>')
             parts.append('</tbody></table>')
 
-            arch_html = build_architecture_lanes(
-                s['sensors'],
-                s['logic'],
-                s['actuators'],
-                s.get('link_subgroups'),
-            )
+            arch_html = build_architecture_lanes(s['sensors'], s['logic'], s['actuators'])
             if arch_html:
                 parts.append('<div class="architecture">')
                 parts.append('<h3>Architecture overview</h3>')
                 parts.append(arch_html)
                 parts.append('</div>')
 
-            def render_group(title, items, lane_key: str):
+            def render_group(title, items):
                 parts.append(f'<h3>{esc(title)}</h3>')
                 if not items:
                     parts.append('<div class="muted small">No items</div>')
@@ -3274,13 +3244,9 @@ class MainWindow(QMainWindow):
                         members = it.get('members', [])
                         member_codes = [m.get('code') or m.get('name') or f'Member {idx + 1}' for idx, m in enumerate(members)]
                         group_title = ' ∥ '.join([c for c in member_codes if c]) or '1oo2 redundant set'
-                        link_color = it.get('link_color')
-                        dot_html = ''
-                        if link_color:
-                            dot_html = f'<span class="link-dot" style="background:{esc(link_color)};"></span>'
                         parts.append('<tr class="group-row">'
                                      f'<td><div class="group-label"><span class="pill arch">1oo2</span>'
-                                     f'<span class="group-title">{dot_html}{esc(group_title)}</span></div></td>'
+                                     f'<span class="group-title">{esc(group_title)}</span></div></td>'
                                      f'<td class="right">{fmt_pfd(pfd_g)}</td>'
                                      f'<td class="right">{fmt_pfh(pfh_g)}</td>'
                                      f'<td class="right">{fmt_fit(pfh_g)}</td>'
@@ -3303,13 +3269,8 @@ class MainWindow(QMainWindow):
                                          f'<td>{esc(m.get("pdm_code", "") or "—")}</td>'
                                          '</tr>')
                     else:
-                        primary_label = esc(it.get("code", it.get("name", "?")))
+                        label_html = esc(it.get("code", it.get("name", "?")))
                         note = self._note_for_provenance(it.get('provenance'))
-                        link_color = it.get('link_color')
-                        dot_html = ''
-                        if link_color:
-                            dot_html = f'<span class="link-dot" style="background:{esc(link_color)};"></span>'
-                        label_html = f'<span class="link-label">{dot_html}{primary_label}</span>'
                         if note:
                             label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
                         parts.append('<tr>'
@@ -3323,58 +3284,9 @@ class MainWindow(QMainWindow):
                 parts.append('</tbody></table>')
 
 
-            render_group('Sensors / Inputs', s['sensors'], 'sensor')
-            render_group('Logic', s['logic'], 'logic')
-            render_group('Outputs / Actuators', s['actuators'], 'actuator')
-
-        combined_groups = (s.get('link_subgroups') or {}).get('combined', [])
-        if combined_groups:
-            parts.append('<div class="link-subgroup-summary">')
-            parts.append('<div class="link-subgroup-summary-title">Link subgroup totals</div>')
-            parts.append('<ul>')
-            for sg_idx, subgroup in enumerate(combined_groups, 1):
-                if not isinstance(subgroup, dict):
-                    continue
-                color_val = subgroup.get('color')
-                dot_style = ' style="background:#d1d5db;"'
-                if color_val:
-                    dot_style = f' style="background:{esc(color_val)};"'
-                count = subgroup.get('count')
-                header = f'Subgroup {sg_idx}'
-                if isinstance(count, int) and count > 0:
-                    word = "component" if count == 1 else "components"
-                    header = f"{header} ({count} {word})"
-                parts.append('<li>')
-                parts.append(f'<span class="link-subgroup-dot"{dot_style}></span>')
-                parts.append('<div>')
-                parts.append(f'<div><strong>{esc(header)}</strong></div>')
-                lanes = subgroup.get('lanes')
-                lane_text = ''
-                if isinstance(lanes, (list, tuple)) and lanes:
-                    lane_text = ', '.join(str(l) for l in lanes if l)
-                member_labels = subgroup.get('member_labels') or [
-                    comp.get('label')
-                    for comp in subgroup.get('components', [])
-                    if isinstance(comp, dict) and comp.get('label')
-                ]
-                member_text = ', '.join(lbl for lbl in member_labels if lbl)
-                if member_text:
-                    parts.append(f'<div>{esc(member_text)}</div>')
-                if lane_text:
-                    parts.append(f'<div class="muted small">Lanes: {esc(lane_text)}</div>')
-                metrics_bits: List[str] = []
-                pfd_val = subgroup.get('pfd')
-                if pfd_val is not None:
-                    metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
-                pfh_val = subgroup.get('pfh')
-                if pfh_val is not None:
-                    metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
-                if metrics_bits:
-                    parts.append(f'<div class="muted small">{" | ".join(metrics_bits)}</div>')
-                parts.append('</div>')
-                parts.append('</li>')
-            parts.append('</ul>')
-            parts.append('</div>')
+            render_group('Sensors / Inputs', s['sensors'])
+            render_group('Logic', s['logic'])
+            render_group('Outputs / Actuators', s['actuators'])
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
         parts.append('</div>')
@@ -3750,12 +3662,12 @@ class MainWindow(QMainWindow):
         def group_of(idx: int) -> str:
             return ('sensor', 'logic', 'actuator')[idx]
 
-        lane_group_totals: Dict[str, Dict[str, Dict[str, Any]]] = {
-            'sensor': {},
-            'logic': {},
-            'actuator': {},
+        subgroup_totals: Dict[str, Dict[str, Any]] = {}
+        lane_totals: Dict[str, Dict[str, float]] = {
+            'sensor': {'pfd': 0.0, 'pfh': 0.0},
+            'logic': {'pfd': 0.0, 'pfh': 0.0},
+            'actuator': {'pfd': 0.0, 'pfh': 0.0},
         }
-        combined_group_totals: Dict[str, Dict[str, Any]] = {}
 
         def describe_payload(payload: dict, default_label: str) -> Tuple[str, List[str]]:
             if payload.get('group') and payload.get('architecture') == '1oo2':
@@ -3775,7 +3687,8 @@ class MainWindow(QMainWindow):
             du_ratio, dd_ratio = self._ratios(group)
             for i in range(lw.count()):
                 item = lw.item(i)
-                if item is None: continue
+                if item is None:
+                    continue
                 ud = item.data(Qt.UserRole) or {}
                 raw_group_id = ud.get('link_group_id')
                 link_group_id = self._normalize_link_group_id(raw_group_id)
@@ -3789,7 +3702,9 @@ class MainWindow(QMainWindow):
                     updated_payload.pop('link_group_id', None)
                     item.setData(Qt.UserRole, updated_payload)
                     ud = updated_payload
+
                 link_color = ud.get('link_color') if isinstance(ud.get('link_color'), str) else None
+
                 if ud.get('group') and ud.get('architecture') == '1oo2':
                     members = [m for m in ud.get('members', []) if isinstance(m, dict)]
                     metrics, tooltip, _, errors = self._group_metrics(
@@ -3801,30 +3716,20 @@ class MainWindow(QMainWindow):
                     )
                     for err in errors:
                         self._handle_conversion_error(err)
+
+                    metrics_pfd = float(metrics.pfd)
+                    metrics_pfh = float(metrics.pfh)
+                    label, member_labels = describe_payload(ud, item.text() or 'Component')
+                    component_info = {
+                        'label': label,
+                        'member_labels': member_labels,
+                        'architecture': '1oo2',
+                        'kind': ud.get('kind', group),
+                        'lane': group,
+                    }
+
                     if link_group_id:
-                        lane_entry = lane_group_totals[group].setdefault(
-                            link_group_id,
-                            {
-                                'color': link_color,
-                                'pfd': 0.0,
-                                'pfh': 0.0,
-                                'components': [],
-                            },
-                        )
-                        if link_color and not lane_entry.get('color'):
-                            lane_entry['color'] = link_color
-                        lane_entry['pfd'] += float(metrics.pfd)
-                        lane_entry['pfh'] += float(metrics.pfh)
-                        label, member_labels = describe_payload(ud, item.text() or 'Component')
-                        component_info = {
-                            'label': label,
-                            'member_labels': member_labels,
-                            'architecture': '1oo2',
-                            'kind': ud.get('kind', group),
-                            'lane': group,
-                        }
-                        lane_entry['components'].append(component_info)
-                        combined_entry = combined_group_totals.setdefault(
+                        entry = subgroup_totals.setdefault(
                             link_group_id,
                             {
                                 'color': link_color,
@@ -3834,97 +3739,74 @@ class MainWindow(QMainWindow):
                                 'lanes': set(),
                             },
                         )
-                        if link_color and not combined_entry.get('color'):
-                            combined_entry['color'] = link_color
-                        combined_entry['pfd'] += float(metrics.pfd)
-                        combined_entry['pfh'] += float(metrics.pfh)
-                        combined_entry['components'].append(component_info.copy())
-                        combined_entry['lanes'].add(group)
+                        if link_color and not entry.get('color'):
+                            entry['color'] = link_color
+                        entry['pfd'] += metrics_pfd
+                        entry['pfh'] += metrics_pfh
+                        entry['components'].append(component_info)
+                        entry['lanes'].add(group)
                     else:
-                        pfd_sum += metrics.pfd
-                        pfh_sum += metrics.pfh
+                        lane_totals[group]['pfd'] += metrics_pfd
+                        lane_totals[group]['pfh'] += metrics_pfh
+
                     item.setToolTip(tooltip)
-                else:
-                    metrics, _, tooltip, error = self._component_metrics(
-                        ud,
-                        du_ratio,
-                        dd_ratio,
-                        mode_key,
-                        assumptions,
+                    continue
+
+                metrics, _, tooltip, error = self._component_metrics(
+                    ud,
+                    du_ratio,
+                    dd_ratio,
+                    mode_key,
+                    assumptions,
+                )
+                if error:
+                    self._handle_conversion_error(error)
+                    continue
+
+                metrics_pfd = float(metrics.pfd)
+                metrics_pfh = float(metrics.pfh)
+                label, member_labels = describe_payload(ud, item.text() or 'Component')
+                component_info = {
+                    'label': label,
+                    'member_labels': member_labels,
+                    'architecture': ud.get('architecture'),
+                    'kind': ud.get('kind', group),
+                    'lane': group,
+                }
+
+                if link_group_id:
+                    entry = subgroup_totals.setdefault(
+                        link_group_id,
+                        {
+                            'color': link_color,
+                            'pfd': 0.0,
+                            'pfh': 0.0,
+                            'components': [],
+                            'lanes': set(),
+                        },
                     )
-                    if error:
-                        self._handle_conversion_error(error)
-                        continue
-                    if link_group_id:
-                        lane_entry = lane_group_totals[group].setdefault(
-                            link_group_id,
-                            {
-                                'color': link_color,
-                                'pfd': 0.0,
-                                'pfh': 0.0,
-                                'components': [],
-                            },
-                        )
-                        if link_color and not lane_entry.get('color'):
-                            lane_entry['color'] = link_color
-                        lane_entry['pfd'] += float(metrics.pfd)
-                        lane_entry['pfh'] += float(metrics.pfh)
-                        label, member_labels = describe_payload(ud, item.text() or 'Component')
-                        component_info = {
-                            'label': label,
-                            'member_labels': member_labels,
-                            'architecture': ud.get('architecture'),
-                            'kind': ud.get('kind', group),
-                            'lane': group,
-                        }
-                        lane_entry['components'].append(component_info)
-                        combined_entry = combined_group_totals.setdefault(
-                            link_group_id,
-                            {
-                                'color': link_color,
-                                'pfd': 0.0,
-                                'pfh': 0.0,
-                                'components': [],
-                                'lanes': set(),
-                            },
-                        )
-                        if link_color and not combined_entry.get('color'):
-                            combined_entry['color'] = link_color
-                        combined_entry['pfd'] += float(metrics.pfd)
-                        combined_entry['pfh'] += float(metrics.pfh)
-                        combined_entry['components'].append(component_info.copy())
-                        combined_entry['lanes'].add(group)
-                    else:
-                        pfd_sum += metrics.pfd
-                        pfh_sum += metrics.pfh
-                    if tooltip:
-                        item.setToolTip(tooltip)
+                    if link_color and not entry.get('color'):
+                        entry['color'] = link_color
+                    entry['pfd'] += metrics_pfd
+                    entry['pfh'] += metrics_pfh
+                    entry['components'].append(component_info)
+                    entry['lanes'].add(group)
+                else:
+                    lane_totals[group]['pfd'] += metrics_pfd
+                    lane_totals[group]['pfh'] += metrics_pfh
+
+                if tooltip:
+                    item.setToolTip(tooltip)
 
         subgroup_payload: Dict[str, List[Dict[str, Any]]] = {}
-        for lane, groups in lane_group_totals.items():
-            if not groups:
-                continue
-            subgroup_payload[lane] = []
-            for _, (group_id, info) in enumerate(groups.items(), 1):
-                labels = [comp.get('label') for comp in info['components'] if comp.get('label')]
-                subgroup_payload[lane].append({
-                    'id': group_id,
-                    'color': info.get('color'),
-                    'pfd': float(info['pfd']),
-                    'pfh': float(info['pfh']),
-                    'components': info['components'],
-                    'member_labels': labels,
-                    'count': len(info['components']),
-                })
-
-        if combined_group_totals:
+        if subgroup_totals:
             combined_payload: List[Dict[str, Any]] = []
             lane_title_map = {
                 'sensor': 'Sensors',
                 'logic': 'Logic',
                 'actuator': 'Outputs',
             }
-            for group_id, info in combined_group_totals.items():
+            for group_id, info in subgroup_totals.items():
                 pfd_sum += info['pfd']
                 pfh_sum += info['pfh']
                 labels = [comp.get('label') for comp in info['components'] if comp.get('label')]
@@ -3940,6 +3822,10 @@ class MainWindow(QMainWindow):
                     'count': len(info['components']),
                 })
             subgroup_payload['combined'] = combined_payload
+
+        for lane_metrics in lane_totals.values():
+            pfd_sum += lane_metrics['pfd']
+            pfh_sum += lane_metrics['pfh']
 
         return pfd_sum, pfh_sum, subgroup_payload
 
