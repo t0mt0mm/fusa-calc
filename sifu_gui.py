@@ -13,7 +13,7 @@ import sys
 import re
 import uuid
 import copy
-from typing import Dict, Tuple, List, Optional, Union, Any
+from typing import Dict, Tuple, List, Optional, Union, Any, Set
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import (
@@ -447,31 +447,83 @@ class ChipList(QListWidget):
     # ----- Item presentation helper -----
     def attach_chip(self, item: QListWidgetItem) -> None:
         d = item.data(Qt.UserRole) or {}
-        kind = d.get("kind", "")
+        kind = d.get("kind", self.allowed_kind)
         text = d.get("code") or d.get("name") or item.text()
 
-        w = QWidget()
-        w.setProperty("kind", kind)
-        lay = QHBoxLayout(w)
-        lay.setContentsMargins(8, 4, 8, 4)
-        lay.setSpacing(6)
+        if d.get("group") and d.get("architecture") == "1oo2":
+            widget = QWidget()
+            widget.setProperty("kind", kind)
+            layout = QHBoxLayout(widget)
+            layout.setContentsMargins(8, 4, 8, 4)
+            layout.setSpacing(8)
 
-        lbl = QLabel(str(text))
-        lbl.setObjectName("ChipLabel")
-        lbl.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        lbl.adjustSize()
-        lay.addWidget(lbl)
+            members = [m for m in d.get("members", []) if isinstance(m, dict)]
+            member_labels: List[str] = []
+            for idx, member in enumerate(members):
+                label = member.get("code") or member.get("name") or f"Member {idx + 1}"
+                member_labels.append(str(label))
 
-        # ensure enough vertical room
-        w.setMinimumHeight(30)
-        sh = w.sizeHint()
-        try:
-            h0 = sh.height()
-            sh.setHeight(max(h0, 38))
-        except Exception:
-            pass
-        item.setSizeHint(sh)
-        self.setItemWidget(item, w)
+            primary_label = member_labels[0] if member_labels else str(text)
+            secondary_label = member_labels[1] if len(member_labels) > 1 else None
+
+            layout.addWidget(self._make_chip_label(primary_label))
+
+            badge = QLabel("← 1oo2 →")
+            badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+            badge.setStyleSheet(
+                "QLabel{color:#555; background:#eee; border:1px solid #ddd; "
+                "border-radius:10px; padding:4px 10px; font-size:11px; font-weight:bold;}"
+            )
+            layout.addWidget(badge)
+
+            if secondary_label:
+                layout.addWidget(self._make_chip_label(secondary_label))
+
+            widget.setMinimumHeight(30)
+            size_hint = widget.sizeHint()
+            try:
+                size_hint.setHeight(max(size_hint.height(), 38))
+            except Exception:
+                pass
+
+            item.setText(" + ".join(lbl for lbl in member_labels[:2] if lbl) or primary_label)
+            item.setSizeHint(size_hint)
+            self.setItemWidget(item, widget)
+
+            window = self.window()
+            if window and hasattr(window, "_tooltip_for_1oo2"):
+                try:
+                    m1 = members[0] if len(members) > 0 else {}
+                    m2 = members[1] if len(members) > 1 else {}
+                    tooltip = window._tooltip_for_1oo2(m1, m2, kind)
+                    if tooltip:
+                        item.setToolTip(tooltip)
+                except Exception:
+                    pass
+        else:
+            widget = QWidget()
+            widget.setProperty("kind", kind)
+            layout = QHBoxLayout(widget)
+            layout.setContentsMargins(8, 4, 8, 4)
+            layout.setSpacing(6)
+
+            label = QLabel(str(text))
+            label.setObjectName("ChipLabel")
+            label.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+            label.adjustSize()
+            layout.addWidget(label)
+
+            widget.setMinimumHeight(30)
+            size_hint = widget.sizeHint()
+            try:
+                size_hint.setHeight(max(size_hint.height(), 38))
+            except Exception:
+                pass
+            item.setText(str(text))
+            item.setSizeHint(size_hint)
+            self.setItemWidget(item, widget)
+
+        self._apply_link_properties(self.itemWidget(item), d)
 
     # ----- Painting placeholder -----
     def paintEvent(self, event):
@@ -494,6 +546,27 @@ class ChipList(QListWidget):
         m = QtWidgets.QMenu(self)
         act_add = m.addAction("Add Component…")
         act_del = m.addAction("Remove")
+        window = self.window()
+        row_idx = -1
+        lane = None
+        if window and hasattr(window, "_row_lane_for_list"):
+            try:
+                row_idx, lane = window._row_lane_for_list(self)
+            except Exception:
+                row_idx, lane = -1, None
+
+        act_start_link = act_stop_link = act_next_link = act_clear_lane = act_clear_sifu = None
+        if lane is not None and isinstance(row_idx, int) and row_idx >= 0:
+            m.addSeparator()
+            is_active = bool(window and hasattr(window, "_is_link_active_for") and window._is_link_active_for(row_idx, lane))
+            if is_active:
+                act_next_link = m.addAction("Next link color")
+                act_stop_link = m.addAction("Stop link mode")
+            else:
+                act_start_link = m.addAction("Start link mode here")
+            act_clear_lane = m.addAction("Clear lane links")
+            act_clear_sifu = m.addAction("Clear SIFU links")
+
         action = m.exec_(self.mapToGlobal(pos))
         if action == act_del:
             for item in self.selectedItems():
@@ -502,6 +575,16 @@ class ChipList(QListWidget):
             self.window().recalculate_all()
         elif action == act_add:
             self.window().open_add_component_dialog(pref_kind=self.allowed_kind, insert_into_row=True)
+        elif action == act_start_link and window:
+            window._activate_link_mode_for(row_idx, lane, self)
+        elif action == act_stop_link and window:
+            window._end_link_session()
+        elif action == act_next_link and window:
+            window._activate_link_mode_for(row_idx, lane, self, restart=True)
+        elif action == act_clear_lane and window:
+            window._clear_lane_links(row_idx, lane)
+        elif action == act_clear_sifu and window:
+            window._clear_sifu_links(row_idx)
 
     # ----- Kind constraint -----
     def _can_accept_item(self, qitem: QListWidgetItem) -> bool:
@@ -588,7 +671,49 @@ class ChipList(QListWidget):
         self.window().recalculate_all()
 
     def mousePressEvent(self, event):
+        window = self.window()
+        if window:
+            setattr(window, "_last_focused_list", self)
         super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        super().mouseReleaseEvent(event)
+        if event.button() == Qt.LeftButton:
+            item = self.itemAt(event.pos())
+            if item:
+                window = self.window()
+                handler = getattr(window, "_handle_link_click", None)
+                if callable(handler):
+                    handler(self, item)
+
+    def focusInEvent(self, event):
+        super().focusInEvent(event)
+        window = self.window()
+        if window:
+            setattr(window, "_last_focused_list", self)
+
+    def _apply_link_properties(self, widget: Optional[QWidget], data: Dict[str, Any]) -> None:
+        if widget is None:
+            return
+        window = self.window()
+        tag = None
+        color = data.get("link_color") if isinstance(data, dict) else None
+        if window and color and hasattr(window, "_tag_for_color"):
+            tag = window._tag_for_color(color)
+        widget.setProperty("linkTag", tag if tag else None)
+        style = widget.style()
+        if style:
+            style.unpolish(widget)
+            style.polish(widget)
+
+    def refresh_chip(self, item: QListWidgetItem) -> None:
+        if not item:
+            return
+        widget = self.itemWidget(item)
+        if widget is None:
+            self.attach_chip(item)
+        else:
+            self._apply_link_properties(widget, item.data(Qt.UserRole) or {})
 
     @staticmethod
     def _make_chip_label(text: str) -> QLabel:
@@ -655,40 +780,9 @@ class ActuatorList(ChipList):
                         'instance_id': new_instance_id(),
                     })
 
-                    widget = QWidget()
-                    widget.setProperty("kind", "actuator")  # for accent styling
-                    lay = QHBoxLayout(widget)
-                    lay.setContentsMargins(8, 4, 8, 4)
-                    lay.setSpacing(8)
-
-                    # compact badge between chips
-                    badge = QLabel("← 1oo2 →")
-                    badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-                    badge.setStyleSheet(
-                        "QLabel{color:#555; background:#eee; border:1px solid #ddd; "
-                        "border-radius:10px; padding:4px 10px; font-size:11px;font-weight: bold}"
-                    )
-                    badge.setFixedWidth(badge.sizeHint().width())
-                    badge.adjustSize()  # <-- passt die Größe an den Inhalt an
-
-                    lay.addWidget(self._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self._make_chip_label(s_name))
-
-                    # ensure enough vertical room
-                    widget.setMinimumHeight(30)
-                    sh1 = widget.sizeHint()
-                    try:
-                        h01 = sh1.height()
-                        sh1.setHeight(max(h01, 38))
-                    except Exception:
-                        pass
-                    grp_item.setSizeHint(sh1)
-                    self.setItemWidget(grp_item, widget)
-
                     self.takeItem(target_row)
                     self.insertItem(target_row, grp_item)
-                    self.setItemWidget(grp_item, widget)
+                    self.attach_chip(grp_item)
 
                     if src is self:
                         qrow = self.row(s_item)
@@ -759,35 +853,9 @@ class SensorList(ChipList):
                         'instance_id': new_instance_id(),
                     })
 
-                    widget = QWidget()
-                    widget.setProperty("kind", "sensor")
-                    lay = QHBoxLayout(widget)
-                    lay.setContentsMargins(8, 4, 8, 4)
-                    lay.setSpacing(8)
-
-                    badge = QLabel("← 1oo2 →")
-                    badge.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-                    badge.setStyleSheet("QLabel{color:#555; background:#eee; border:1px solid #ddd; border-radius:10px; padding:4px 10px; font-size:11px;font-weight: bold}")
-                    badge.setFixedWidth(badge.sizeHint().width())
-                    badge.adjustSize()
-
-                    lay.addWidget(self._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self._make_chip_label(s_name))
-
-                    widget.setMinimumHeight(30)
-                    sh1 = widget.sizeHint()
-                    try:
-                        h01 = sh1.height()
-                        sh1.setHeight(max(h01, 38))
-                    except Exception:
-                        pass
-                    grp_item.setSizeHint(sh1)
-                    self.setItemWidget(grp_item, widget)
-
                     self.takeItem(target_row)
                     self.insertItem(target_row, grp_item)
-                    self.setItemWidget(grp_item, widget)
+                    self.attach_chip(grp_item)
 
                     if src is self:
                         qrow = self.row(s_item)
@@ -803,6 +871,7 @@ class SensorList(ChipList):
         self.setProperty("dragTarget", False)
         self.style().unpolish(self); self.style().polish(self)
         self.window().recalculate_all()
+
 class SifuRowWidgets:
     """Container of column lists + result cell."""
     def __init__(self):
@@ -1482,6 +1551,24 @@ class MainWindow(QMainWindow):
         }
         self.du_dd_ratios = {'sensor': (0.7, 0.3), 'logic': (0.6, 0.4), 'actuator': (0.6, 0.4)}
 
+        self.link_palette: List[Tuple[str, str]] = [
+            ("#FDE68A", "link0"),
+            ("#BFDBFE", "link1"),
+            ("#CFFAFE", "link2"),
+            ("#D9F99D", "link3"),
+            ("#FBCFE8", "link4"),
+            ("#F5D0C5", "link5"),
+        ]
+        self._link_color_tags: Dict[str, str] = {color.lower(): tag for color, tag in self.link_palette}
+        self._link_session_counters: Dict[Tuple[str, str], int] = {}
+        self._link_active = False
+        self._link_active_row_uid: Optional[str] = None
+        self._link_active_lane: Optional[str] = None
+        self._link_active_list = None
+        self._link_active_color: Optional[str] = None
+        self._link_active_group_id: Optional[str] = None
+        self._last_focused_list = None
+
         # --- per-row metadata store ---
         self.rows_meta: List[RowMeta] = []
 
@@ -1509,6 +1596,14 @@ class MainWindow(QMainWindow):
         toggle_actuator.setChecked(True)
         toggle_actuator.triggered.connect(lambda checked: self.act_lib.setVisible(checked))
         view_menu.addAction(toggle_actuator)
+
+        tools_menu = self.menuBar().addMenu("Tools")
+        self.link_mode_action = QAction("Component Link Mode", self)
+        self.link_mode_action.setCheckable(True)
+        self.link_mode_action.setShortcut("Ctrl+L")
+        self.link_mode_action.setToolTip("Highlight related components within the active lane (Ctrl+L)")
+        self.link_mode_action.triggered.connect(self._toggle_link_mode)
+        tools_menu.addAction(self.link_mode_action)
 
         # New Project
         act_new = QAction("New Project", self)
@@ -1722,6 +1817,7 @@ class MainWindow(QMainWindow):
 
         # initial calc & row height
         self.recalculate_all()
+        self._reseed_link_counters()
 
         # theme
         self._apply_qss_theme()  # Light only per preference
@@ -1854,6 +1950,10 @@ class MainWindow(QMainWindow):
         primary = "#3B82F6"; success = "#1B7F3A"; danger = "#B42318"
         bg0 = "#FFFFFF"; bg1 = "#F7F8FA"; border = "#DADCE0"
         sensor_accent = "#0EA5E9"; logic_accent = "#22C55E"; actuator_accent= "#A855F7"
+        link_styles = "".join(
+            f'        QWidget[linkTag="{tag}"] {{ background: {color}; }}\n'
+            for color, tag in self.link_palette
+        )
 
         self.setStyleSheet(f"""
         * {{ font-size: 11px; }}
@@ -1951,6 +2051,7 @@ class MainWindow(QMainWindow):
         QWidget[kind] {{
             background:{bg0}; border:1px solid #d9d9d9; border-radius:12px;
         }}
+{link_styles}
         QWidget[kind="sensor"] {{ border-left:4px solid {sensor_accent}; padding-left:8px; }}
         QWidget[kind="logic"] {{ border-left:4px solid {logic_accent}; padding-left:8px; }}
         QWidget[kind="actuator"] {{ border-left:4px solid {actuator_accent}; padding-left:8px; }}
@@ -2303,51 +2404,12 @@ class MainWindow(QMainWindow):
                 it = src_list.item(i)
                 if not it:
                     continue
-                d = (it.data(Qt.UserRole) or {}).copy()
-
-                # 1oo2-Gruppe separat behandeln
-                if d.get("group") and d.get("architecture") == "1oo2":
-                    members = d.get("members", [])
-                    m1 = members[0] if len(members) > 0 else {}
-                    m2 = members[1] if len(members) > 1 else {}
-                    # Neues Gruppen-Item
-                    grp_item = QListWidgetItem(f"{m1.get('code','?')} + {m2.get('code','?')}")
-                    grp_item.setData(
-                        Qt.UserRole,
-                        {
-                            "group": True,
-                            "architecture": "1oo2",
-                            "members": [m1.copy(), m2.copy()],
-                            "kind": group_kind,
-                        },
-                    )
-                    # Tooltip + Darstellung ähnlich wie beim Import
-                    grp_item.setToolTip(self._tooltip_for_1oo2(m1, m2, group_kind))
-                    widget = QWidget(); widget.setProperty("kind", group_kind)
-                    lay = QHBoxLayout(widget); lay.setContentsMargins(8,4,8,4); lay.setSpacing(8)
-                    badge = QLabel("1oo2"); badge.setStyleSheet(
-                        "QLabel{font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; border:1px solid #ddd;}"
-                    )
-                    # Reuse ChipList helper for members' labels
-                    lblA = dst_widgets.out_list._make_chip_label(m1.get("code","?")) if group_kind=="actuator" else QLabel(m1.get("code","?"))
-                    lblB = dst_widgets.out_list._make_chip_label(m2.get("code","?")) if group_kind=="actuator" else QLabel(m2.get("code","?"))
-                    lay.addWidget(lblA); lay.addWidget(badge); lay.addWidget(lblB)
-                    grp_item.setSizeHint(widget.sizeHint())
-                    dst_list.addItem(grp_item)
-                    dst_list.setItemWidget(grp_item, widget)
-                else:
-                    # Normales Einzel-Item neu erzeugen
-                    name = d.get("name") or d.get("code") or "Item"
-                    pfd = float(d.get("pfd", d.get("pfd_avg", 0.0)) or 0.0)
-                    pfh = float(d.get("pfh", d.get("pfh_avg", 0.0)) or 0.0)
-                    syscap = d.get("syscap", d.get("sys_cap", ""))
-                    pdm = d.get("pdm_code", "")
-                    pfh_fit = d.get("pfh_fit") if "pfh_fit" in d else None
-                    pfd_fit = d.get("pfd_fit") if "pfd_fit" in d else None
-                    new_item = self._make_item(str(name), pfd, pfh, syscap, pdm_code=pdm,
-                                            kind=group_kind, pfh_fit=pfh_fit, pfd_fit=pfd_fit)
-                    dst_list.addItem(new_item)
-                    dst_list.attach_chip(new_item)
+                payload = it.data(Qt.UserRole) or {}
+                new_payload = self._clone_chip_data(payload, preserve_id=False)
+                new_item = QListWidgetItem(it)
+                new_item.setData(Qt.UserRole, new_payload)
+                dst_list.addItem(new_item)
+                dst_list.attach_chip(new_item)
 
         _clone_list(src_widgets.in_list,    dst_widgets.in_list,    "sensor")
         _clone_list(src_widgets.logic_list, dst_widgets.logic_list, "logic")
@@ -2356,6 +2418,7 @@ class MainWindow(QMainWindow):
         # --- Höhe und Ergebnis neu berechnen
         self._update_row_height(new_row)
         self.recalculate_row(new_row)
+        self._reseed_link_counters()
         self.statusBar().showMessage("SIFU duplicated", 2000)
         
     # ---- HTML Report Export -------------------------------------------------
@@ -2404,7 +2467,277 @@ class MainWindow(QMainWindow):
                     member_copy["instance_id"] = new_instance_id()
                 members.append(member_copy)
             new_data["members"] = members
+        if not preserve_id:
+            new_data.pop("link_color", None)
+            new_data.pop("link_group_id", None)
         return new_data
+
+    def _tag_for_color(self, color: Optional[str]) -> Optional[str]:
+        if not color:
+            return None
+        return self._link_color_tags.get(str(color).lower())
+
+    def _row_uid_for_index(self, row_idx: int) -> Optional[str]:
+        if 0 <= row_idx < len(self.rows_meta):
+            return self._ensure_row_uid(self.rows_meta[row_idx])
+        return None
+
+    def _lane_name_for_column(self, column: int) -> Optional[str]:
+        mapping = {0: "sensor", 1: "logic", 2: "actuator"}
+        return mapping.get(column)
+
+    def _list_for_lane(self, row_idx: int, lane: Optional[str]) -> Optional[ChipList]:
+        widgets = self.sifu_widgets.get(row_idx)
+        if not widgets or not lane:
+            return None
+        if lane == "sensor":
+            return widgets.in_list
+        if lane == "logic":
+            return widgets.logic_list
+        if lane == "actuator":
+            return widgets.out_list
+        return None
+
+    def _row_lane_for_list(self, list_widget: Optional[ChipList]) -> Tuple[int, Optional[str]]:
+        if list_widget is None:
+            return -1, None
+        for idx, widgets in self.sifu_widgets.items():
+            if list_widget is widgets.in_list:
+                return idx, "sensor"
+            if list_widget is widgets.logic_list:
+                return idx, "logic"
+            if list_widget is widgets.out_list:
+                return idx, "actuator"
+        return -1, None
+
+    def _toggle_link_mode(self, checked: bool) -> None:
+        if checked:
+            target_list = self._last_focused_list
+            row_idx, lane = self._row_lane_for_list(target_list)
+            if lane is None or row_idx < 0:
+                row_idx = self._current_row_index()
+                lane = self._lane_name_for_column(self.table.currentColumn())
+                target_list = self._list_for_lane(row_idx, lane)
+            if lane is None or row_idx < 0 or target_list is None:
+                self.link_mode_action.blockSignals(True)
+                self.link_mode_action.setChecked(False)
+                self.link_mode_action.blockSignals(False)
+                self.statusBar().showMessage("Select a SIFU lane before enabling link mode", 3000)
+                return
+            self._activate_link_mode_for(row_idx, lane, target_list, restart=True)
+        else:
+            self._end_link_session()
+
+    def _activate_link_mode_for(self, row_idx: int, lane: str, list_widget: Optional[ChipList], restart: bool = True) -> None:
+        if list_widget is None or not lane or row_idx < 0:
+            return
+        row_uid = self._row_uid_for_index(row_idx)
+        if not row_uid:
+            return
+        if self._link_active:
+            same_lane = self._link_active_row_uid == row_uid and self._link_active_lane == lane
+            if same_lane and not restart:
+                return
+            self._end_link_session(silent=True, keep_action=True)
+        self._begin_link_session(row_idx, row_uid, lane, list_widget)
+
+    def _begin_link_session(self, row_idx: int, row_uid: str, lane: str, list_widget: ChipList) -> None:
+        key = (row_uid, lane)
+        count = self._link_session_counters.get(key, 0)
+        color = self.link_palette[count % len(self.link_palette)][0]
+        self._link_session_counters[key] = count + 1
+        group_id = f"{row_uid}:{lane}:g{count}"
+
+        self._link_active = True
+        self._link_active_row_uid = row_uid
+        self._link_active_lane = lane
+        self._link_active_list = list_widget
+        self._link_active_color = color
+        self._link_active_group_id = group_id
+        self._last_focused_list = list_widget
+
+        if hasattr(self, "link_mode_action"):
+            self.link_mode_action.blockSignals(True)
+            self.link_mode_action.setChecked(True)
+            self.link_mode_action.blockSignals(False)
+
+        sifu_name = "SIFU"
+        if 0 <= row_idx < len(self.rows_meta):
+            sifu_name = self.rows_meta[row_idx].get("sifu_name", sifu_name)
+        lane_label = {"sensor": "Sensors", "logic": "Logic", "actuators": "Outputs", "actuator": "Outputs"}.get(lane, lane)
+        self.statusBar().showMessage(f"Link mode active for {sifu_name} — {lane_label} (color {color})", 4000)
+
+    def _end_link_session(self, silent: bool = False, keep_action: bool = False) -> None:
+        if not self._link_active:
+            if hasattr(self, "link_mode_action") and not keep_action:
+                self.link_mode_action.blockSignals(True)
+                self.link_mode_action.setChecked(False)
+                self.link_mode_action.blockSignals(False)
+            return
+        self._link_active = False
+        self._link_active_row_uid = None
+        self._link_active_lane = None
+        self._link_active_list = None
+        self._link_active_color = None
+        self._link_active_group_id = None
+        if hasattr(self, "link_mode_action") and not keep_action:
+            self.link_mode_action.blockSignals(True)
+            self.link_mode_action.setChecked(False)
+            self.link_mode_action.blockSignals(False)
+        if not silent:
+            self.statusBar().showMessage("Link mode stopped", 3000)
+
+    def _is_link_active_for(self, row_idx: int, lane: Optional[str]) -> bool:
+        if not self._link_active or lane is None:
+            return False
+        row_uid = self._row_uid_for_index(row_idx)
+        return bool(row_uid and row_uid == self._link_active_row_uid and lane == self._link_active_lane)
+
+    def _handle_link_click(self, list_widget: ChipList, item: QListWidgetItem) -> None:
+        if not self._link_active or not item:
+            return
+        row_idx, lane = self._row_lane_for_list(list_widget)
+        row_uid = self._row_uid_for_index(row_idx)
+        if row_uid != self._link_active_row_uid or lane != self._link_active_lane:
+            self.statusBar().showMessage("Link mode is active for a different lane.", 3000)
+            return
+        payload = item.data(Qt.UserRole) or {}
+        updated = copy.deepcopy(payload)
+        current_id = updated.get("link_group_id")
+        if current_id == self._link_active_group_id:
+            removed = False
+            if updated.pop("link_color", None) is not None:
+                removed = True
+            if updated.pop("link_group_id", None) is not None:
+                removed = True or removed
+            if removed:
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                self.statusBar().showMessage("Component removed from link group", 2000)
+        else:
+            if self._link_active_color and self._link_active_group_id:
+                updated["link_color"] = self._link_active_color
+                updated["link_group_id"] = self._link_active_group_id
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                self.statusBar().showMessage("Component linked", 2000)
+
+    def _clear_lane_links(self, row_idx: int, lane: str, announce: bool = True) -> bool:
+        list_widget = self._list_for_lane(row_idx, lane)
+        if not list_widget:
+            if announce:
+                self.statusBar().showMessage("No lane available to clear", 2000)
+            return False
+        row_uid = self._row_uid_for_index(row_idx)
+        if self._is_link_active_for(row_idx, lane):
+            self._end_link_session(silent=True)
+        changed = False
+        for i in range(list_widget.count()):
+            item = list_widget.item(i)
+            if not item:
+                continue
+            payload = item.data(Qt.UserRole) or {}
+            updated = copy.deepcopy(payload)
+            removed = False
+            if updated.pop("link_color", None) is not None:
+                removed = True
+            if updated.pop("link_group_id", None) is not None:
+                removed = True or removed
+            if removed:
+                item.setData(Qt.UserRole, updated)
+                list_widget.refresh_chip(item)
+                changed = True
+        if row_uid:
+            self._link_session_counters.pop((row_uid, lane), None)
+        if announce:
+            if changed:
+                self.statusBar().showMessage("Cleared link highlights for lane", 2000)
+            else:
+                self.statusBar().showMessage("No link highlights found for lane", 2000)
+        return changed
+
+    def _clear_sifu_links(self, row_idx: int) -> None:
+        if row_idx < 0 or row_idx >= len(self.rows_meta):
+            return
+        any_cleared = False
+        for lane in ("sensor", "logic", "actuator"):
+            if self._clear_lane_links(row_idx, lane, announce=False):
+                any_cleared = True
+        row_uid = self._row_uid_for_index(row_idx)
+        if row_uid:
+            for lane in ("sensor", "logic", "actuator"):
+                self._link_session_counters.pop((row_uid, lane), None)
+        if any_cleared:
+            self.statusBar().showMessage("Cleared link highlights for SIFU", 2000)
+        else:
+            self.statusBar().showMessage("No link highlights found for SIFU", 2000)
+
+    def _reseed_link_counters(self) -> None:
+        counters: Dict[Tuple[str, str], int] = {}
+        for row_idx, meta in enumerate(self.rows_meta):
+            row_uid = self._ensure_row_uid(meta)
+            widgets = self.sifu_widgets.get(row_idx)
+            if not widgets:
+                continue
+            for lane, attr in (("sensor", "in_list"), ("logic", "logic_list"), ("actuator", "out_list")):
+                lw = getattr(widgets, attr, None)
+                if not lw:
+                    continue
+                seen: Set[str] = set()
+                for i in range(lw.count()):
+                    item = lw.item(i)
+                    if not item:
+                        continue
+                    payload = item.data(Qt.UserRole) or {}
+                    group_id = payload.get("link_group_id")
+                    if isinstance(group_id, str) and group_id:
+                        seen.add(group_id)
+                if seen:
+                    counters[(row_uid, lane)] = len(seen)
+        self._link_session_counters = counters
+
+    def _create_group_item(self, entry: dict, kind: str) -> QListWidgetItem:
+        members: List[dict] = []
+        for member in entry.get('members', []):
+            if not isinstance(member, dict):
+                continue
+            member_copy = copy.deepcopy(member)
+            inst_id = member_copy.get('instance_id')
+            if not isinstance(inst_id, str) or not inst_id:
+                member_copy['instance_id'] = new_instance_id()
+            members.append(member_copy)
+
+        labels: List[str] = []
+        for idx, member in enumerate(members):
+            label = member.get('code') or member.get('name') or f"Member {idx + 1}"
+            labels.append(str(label))
+        if not labels:
+            fallback = entry.get('code') or entry.get('name') or "1oo2 Group"
+            labels.append(str(fallback))
+
+        item = QListWidgetItem(" + ".join(labels[:2]))
+        payload = {
+            'group': True,
+            'architecture': '1oo2',
+            'members': members,
+            'kind': kind,
+            'instance_id': entry.get('instance_id', new_instance_id()),
+        }
+        if entry.get('link_color'):
+            payload['link_color'] = entry['link_color']
+        if entry.get('link_group_id'):
+            payload['link_group_id'] = entry['link_group_id']
+        item.setData(Qt.UserRole, payload)
+
+        try:
+            m1 = members[0] if len(members) > 0 else {}
+            m2 = members[1] if len(members) > 1 else {}
+            tooltip = self._tooltip_for_1oo2(m1, m2, kind)
+        except Exception:
+            tooltip = None
+        if tooltip:
+            item.setToolTip(tooltip)
+        return item
 
     def _build_html_report(self) -> str:
         '''Build a self-contained HTML report (print-friendly) with all SIFUs,
@@ -2618,6 +2951,7 @@ class MainWindow(QMainWindow):
                             "members": members_payload,
                             "member_count": len(members_payload),
                             "note": note_text,
+                            "link_color": entry.get("link_color"),
                         })
                     else:
                         subtitle = ""
@@ -2634,6 +2968,7 @@ class MainWindow(QMainWindow):
                             "sil": sil_val,
                             "pdm": pdm_val,
                             "note": note_text,
+                            "link_color": entry.get("link_color"),
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -2667,7 +3002,11 @@ class MainWindow(QMainWindow):
                     if card["type"] == "group":
                         classes.append("group")
                     class_attr = " ".join(classes)
-                    html_parts.append(f'<div class="{class_attr}">')
+                    style_attr = ""
+                    card_color = card.get("link_color")
+                    if card_color:
+                        style_attr = f' style="background:{esc(card_color)};"'
+                    html_parts.append(f'<div class="{class_attr}"{style_attr}>')
                     html_parts.append('<div class="lane-card-header">')
                     html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
                     if card.get("architecture"):
@@ -2894,7 +3233,10 @@ class MainWindow(QMainWindow):
                         members = it.get('members', [])
                         member_codes = [m.get('code') or m.get('name') or f'Member {idx + 1}' for idx, m in enumerate(members)]
                         group_title = ' ∥ '.join([c for c in member_codes if c]) or '1oo2 redundant set'
-                        parts.append('<tr class="group-row">'
+                        row_style = ''
+                        if it.get('link_color'):
+                            row_style = f' style="background:{esc(it.get("link_color"))};"'
+                        parts.append('<tr class="group-row"' + row_style + '>'
                                      f'<td><div class="group-label"><span class="pill arch">1oo2</span>'
                                      f'<span class="group-title">{esc(group_title)}</span></div></td>'
                                      f'<td class="right">{fmt_pfd(pfd_g)}</td>'
@@ -2923,7 +3265,10 @@ class MainWindow(QMainWindow):
                         note = self._note_for_provenance(it.get('provenance'))
                         if note:
                             label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
-                        parts.append('<tr>'
+                        row_style = ''
+                        if it.get('link_color'):
+                            row_style = f' style="background:{esc(it.get("link_color"))};"'
+                        parts.append('<tr' + row_style + '>'
                                      f'<td>{label_html}</td>'
                                      f'<td class="right">{fmt_pfd(it.get("pfd_avg", it.get("pfd")))}</td>'
                                      f'<td class="right">{fmt_pfh(it.get("pfh_avg", it.get("pfh")))}</td>'
@@ -3002,9 +3347,14 @@ class MainWindow(QMainWindow):
             self.table.setCellWidget(row_idx, 3, widgets.result)
 
             for sensor in sifu_data.get("sensors", []):
-                item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor", extra_fields=sensor)
-                widgets.in_list.addItem(item)
-                widgets.in_list.attach_chip(item)
+                if sensor.get("architecture") == "1oo2":
+                    item = self._create_group_item(sensor, "sensor")
+                    widgets.in_list.addItem(item)
+                    widgets.in_list.attach_chip(item)
+                else:
+                    item = self._make_item(sensor.get("code", "?"), sensor.get("pfd_avg", 0.0), sensor.get("pfh_avg", 0.0), sensor.get("sys_cap", ""), sensor.get("pdm_code", ""), kind="sensor", extra_fields=sensor)
+                    widgets.in_list.addItem(item)
+                    widgets.in_list.attach_chip(item)
 
             for logic in sifu_data.get("logic", []):
                 name = logic.get("code", logic.get("name", "Logic"))
@@ -3014,28 +3364,9 @@ class MainWindow(QMainWindow):
 
             for act in sifu_data.get("actuators", []):
                 if act.get("architecture") == "1oo2":
-                    m1, m2 = act.get("members", [{}, {}])
-                    t_name = m1.get("code", "?"); s_name = m2.get("code", "?")
-                    members: List[dict] = []
-                    for payload in (m1, m2):
-                        payload = copy.deepcopy(payload)
-                        if not isinstance(payload.get('instance_id'), str) or not payload.get('instance_id'):
-                            payload['instance_id'] = new_instance_id()
-                        members.append(payload)
-                    grp_item = QListWidgetItem(f"{t_name} + {s_name}")
-                    grp_item.setData(Qt.UserRole, {'group': True, 'architecture': '1oo2', 'members': members, 'kind': 'actuator', 'instance_id': act.get('instance_id', new_instance_id())})
-                    # Tooltip
-                    tooltip_m1 = members[0] if members else {}
-                    tooltip_m2 = members[1] if len(members) > 1 else {}
-                    grp_item.setToolTip(self._tooltip_for_1oo2(tooltip_m1, tooltip_m2, "actuator"))
-                    widget = QWidget(); widget.setProperty("kind", "actuator")
-                    lay = QHBoxLayout(widget); lay.setContentsMargins(8,4,8,4); lay.setSpacing(8)
-                    badge = QLabel("1oo2"); badge.setStyleSheet("QLabel{font-size:11px; padding:4px 10px; border-radius:12px; background:#eee; border:1px solid #ddd;}")
-                    lay.addWidget(self.sifu_widgets[row_idx].out_list._make_chip_label(t_name))
-                    lay.addWidget(badge)
-                    lay.addWidget(self.sifu_widgets[row_idx].out_list._make_chip_label(s_name))
-                    grp_item.setSizeHint(widget.sizeHint())
-                    widgets.out_list.addItem(grp_item); widgets.out_list.setItemWidget(grp_item, widget)
+                    grp_item = self._create_group_item(act, "actuator")
+                    widgets.out_list.addItem(grp_item)
+                    widgets.out_list.attach_chip(grp_item)
                 else:
                     item = self._make_item(act.get("code", "?"), act.get("pfd_avg", 0.0), act.get("pfh_avg", 0.0), act.get("sys_cap", ""), act.get("pdm_code", ""), kind="actuator", extra_fields=act)
                     widgets.out_list.addItem(item)
@@ -3047,6 +3378,7 @@ class MainWindow(QMainWindow):
             self.table.setColumnWidth(0, 360); self.table.setColumnWidth(1, 300); self.table.setColumnWidth(2, 360)
 
         self.recalculate_all()
+        self._reseed_link_counters()
 
     # ----- collect list items -----
     def _collect_list_items(self, lw: QListWidget, group_kind: str, mode_key: str) -> List[dict]:
@@ -3103,13 +3435,21 @@ class MainWindow(QMainWindow):
                         'provenance': info['provenance'],
                     })
 
-                items.append({
+                entry = {
                     'architecture': '1oo2',
                     'members': members_payload,
                     'pfd_avg': float(metrics.pfd),
                     'pfh_avg': float(metrics.pfh),
                     'instance_id': payload.get('instance_id'),
-                })
+                    'kind': payload.get('kind', group_kind),
+                }
+                link_color = payload.get('link_color')
+                if link_color:
+                    entry['link_color'] = link_color
+                link_group = payload.get('link_group_id')
+                if link_group:
+                    entry['link_group_id'] = link_group
+                items.append(entry)
             else:
                 inst_id = payload.get('instance_id')
                 if not isinstance(inst_id, str) or not inst_id:
@@ -3129,7 +3469,7 @@ class MainWindow(QMainWindow):
                     self._handle_conversion_error(error)
                     continue
 
-                items.append({
+                entry = {
                     'code': payload.get('code') or payload.get('name'),
                     'name': payload.get('name'),
                     'pfd_avg': float(payload.get('pfd', payload.get('pfd_avg', 0.0)) or 0.0),
@@ -3139,7 +3479,14 @@ class MainWindow(QMainWindow):
                     'kind': payload.get('kind'),
                     'instance_id': inst_id,
                     'provenance': provenance,
-                })
+                }
+                link_color = payload.get('link_color')
+                if link_color:
+                    entry['link_color'] = link_color
+                link_group = payload.get('link_group_id')
+                if link_group:
+                    entry['link_group_id'] = link_group
+                items.append(entry)
         return items
 
     # ----- effective mode -----
@@ -3558,10 +3905,13 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.Yes:
             return
+        self._end_link_session(silent=True)
+        self._link_session_counters.clear()
         # Clear table & metadata (keep libraries)
         self.table.clearContents(); self.table.setRowCount(0)
         self.rows_meta.clear(); self.sifu_widgets.clear()
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("Project cleared", 1500)
 
     def _action_new_project_fallback(self):
@@ -3575,10 +3925,13 @@ class MainWindow(QMainWindow):
         )
         if reply != QMessageBox.Yes:
             return
+        self._end_link_session(silent=True)
+        self._link_session_counters.clear()
         # Clear table & metadata (keep libraries)
         self.table.clearContents(); self.table.setRowCount(0)
         self.rows_meta.clear(); self.sifu_widgets.clear()
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("Project cleared", 1500)
 
     def _action_new_project(self):
@@ -3622,6 +3975,12 @@ class MainWindow(QMainWindow):
             )
             if r != QMessageBox.Yes:
                 return
+        row_uid = self._row_uid_for_index(row)
+        if row_uid and self._link_active_row_uid == row_uid:
+            self._end_link_session(silent=True)
+        if row_uid:
+            for lane in ("sensor", "logic", "actuator"):
+                self._link_session_counters.pop((row_uid, lane), None)
         # Remove row from UI and metadata
         self.table.removeRow(row)
         self.rows_meta.pop(row)
@@ -3647,6 +4006,7 @@ class MainWindow(QMainWindow):
                 self.table.setVerticalHeaderItem(i, QTableWidgetItem(header))
         self.sifu_widgets = new_map
         self.recalculate_all()
+        self._reseed_link_counters()
         self.statusBar().showMessage("SIFU removed", 1500)
 
     def _action_edit_sifu(self):
