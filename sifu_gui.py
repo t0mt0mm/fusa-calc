@@ -3263,10 +3263,6 @@ class MainWindow(QMainWindow):
                     attr_list.append(f'data-lane="{stage_key}"')
                     if card_color:
                         attr_list.append(f'data-link-color="{card_color}"')
-                        connector_targets.setdefault(card_color, []).append({
-                            "id": card_anchor,
-                            "lane": stage_key,
-                        })
                     attr_str = ' '.join(attr_list)
                     html_parts.append(f'<div {attr_str}>')
                     html_parts.append('<div class="lane-card-header">')
@@ -3301,9 +3297,22 @@ class MainWindow(QMainWindow):
                         if members:
                             html_parts.append(f'<div class="lane-group-meta">Members ({len(members)})</div>')
                             html_parts.append('<div class="lane-members">')
-                            for member in members:
-                                html_parts.append('<div class="lane-member">')
-                                member_color = sanitize_color(member.get("color"))
+                            for m_idx, member in enumerate(members, 1):
+                                member_color = sanitize_color(member.get("color") or card_color)
+                                member_anchor = f"{card_anchor}-member-{m_idx}" if member_color else None
+                                member_attr: List[str] = ['class="lane-member"']
+                                if member_anchor:
+                                    member_attr.append(f'id="{member_anchor}"')
+                                member_attr.append(f'data-lane="{stage_key}"')
+                                if member_color:
+                                    member_attr.append(f'data-link-color="{member_color}"')
+                                    connector_targets.setdefault(member_color, []).append({
+                                        "id": member_anchor,
+                                        "lane": stage_key,
+                                        "kind": "member",
+                                    })
+                                member_attr_str = ' '.join(member_attr)
+                                html_parts.append(f'<div {member_attr_str}>')
                                 member_title_bits = ['<div class="lane-member-title">']
                                 if member_color:
                                     member_title_bits.append(
@@ -3325,6 +3334,12 @@ class MainWindow(QMainWindow):
                             html_parts.append('</div>')
                         else:
                             html_parts.append('<div class="lane-note">Group members unavailable</div>')
+                    elif card_color:
+                        connector_targets.setdefault(card_color, []).append({
+                            "id": card_anchor,
+                            "lane": stage_key,
+                            "kind": "card",
+                        })
                     html_parts.append('</div>')
                 html_parts.append('</div>')
                 html_parts.append('</div>')
@@ -3334,15 +3349,55 @@ class MainWindow(QMainWindow):
             html_parts.append('</div>')
 
             connector_payload: List[Dict[str, Any]] = []
+            lane_sequence = ("sensors", "logic", "actuators")
+
+            def pairwise_links(source_lane: str, target_lane: str, records: Dict[str, List[Dict[str, str]]]) -> List[Dict[str, Dict[str, str]]]:
+                links: List[Dict[str, Dict[str, str]]] = []
+                source_items = records.get(source_lane) or []
+                target_items = records.get(target_lane) or []
+                for src in source_items:
+                    src_id = src.get("id")
+                    if not src_id:
+                        continue
+                    for dst in target_items:
+                        dst_id = dst.get("id")
+                        if not dst_id or dst_id == src_id:
+                            continue
+                        links.append({
+                            "start": {
+                                "id": src_id,
+                                "lane": source_lane,
+                            },
+                            "end": {
+                                "id": dst_id,
+                                "lane": target_lane,
+                            },
+                        })
+                return links
+
             for color, anchors in connector_targets.items():
                 if not color:
                     continue
-                lanes_present = {a.get("lane") for a in anchors if a.get("lane")}
-                if len(lanes_present) < 2:
+                lanes_map: Dict[str, List[Dict[str, str]]] = {}
+                for anchor in anchors:
+                    lane_key = anchor.get("lane")
+                    if lane_key not in lane_sequence:
+                        continue
+                    lanes_map.setdefault(lane_key, []).append(anchor)
+                if len(lanes_map) < 2:
+                    continue
+                links: List[Dict[str, Dict[str, str]]] = []
+                if lanes_map.get("sensors") and lanes_map.get("logic"):
+                    links.extend(pairwise_links("sensors", "logic", lanes_map))
+                if lanes_map.get("logic") and lanes_map.get("actuators"):
+                    links.extend(pairwise_links("logic", "actuators", lanes_map))
+                if not lanes_map.get("logic") and lanes_map.get("sensors") and lanes_map.get("actuators"):
+                    links.extend(pairwise_links("sensors", "actuators", lanes_map))
+                if not links:
                     continue
                 connector_payload.append({
                     "color": color,
-                    "targets": anchors,
+                    "links": links,
                 })
 
             return ''.join(html_parts), connector_payload
@@ -3687,15 +3742,38 @@ class MainWindow(QMainWindow):
         parts.append('</div>')
         parts.append('''<script>
 (function() {
-  const laneOrder = ['sensors','logic','actuators'];
-  function average(points) {
-    if (!points || !points.length) {
-      return null;
+  const laneIndex = { sensors: 0, logic: 1, actuators: 2 };
+
+  function determineStartSide(startLane, endLane) {
+    const startIdx = laneIndex[startLane];
+    const endIdx = laneIndex[endLane];
+    if (startIdx == null || endIdx == null) {
+      return 'right';
     }
-    const total = points.reduce(function(acc, pt) {
-      return { x: acc.x + pt.x, y: acc.y + pt.y };
-    }, { x: 0, y: 0 });
-    return { x: total.x / points.length, y: total.y / points.length };
+    return startIdx <= endIdx ? 'right' : 'left';
+  }
+
+  function determineEndSide(startLane, endLane) {
+    const startIdx = laneIndex[startLane];
+    const endIdx = laneIndex[endLane];
+    if (startIdx == null || endIdx == null) {
+      return 'left';
+    }
+    return startIdx <= endIdx ? 'left' : 'right';
+  }
+
+  function pointFor(rect, side, bounds) {
+    const x = side === 'left' ? rect.left - bounds.left : rect.right - bounds.left;
+    const y = rect.top + rect.height / 2 - bounds.top;
+    return { x: x, y: y };
+  }
+
+  function bezierPath(start, end, startSide, endSide) {
+    const dx = Math.abs(end.x - start.x);
+    const offset = Math.max(36, dx * 0.45);
+    const c1x = start.x + (startSide === 'right' ? offset : -offset);
+    const c2x = end.x + (endSide === 'left' ? -offset : offset);
+    return 'M ' + start.x + ' ' + start.y + ' C ' + c1x + ' ' + start.y + ' ' + c2x + ' ' + end.y + ' ' + end.x + ' ' + end.y;
   }
   function draw(block) {
     const dataTag = block.querySelector('script.link-connector-data');
@@ -3732,41 +3810,36 @@ class MainWindow(QMainWindow):
     svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
     const svgNS = 'http://www.w3.org/2000/svg';
     groups.forEach(function(group) {
-      if (!group || !group.color || !Array.isArray(group.targets)) {
+      if (!group || !group.color || !Array.isArray(group.links)) {
         return;
       }
-      const lanePoints = new Map();
-      group.targets.forEach(function(target) {
-        if (!target || !target.id) {
+      group.links.forEach(function(link) {
+        if (!link || !link.start || !link.end) {
           return;
         }
-        const el = document.getElementById(target.id);
-        if (!el) {
+        const startRef = link.start;
+        const endRef = link.end;
+        if (!startRef.id || !endRef.id) {
           return;
         }
-        const rect = el.getBoundingClientRect();
-        const point = {
-          x: rect.left + rect.width / 2 - bounds.left,
-          y: rect.top + rect.height / 2 - bounds.top
-        };
-        const laneKey = target.lane || el.getAttribute('data-lane');
-        if (!lanePoints.has(laneKey)) {
-          lanePoints.set(laneKey, []);
+        const startEl = document.getElementById(startRef.id);
+        const endEl = document.getElementById(endRef.id);
+        if (!startEl || !endEl) {
+          return;
         }
-        lanePoints.get(laneKey).push(point);
-      });
-      const orderedPoints = laneOrder
-        .map(function(lane) { return average(lanePoints.get(lane)); })
-        .filter(Boolean);
-      if (orderedPoints.length < 2) {
-        return;
-      }
-      for (let i = 0; i < orderedPoints.length - 1; i += 1) {
-        const start = orderedPoints[i];
-        const end = orderedPoints[i + 1];
-        const midX = (start.x + end.x) / 2;
+        const startLane = startRef.lane || startEl.getAttribute('data-lane');
+        const endLane = endRef.lane || endEl.getAttribute('data-lane');
+        if (!startLane || !endLane || startLane === endLane) {
+          return;
+        }
+        const startRect = startEl.getBoundingClientRect();
+        const endRect = endEl.getBoundingClientRect();
+        const startSide = determineStartSide(startLane, endLane);
+        const endSide = determineEndSide(startLane, endLane);
+        const startPoint = pointFor(startRect, startSide, bounds);
+        const endPoint = pointFor(endRect, endSide, bounds);
         const path = document.createElementNS(svgNS, 'path');
-        path.setAttribute('d', 'M ' + start.x + ' ' + start.y + ' C ' + midX + ' ' + start.y + ' ' + midX + ' ' + end.y + ' ' + end.x + ' ' + end.y);
+        path.setAttribute('d', bezierPath(startPoint, endPoint, startSide, endSide));
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke', group.color);
         path.setAttribute('stroke-width', '2');
@@ -3774,7 +3847,7 @@ class MainWindow(QMainWindow):
         path.setAttribute('stroke-linejoin', 'round');
         path.setAttribute('stroke-opacity', '0.55');
         svg.appendChild(path);
-      }
+      });
     });
   }
   function renderAll() {
