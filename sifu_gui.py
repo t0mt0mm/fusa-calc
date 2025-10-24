@@ -3853,7 +3853,7 @@ class MainWindow(QMainWindow):
         path.setAttribute('stroke-width', '2');
         path.setAttribute('stroke-linecap', 'round');
         path.setAttribute('stroke-linejoin', 'round');
-        path.setAttribute('stroke-opacity', '0.55');
+        path.setAttribute('stroke-opacity', '0.75');
         svg.appendChild(path);
       });
     });
