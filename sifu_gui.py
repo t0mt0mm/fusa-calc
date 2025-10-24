@@ -2438,6 +2438,27 @@ class MainWindow(QMainWindow):
         .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
+        .formula-section { margin: 24px 0; }
+        .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
+        .formula-column { display:flex; flex-direction:column; gap:16px; }
+        .formula-column--architecture { flex:1 1 340px; }
+        .formula-column--supporting { flex:1 1 260px; }
+        .formula-column--variables { flex:1 1 320px; min-width:280px; }
+        .formula-panel { flex:0 0 auto; border:1px solid #e5e7eb; border-radius:10px; background:#fff; box-shadow:0 6px 16px rgba(15,23,42,0.05); display:flex; flex-direction:column; min-width:240px; }
+        .formula-panel-header { padding:12px 16px; background:#f8fafc; color:#111827; font-weight:600; font-size:14px; border-bottom:1px solid #e5e7eb; }
+        .formula-panel-body { padding:12px 16px 16px; display:flex; flex-direction:column; gap:14px; }
+        .formula-box { border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; padding:12px 14px; }
+        .formula-note { margin:6px 0 0; }
+        .formula-table { width:100%; border-collapse:collapse; font-size:13px; }
+        .formula-table th, .formula-table td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
+        .formula-table th { background:#f8fafc; width:32%; }
+        @media (max-width: 960px) {
+            .formula-layout { flex-direction:column; }
+            .formula-column--variables { min-width:0; }
+        }
+        @media (max-width: 720px) {
+            .formula-panel { min-width:0; }
+        }
         @media print { .page { padding: 0; } .no-print { display:none; } }
         '''
 
@@ -2582,12 +2603,103 @@ class MainWindow(QMainWindow):
             html_parts.append('</div>')
             return ''.join(html_parts)
 
+        def build_formula_reference() -> str:
+            section_parts: List[str] = []
+            section_parts.append('<section class="formula-section">')
+            section_parts.append('<h2>Base Formulas</h2>')
+
+            def render_formulas(entries: List[Tuple[str, str]]) -> str:
+                box_bits: List[str] = []
+                for latex, note in entries:
+                    box_bits.append('<div class="formula-box">')
+                    box_bits.append(f'\\[{latex}\\]')
+                    box_bits.append(f'<p class="formula-note muted small"><em>{esc(note)}</em></p>')
+                    box_bits.append('</div>')
+                return ''.join(box_bits)
+
+            def panel_block(title: str, inner_html: str) -> str:
+                block_parts: List[str] = []
+                block_parts.append('<div class="formula-panel">')
+                block_parts.append(f'<div class="formula-panel-header">{esc(title)}</div>')
+                block_parts.append('<div class="formula-panel-body">')
+                block_parts.append(inner_html)
+                block_parts.append('</div>')
+                block_parts.append('</div>')
+                return ''.join(block_parts)
+
+            oneoo1_entries = [
+                (r'PFD_{1oo1} = \lambda_{DU}(T_I/2 + MTTR) + \lambda_{DD}MTTR', 'Average probability of failure on demand for a single 1oo1 channel.'),
+                (r'PFH_{1oo1} = \lambda_{DU}', 'Dangerous failure rate per hour for a single 1oo1 channel.'),
+            ]
+            architecture_blocks = [
+                panel_block('1oo1 Architecture', render_formulas(oneoo1_entries)),
+            ]
+            oneoo2_entries = [
+                (r't_{CE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}(T_I/2 + MTTR) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}}MTTR', 'Exposure time for common-cause dangerous undetected combinations using independent channel rates.'),
+                (r't_{GE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}(T_I/3 + MTTR) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}}MTTR', 'Exposure time for general dangerous undetected combinations with staggered testing, independent portion.'),
+                (r'PFD_{1oo2} = 2(1-\beta)^2(\lambda_D)^2 t_{CE}t_{GE} \\[4pt]'
+                 r'+ \beta\lambda_{DU}(T_I/2 + MTTR) + \beta_D\lambda_{DD}MTTR', 'System-level probability of failure on demand for a redundant 1oo2 channel.'),
+                (r'PFH_{1oo2} = 2(1-\beta)\lambda_D^{ind}\lambda_{DU}^{ind}t_{CE} + \beta\lambda_{DU}', 'System-level dangerous failure rate per hour for a redundant 1oo2 channel.'),
+            ]
+            architecture_blocks.append(
+                panel_block('1oo2 Architecture', render_formulas(oneoo2_entries))
+            )
+
+            supporting_entries = [
+                (r'\lambda_D = \lambda_{DU} + \lambda_{DD}', 'Total dangerous failure rate split into undetected and detected parts.'),
+                (r'\lambda_{DU} = r_{DU}\lambda_D,\ \lambda_{DD} = r_{DD}\lambda_D', 'Ratios mapping total dangerous failures to undetected and detected portions.'),
+                (r'\lambda_{DU}^{ind} = (1-\beta)\lambda_{DU},\ \lambda_{DD}^{ind} = (1-\beta_D)\lambda_{DD}', 'Independent channel failure rates after removing common cause factors.'),
+            ]
+            supporting_block = panel_block('Supporting Relations', render_formulas(supporting_entries))
+
+            var_rows: List[Tuple[str, str]] = [
+                (r't_{CE}', 'Exposure window for common-cause dangerous undetected failures.'),
+                (r't_{GE}', 'Exposure window for general dangerous undetected failures.'),
+                (r'\lambda_{DU}', 'Dangerous undetected failure rate.'),
+                (r'\lambda_{DD}', 'Dangerous detected failure rate.'),
+                (r'\lambda_D', 'Total dangerous failure rate (detected + undetected).'),
+                (r'\lambda_D^{ind}', 'Independent-channel total dangerous failure rate (excludes common cause).'),
+                (r'\lambda_{DU}^{ind}', 'Channel-specific dangerous undetected failure rate (independent portion).'),
+                (r'\lambda_{DD}^{ind}', 'Channel-specific dangerous detected failure rate (independent portion).'),
+                (r'r_{DU}', 'Fraction of dangerous failures that are undetected.'),
+                (r'r_{DD}', 'Fraction of dangerous failures that are detected.'),
+                (r'\beta', 'Common cause factor for dangerous undetected failures.'),
+                (r'\beta_D', 'Common cause factor for dangerous detected failures.'),
+                (r'T_I', 'Proof-test interval.'),
+                (r'MTTR', 'Mean time to repair.'),
+            ]
+            table_parts: List[str] = ['<div class="formula-box">', '<table class="formula-table"><thead><tr><th>Symbol</th><th>Meaning</th></tr></thead><tbody>']
+            for symbol, meaning in var_rows:
+                table_parts.append('<tr>')
+                table_parts.append(f'<td class="nowrap">\\({symbol}\\)</td>')
+                table_parts.append(f'<td>{esc(meaning)}</td>')
+                table_parts.append('</tr>')
+            table_parts.append('</tbody></table></div>')
+            variable_block = panel_block('Variable Summary', ''.join(table_parts))
+
+            section_parts.append('<div class="formula-layout">')
+            section_parts.append('<div class="formula-column formula-column--architecture">')
+            section_parts.extend(architecture_blocks)
+            section_parts.append('</div>')
+            section_parts.append('<div class="formula-column formula-column--supporting">')
+            section_parts.append(supporting_block)
+            section_parts.append('</div>')
+            section_parts.append('<div class="formula-column formula-column--variables">')
+            section_parts.append(variable_block)
+            section_parts.append('</div>')
+            section_parts.append('</div>')
+
+            section_parts.append('</section>')
+            return ''.join(section_parts)
+
         # Build HTML
         parts = []
         parts.append('<!doctype html><html><head><meta charset="utf-8">')
         parts.append('<meta name="viewport" content="width=device-width,initial-scale=1">')
         parts.append('<title>SIFU Report</title>')
         parts.append(f'<style>{css}</style>')
+        parts.append('<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>')
+        parts.append('<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>')
         parts.append('</head><body>')
         parts.append('<div class="page">')
         parts.append('<h1>SIFU Calculation Report</h1>')
@@ -2611,6 +2723,8 @@ class MainWindow(QMainWindow):
                 '</tr>'
             )
         parts.append('</tbody></table>')
+
+        parts.append(build_formula_reference())
 
         # Assumptions & Ratios
         parts.append('<div class="grid">')
@@ -2707,7 +2821,8 @@ class MainWindow(QMainWindow):
             render_group('Outputs / Actuators', s['actuators'])
 
         parts.append('<div class="muted small">This report is generated for documentation support of IEC 61508 evaluations. Ensure project-specific assumptions and operational profiles are validated.</div>')
-        parts.append('</div></body></html>')
+        parts.append('</div>')
+        parts.append('</body></html>')
 
         return '\n'.join(parts)
 
