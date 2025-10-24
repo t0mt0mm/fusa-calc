@@ -3292,11 +3292,18 @@ class MainWindow(QMainWindow):
                         html_parts.append(metrics_html)
                     if card.get("note"):
                         html_parts.append(f'<div class="lane-note">{esc(card.get("note"))}</div>')
+                    is_oneoo2 = card.get("architecture") == "1oo2"
                     if card["type"] == "group":
                         members = card.get("members", [])
                         if members:
                             html_parts.append(f'<div class="lane-group-meta">Members ({len(members)})</div>')
                             html_parts.append('<div class="lane-members">')
+                            if is_oneoo2 and card_color:
+                                connector_targets.setdefault(card_color, []).append({
+                                    "id": card_anchor,
+                                    "lane": stage_key,
+                                    "kind": "card",
+                                })
                             for m_idx, member in enumerate(members, 1):
                                 member_color = sanitize_color(member.get("color") or card_color)
                                 member_anchor = f"{card_anchor}-member-{m_idx}" if member_color else None
@@ -3306,11 +3313,12 @@ class MainWindow(QMainWindow):
                                 member_attr.append(f'data-lane="{stage_key}"')
                                 if member_color:
                                     member_attr.append(f'data-link-color="{member_color}"')
-                                    connector_targets.setdefault(member_color, []).append({
-                                        "id": member_anchor,
-                                        "lane": stage_key,
-                                        "kind": "member",
-                                    })
+                                    if not is_oneoo2:
+                                        connector_targets.setdefault(member_color, []).append({
+                                            "id": member_anchor,
+                                            "lane": stage_key,
+                                            "kind": "member",
+                                        })
                                 member_attr_str = ' '.join(member_attr)
                                 html_parts.append(f'<div {member_attr_str}>')
                                 member_title_bits = ['<div class="lane-member-title">']
