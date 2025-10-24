@@ -457,6 +457,10 @@ class ChipList(QListWidget):
             layout.setContentsMargins(8, 4, 8, 4)
             layout.setSpacing(8)
 
+            indicator = self._make_link_indicator()
+            layout.addWidget(indicator)
+            widget._link_indicator = indicator  # type: ignore[attr-defined]
+
             members = [m for m in d.get("members", []) if isinstance(m, dict)]
             member_labels: List[str] = []
             for idx, member in enumerate(members):
@@ -506,6 +510,10 @@ class ChipList(QListWidget):
             layout = QHBoxLayout(widget)
             layout.setContentsMargins(8, 4, 8, 4)
             layout.setSpacing(6)
+
+            indicator = self._make_link_indicator()
+            layout.addWidget(indicator)
+            widget._link_indicator = indicator  # type: ignore[attr-defined]
 
             label = QLabel(str(text))
             label.setObjectName("ChipLabel")
@@ -697,15 +705,27 @@ class ChipList(QListWidget):
         if widget is None:
             return
         window = self.window()
-        tag = None
-        color = data.get("link_color") if isinstance(data, dict) else None
-        if window and color and hasattr(window, "_tag_for_color"):
-            tag = window._tag_for_color(color)
-        widget.setProperty("linkTag", tag if tag else None)
-        style = widget.style()
-        if style:
-            style.unpolish(widget)
-            style.polish(widget)
+        color_value = data.get("link_color") if isinstance(data, dict) else None
+        sanitized = None
+        if window and color_value and hasattr(window, "_sanitize_link_color"):
+            sanitized = window._sanitize_link_color(color_value)
+        elif isinstance(color_value, str):
+            sanitized = color_value
+
+        indicator = getattr(widget, "_link_indicator", None)
+        if isinstance(indicator, QLabel):
+            if sanitized:
+                indicator.setVisible(True)
+                indicator.setStyleSheet(
+                    "QLabel{background:%s; border-radius:5px; border:1px solid rgba(15,23,42,0.18);}" % sanitized
+                )
+            else:
+                indicator.setVisible(False)
+                indicator.setStyleSheet(
+                    "QLabel{background: transparent; border-radius:5px; border:1px solid rgba(148,163,184,0.45);}"  # noqa: E501
+                )
+
+        widget.setProperty("linkTag", None)
 
     def refresh_chip(self, item: QListWidgetItem) -> None:
         if not item:
@@ -727,6 +747,18 @@ class ChipList(QListWidget):
         lbl.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         lbl.adjustSize()
         return lbl
+
+    @staticmethod
+    def _make_link_indicator() -> QLabel:
+        indicator = QLabel()
+        indicator.setObjectName("ChipLinkDot")
+        indicator.setFixedSize(10, 10)
+        indicator.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        indicator.setStyleSheet(
+            "QLabel{background: transparent; border-radius:5px; border:1px solid rgba(148,163,184,0.45);}"  # noqa: E501
+        )
+        indicator.setVisible(False)
+        return indicator
 
 
 class ActuatorList(ChipList):
@@ -1961,10 +1993,17 @@ class MainWindow(QMainWindow):
         primary = "#3B82F6"; success = "#1B7F3A"; danger = "#B42318"
         bg0 = "#FFFFFF"; bg1 = "#F7F8FA"; border = "#DADCE0"
         sensor_accent = "#0EA5E9"; logic_accent = "#22C55E"; actuator_accent= "#A855F7"
-        link_styles = "".join(
-            f'        QWidget[linkTag="{tag}"] {{ background: {color}; }}\n'
-            for color, tag in self.link_palette
-        )
+        link_styles = """
+        QLabel#ChipLinkDot {
+            min-width: 10px;
+            max-width: 10px;
+            min-height: 10px;
+            max-height: 10px;
+            border-radius: 5px;
+            border:1px solid rgba(148,163,184,0.45);
+            background: transparent;
+        }
+        """
 
         self.setStyleSheet(f"""
         * {{ font-size: 11px; }}
@@ -3016,7 +3055,7 @@ class MainWindow(QMainWindow):
         table.component-table tbody tr.group-member td:first-child::before { content:'↳'; position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#6366f1; font-size:12px; }
         table.component-table td.right, table.component-table th.right { font-variant-numeric: tabular-nums; white-space: nowrap; }
         .member-tag { display:inline-flex; align-items:center; padding:1px 6px; border-radius:999px; background:#ede9fe; color:#312e81; font-weight:600; }
-        .member-caption { display:block; color:#6b7280; font-size:11px; margin-top:2px; }
+        .member-caption { display:inline-flex; align-items:center; color:#6b7280; font-size:11px; margin-top:0; }
         .ok { color: #166534; font-weight: 600; }
         .bad { color: #b91c1c; font-weight: 600; }
         .pill { display:inline-flex; align-items:center; padding:2px 7px; border:1px solid #d1d5db; border-radius:999px; font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:0.04em; background:#f9fafb; color:#374151; }
@@ -3039,8 +3078,10 @@ class MainWindow(QMainWindow):
         .lane--sensors .lane-card { border-left-color:#0EA5E9; }
         .lane--logic .lane-card { border-left-color:#22C55E; }
         .lane--actuators .lane-card { border-left-color:#A855F7; }
+        .chip-link-dot { width:10px; height:10px; border-radius:999px; border:1px solid rgba(148,163,184,0.45); background:transparent; display:inline-flex; flex-shrink:0; }
         .lane-card-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .lane-title { font-size:13px; font-weight:600; color:#111827; margin:0; }
+        .lane-title { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:#111827; margin:0; }
+        .lane-title-text { display:inline-flex; align-items:center; }
         .lane-subtitle { font-size:11px; color:#6b7280; margin:0; }
         .lane-metrics { display:flex; flex-wrap:wrap; gap:6px; font-size:11px; color:#374151; }
         .lane-metrics span { white-space:nowrap; padding:0 6px; border-radius:999px; background:#fff; border:1px solid #e5e7eb; }
@@ -3050,11 +3091,14 @@ class MainWindow(QMainWindow):
         .lane--sensors .lane-member { border-left-color:#0EA5E9; }
         .lane--logic .lane-member { border-left-color:#22C55E; }
         .lane--actuators .lane-member { border-left-color:#A855F7; }
-        .lane-member h4 { font-size:11px; margin:0; color:#1f2937; }
+        .lane-member-title { display:flex; align-items:center; gap:6px; font-size:11px; color:#1f2937; font-weight:600; margin:0; }
+        .lane-member-text { color:#1f2937; }
         .lane-member .lane-metrics { margin:0; gap:4px; font-size:10px; }
         .lane-member .lane-metrics span { background:#f8fafc; border:1px solid #e2e8f0; padding:0 5px; }
         .lane-group-meta { font-size:11px; color:#4b5563; }
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
+        .component-label { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+        .component-label-text { font-weight:600; color:#1f2937; }
         .link-subgroup-box { margin-top:16px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); }
         .link-subgroup-heading { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#1f2937; margin:0 0 10px; }
         .link-subgroup-list { display:flex; flex-direction:column; gap:10px; }
@@ -3111,6 +3155,7 @@ class MainWindow(QMainWindow):
                     pfh_val = entry.get("pfh_avg", entry.get("pfh"))
                     sil_val = entry.get("sys_cap", entry.get("syscap", ""))
                     pdm_val = entry.get("pdm_code", "")
+                    color = sanitize_color(entry.get("link_color") or entry.get("color"))
 
                     note_text = self._note_for_provenance(entry.get("provenance"))
 
@@ -3122,6 +3167,7 @@ class MainWindow(QMainWindow):
                                 continue
                             member_label = member.get("code") or member.get("name") or f"Member {m_idx + 1}"
                             member_codes.append(member_label)
+                            member_color = sanitize_color(member.get("link_color") or color)
                             members_payload.append({
                                 "label": member_label,
                                 "name": member.get("name"),
@@ -3130,6 +3176,7 @@ class MainWindow(QMainWindow):
                                 "sil": member.get("sys_cap", member.get("syscap", "")),
                                 "pdm": member.get("pdm_code", ""),
                                 "note": self._note_for_provenance(member.get("provenance")),
+                                "color": member_color,
                             })
                         display_label = " ∥ ".join(c for c in member_codes if c) or base_label
                         subtitle = base_label if display_label != base_label else ""
@@ -3145,6 +3192,7 @@ class MainWindow(QMainWindow):
                             "members": members_payload,
                             "member_count": len(members_payload),
                             "note": note_text,
+                            "color": color,
                         })
                     else:
                         subtitle = ""
@@ -3161,6 +3209,7 @@ class MainWindow(QMainWindow):
                             "sil": sil_val,
                             "pdm": pdm_val,
                             "note": note_text,
+                            "color": color,
                         })
 
                 stage_payload.append((stage_key, stage_title, cards))
@@ -3194,9 +3243,15 @@ class MainWindow(QMainWindow):
                     if card["type"] == "group":
                         classes.append("group")
                     class_attr = " ".join(classes)
+                    card_color = sanitize_color(card.get("color"))
                     html_parts.append(f'<div class="{class_attr}">')
                     html_parts.append('<div class="lane-card-header">')
-                    html_parts.append(f'<div class="lane-title">{esc(card["label"])}</div>')
+                    title_bits = ['<div class="lane-title">']
+                    if card_color:
+                        title_bits.append(f'<span class="chip-link-dot" style="background:{card_color};"></span>')
+                    title_bits.append(f'<span class="lane-title-text">{esc(card["label"])}</span>')
+                    title_bits.append('</div>')
+                    html_parts.append(''.join(title_bits))
                     if card.get("architecture"):
                         html_parts.append(f'<span class="lane-pill arch">{esc(card["architecture"])}</span>')
                     html_parts.append('</div>')
@@ -3224,7 +3279,17 @@ class MainWindow(QMainWindow):
                             html_parts.append('<div class="lane-members">')
                             for member in members:
                                 html_parts.append('<div class="lane-member">')
-                                html_parts.append(f'<h4>{esc(member.get("label", "Member"))}</h4>')
+                                member_color = sanitize_color(member.get("color"))
+                                member_title_bits = ['<div class="lane-member-title">']
+                                if member_color:
+                                    member_title_bits.append(
+                                        f'<span class="chip-link-dot" style="background:{member_color};"></span>'
+                                    )
+                                member_title_bits.append(
+                                    f'<span class="lane-member-text">{esc(member.get("label", "Member"))}</span>'
+                                )
+                                member_title_bits.append('</div>')
+                                html_parts.append(''.join(member_title_bits))
                                 member_metrics = render_metrics(member.get("pfd"), member.get("pfh"), member.get("sil"), member.get("pdm"))
                                 if member_metrics:
                                     html_parts.append(member_metrics)
@@ -3302,7 +3367,10 @@ class MainWindow(QMainWindow):
                         tooltip_attr = ''
                         if member_labels:
                             tooltip_attr = f' title="{esc("Members: " + ", ".join(member_labels))}"'
+                        comp_color = sanitize_color(comp.get('color') or subgroup.get('color'))
                         cards.append(f'<div class="link-subgroup-member"{tooltip_attr}>')
+                        if comp_color:
+                            cards.append(f'<span class="chip-link-dot" style="background:{comp_color};"></span>')
                         cards.append(f'<span class="member-tag">{esc(label_val)}</span>')
                         if lane_caption:
                             cards.append(f'<span class="lane">{lane_caption}</span>')
@@ -3500,9 +3568,15 @@ class MainWindow(QMainWindow):
                         members = it.get('members', [])
                         member_codes = [m.get('code') or m.get('name') or f'Member {idx + 1}' for idx, m in enumerate(members)]
                         group_title = ' ∥ '.join([c for c in member_codes if c]) or '1oo2 redundant set'
+                        group_color = sanitize_color(it.get('link_color') or it.get('color'))
+                        group_label_bits = ['<div class="group-label">', '<span class="pill arch">1oo2</span>']
+                        if group_color:
+                            group_label_bits.append(f'<span class="chip-link-dot" style="background:{group_color};"></span>')
+                        group_label_bits.append(f'<span class="group-title">{esc(group_title)}</span>')
+                        group_label_bits.append('</div>')
+                        group_label_html = ''.join(group_label_bits)
                         parts.append('<tr class="group-row">'
-                                     f'<td><div class="group-label"><span class="pill arch">1oo2</span>'
-                                     f'<span class="group-title">{esc(group_title)}</span></div></td>'
+                                     f'<td>{group_label_html}</td>'
                                      f'<td class="right">{fmt_pfd(pfd_g)}</td>'
                                      f'<td class="right">{fmt_pfh(pfh_g)}</td>'
                                      f'<td class="right">{fmt_fit(pfh_g)}</td>'
@@ -3510,12 +3584,18 @@ class MainWindow(QMainWindow):
                         for m_idx, m in enumerate(members, 1):
                             code_val = m.get('code') or m.get('name') or f'Member {m_idx}'
                             name_val = m.get('name')
-                            label_html = f'<span class="member-tag">{esc(code_val)}</span>'
+                            member_color = sanitize_color(m.get('link_color') or m.get('color') or group_color)
+                            label_bits = ['<div class="component-label">']
+                            if member_color:
+                                label_bits.append(f'<span class="chip-link-dot" style="background:{member_color};"></span>')
+                            label_bits.append(f'<span class="member-tag">{esc(code_val)}</span>')
                             if name_val and name_val != code_val:
-                                label_html += f'<span class="member-caption">{esc(name_val)}</span>'
+                                label_bits.append(f'<span class="member-caption">{esc(name_val)}</span>')
+                            label_bits.append('</div>')
                             note = self._note_for_provenance(m.get('provenance'))
                             if note:
-                                label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
+                                label_bits.append(f"<div class=\"lane-note\">{esc(note)}</div>")
+                            label_html = ''.join(label_bits)
                             parts.append('<tr class="group-member">'
                                          f'<td>{label_html}</td>'
                                          f'<td class="right">{fmt_pfd(m.get("pfd_avg", m.get("pfd")))}</td>'
@@ -3525,10 +3605,17 @@ class MainWindow(QMainWindow):
                                          f'<td>{esc(m.get("pdm_code", "") or "—")}</td>'
                                          '</tr>')
                     else:
-                        label_html = esc(it.get("code", it.get("name", "?")))
+                        item_color = sanitize_color(it.get('link_color') or it.get('color'))
+                        label_bits = ['<div class="component-label">']
+                        if item_color:
+                            label_bits.append(f'<span class="chip-link-dot" style="background:{item_color};"></span>')
+                        code_label = esc(it.get("code", it.get("name", "?")))
+                        label_bits.append(f'<span class="component-label-text">{code_label}</span>')
+                        label_bits.append('</div>')
                         note = self._note_for_provenance(it.get('provenance'))
                         if note:
-                            label_html += f"<div class=\"lane-note\">{esc(note)}</div>"
+                            label_bits.append(f"<div class=\"lane-note\">{esc(note)}</div>")
+                        label_html = ''.join(label_bits)
                         parts.append('<tr>'
                                      f'<td>{label_html}</td>'
                                      f'<td class="right">{fmt_pfd(it.get("pfd_avg", it.get("pfd")))}</td>'
@@ -3660,6 +3747,7 @@ class MainWindow(QMainWindow):
             payload = item.data(Qt.UserRole) or {}
             if payload.get('group') and payload.get('architecture') == '1oo2':
                 normalized_members: List[dict] = []
+                group_link_color = self._sanitize_link_color(payload.get('link_color'))
                 for member in payload.get('members', []):
                     if isinstance(member, dict):
                         member_copy = copy.deepcopy(member)
@@ -3691,7 +3779,7 @@ class MainWindow(QMainWindow):
                     if not isinstance(member_id, str) or not member_id:
                         member_id = new_instance_id()
                         member_payload['instance_id'] = member_id
-                    members_payload.append({
+                    member_entry = {
                         'code': member_payload.get('code'),
                         'name': member_payload.get('name'),
                         'pfd_avg': float(member_payload.get('pfd', member_payload.get('pfd_avg', 0.0)) or 0.0),
@@ -3700,7 +3788,10 @@ class MainWindow(QMainWindow):
                         'pdm_code': member_payload.get('pdm_code'),
                         'instance_id': member_id,
                         'provenance': info['provenance'],
-                    })
+                    }
+                    if group_link_color:
+                        member_entry['link_color'] = group_link_color
+                    members_payload.append(member_entry)
 
                 entry = {
                     'architecture': '1oo2',
@@ -3710,11 +3801,10 @@ class MainWindow(QMainWindow):
                     'instance_id': payload.get('instance_id'),
                     'kind': payload.get('kind', group_kind),
                 }
-                link_color = self._sanitize_link_color(payload.get('link_color'))
-                if link_color:
-                    entry['link_color'] = link_color
+                if group_link_color:
+                    entry['link_color'] = group_link_color
                     if row_uid:
-                        entry['link_group_id'] = self._group_id_for_color(row_uid, link_color)
+                        entry['link_group_id'] = self._group_id_for_color(row_uid, group_link_color)
                 items.append(entry)
             else:
                 inst_id = payload.get('instance_id')
@@ -4016,6 +4106,7 @@ class MainWindow(QMainWindow):
                         'kind': ud.get('kind', group),
                         'lane': group,
                         'lane_title': lane_title_map.get(group, group.title()),
+                        'color': link_color,
                     }
 
                     if link_group_id:
@@ -4063,6 +4154,7 @@ class MainWindow(QMainWindow):
                     'kind': ud.get('kind', group),
                     'lane': group,
                     'lane_title': lane_title_map.get(group, group.title()),
+                    'color': link_color,
                 }
 
                 if link_group_id:
@@ -4110,6 +4202,7 @@ class MainWindow(QMainWindow):
                         'architecture': comp.get('architecture'),
                         'member_labels': comp.get('member_labels', []),
                         'kind': comp.get('kind'),
+                        'color': comp.get('color', info.get('color')),
                     })
                 lanes = sorted(info.get('lanes', set()))
                 combined_payload.append({
