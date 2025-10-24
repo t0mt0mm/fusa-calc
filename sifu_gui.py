@@ -3060,8 +3060,8 @@ class MainWindow(QMainWindow):
                             html_parts.append('<div class="lane-note">Group members unavailable</div>')
                     html_parts.append('</div>')
                 html_parts.append('</div>')
+                html_parts.append('</div>')
 
-            html_parts.append('</div>')
             html_parts.append('</div>')
             return ''.join(html_parts)
 
