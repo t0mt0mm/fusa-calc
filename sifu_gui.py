@@ -3558,9 +3558,7 @@ class MainWindow(QMainWindow):
 
                     lambda_total_txt = fmt_lambda(detail.get('lambda_total'))
                     lambda_du_txt = fmt_lambda(detail.get('lambda_du'))
-                    lambda_dd_txt = fmt_lambda(detail.get('lambda_dd'))
                     ratio_du_txt = fmt_ratio(detail.get('ratio_du'))
-                    ratio_dd_txt = fmt_ratio(detail.get('ratio_dd'))
 
                     formula_bits: List[str] = []
                     if (
@@ -3570,14 +3568,6 @@ class MainWindow(QMainWindow):
                     ):
                         formula_bits.append(
                             f'λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h'
-                        )
-                    if (
-                        lambda_total_txt != '–'
-                        and ratio_dd_txt != '–'
-                        and lambda_dd_txt != '–'
-                    ):
-                        formula_bits.append(
-                            f'λ_total {lambda_total_txt} × r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h'
                         )
                     if not formula_bits:
                         continue
@@ -5002,8 +4992,6 @@ class MainWindow(QMainWindow):
                 lambda_total_txt = fmt_lambda_value(detail.get('lambda_total'))
                 ratio_du_txt = fmt_ratio_percent(detail.get('ratio_du'))
                 lambda_du_txt = fmt_lambda_value(detail.get('lambda_du'))
-                ratio_dd_txt = fmt_ratio_percent(detail.get('ratio_dd'))
-                lambda_dd_txt = fmt_lambda_value(detail.get('lambda_dd'))
                 segments: List[str] = []
                 if (
                     lambda_total_txt != "–"
@@ -5012,14 +5000,6 @@ class MainWindow(QMainWindow):
                 ):
                     segments.append(
                         f"λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h"
-                    )
-                if (
-                    lambda_total_txt != "–"
-                    and ratio_dd_txt != "–"
-                    and lambda_dd_txt != "–"
-                ):
-                    segments.append(
-                        f"λ_total {lambda_total_txt} × r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h"
                     )
                 if segments:
                     lines.append(f"{indent}{label}: {' | '.join(segments)}")
