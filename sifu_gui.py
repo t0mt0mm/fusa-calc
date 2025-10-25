@@ -2237,7 +2237,7 @@ class MainWindow(QMainWindow):
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return
         mode = self._effective_demand_mode(row_idx) if 0 <= row_idx < len(self.rows_meta) else ""
-        mode_key = "low_demand" if "low" in str(mode).lower() else "high_demand"
+        mode_key = self._mode_key_from_value(mode)
         lw = widgets.out_list
         for i in range(lw.count()):
             item = lw.item(i)
@@ -2995,7 +2995,7 @@ class MainWindow(QMainWindow):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
             mode = self._effective_demand_mode(row_idx)
-            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+            mode_key = self._mode_key_from_value(mode)
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
@@ -3024,7 +3024,11 @@ class MainWindow(QMainWindow):
                         'lambda_dd': float(total_entry.get('lambda_dd', 0.0)),
                         'details': copy.deepcopy(total_entry.get('details', [])),
                     }
-            sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
+            sil_calc = (
+                classify_sil_from_pfh(pfh_sum)
+                if mode_key == 'high_demand'
+                else classify_sil_from_pfd(pfd_sum)
+            )
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
             calc_rank = sil_rank(sil_calc)
@@ -3538,10 +3542,12 @@ class MainWindow(QMainWindow):
             total_entry: Optional[Dict[str, Any]],
             subgroups: Optional[List[Dict[str, Any]]],
             residuals: Optional[List[Dict[str, Any]]],
-            mode_key: str,
+            mode_key: Optional[str],
+            mode_text: Optional[str],
         ) -> str:
-            is_high = str(mode_key).lower() == 'high_demand'
-            mode_label = 'High demand' if is_high else 'Low demand'
+            normalized_key = self._mode_key_from_value(mode_key or mode_text)
+            is_high = normalized_key == 'high_demand'
+            mode_label = self._mode_label_from_key(normalized_key)
 
             def fmt_ratio(value: Optional[float]) -> str:
                 try:
@@ -3875,7 +3881,8 @@ class MainWindow(QMainWindow):
                 breakdown_total,
                 s.get('link_subgroups'),
                 s.get('lane_residuals'),
-                s.get('mode_key', 'high_demand'),
+                s.get('mode_key'),
+                s.get('mode'),
             )
             if arch_html or subgroup_html or breakdown_html:
                 parts.append('<div class="architecture">')
@@ -4107,7 +4114,7 @@ class MainWindow(QMainWindow):
             meta = self.rows_meta[row_idx]
             widgets = self.sifu_widgets[row_idx]
             mode = self._effective_demand_mode(row_idx)
-            mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+            mode_key = self._mode_key_from_value(mode)
             sensors = self._collect_list_items(widgets.in_list, 'sensor', mode_key)
             logic   = self._collect_list_items(widgets.logic_list, 'logic', mode_key)
             outputs = self._collect_list_items(widgets.out_list, 'actuator', mode_key)
@@ -4115,7 +4122,11 @@ class MainWindow(QMainWindow):
                 (widgets.in_list, widgets.logic_list, widgets.out_list),
                 mode_key,
             )
-            sil_calc = classify_sil_from_pfh(pfh_sum) if "high" in mode.lower() else classify_sil_from_pfd(pfd_sum)
+            sil_calc = (
+                classify_sil_from_pfh(pfh_sum)
+                if mode_key == 'high_demand'
+                else classify_sil_from_pfd(pfd_sum)
+            )
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
             out["sifus"].append({
@@ -4309,7 +4320,22 @@ class MainWindow(QMainWindow):
         return items
 
     # ----- effective mode -----
+    @staticmethod
+    def _mode_key_from_value(mode_value: Any) -> str:
+        text = str(mode_value or "").strip().lower()
+        if "low" in text:
+            return "low_demand"
+        if "high" in text:
+            return "high_demand"
+        return "high_demand"
+
+    @staticmethod
+    def _mode_label_from_key(mode_key: str) -> str:
+        return "Low demand" if str(mode_key).lower() == "low_demand" else "High demand"
+
     def _effective_demand_mode(self, row_idx: int) -> str:
+        if row_idx < 0 or row_idx >= len(self.rows_meta):
+            return "High demand"
         meta = self.rows_meta[row_idx]
         return meta.get("demand_mode_override") or meta.get("demand_mode_required", "High demand")
 
@@ -4892,7 +4918,7 @@ class MainWindow(QMainWindow):
         widgets = self.sifu_widgets.get(row_idx)
         if not widgets: return  # can happen after remove
         mode = self._effective_demand_mode(row_idx)
-        mode_key = "low_demand" if "low" in mode.lower() else "high_demand"
+        mode_key = self._mode_key_from_value(mode)
         pfd_sum, pfh_sum, subgroup_info = self._sum_lists(
             (widgets.in_list, widgets.logic_list, widgets.out_list),
             mode_key,
