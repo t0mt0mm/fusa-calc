@@ -3151,12 +3151,11 @@ class MainWindow(QMainWindow):
         .link-breakdown-table th.numeric, .link-breakdown-table td.numeric { text-align:right; font-variant-numeric:tabular-nums; }
         .link-breakdown-source { display:flex; align-items:center; gap:6px; }
         .link-breakdown-table tfoot td { font-weight:600; background:#f8fafc; }
-        .link-breakdown-detail-row td { background:#f9fafb; border-top:none; border-bottom:1px solid #e5e7eb; padding:10px 14px; }
-        .link-breakdown-details { display:flex; flex-direction:column; gap:8px; }
-        .link-breakdown-detail-entry { display:flex; flex-direction:column; gap:3px; }
-        .link-breakdown-detail-entry .label { font-weight:600; color:#111827; display:flex; align-items:center; gap:6px; font-size:12px; }
-        .link-breakdown-detail-formula { font-family:'Fira Mono','SFMono-Regular',Menlo,monospace; font-size:10px; color:#1f2937; }
-        .link-breakdown-detail-result { font-size:10px; color:#1f2937; }
+        .link-breakdown-computation { display:flex; flex-direction:column; gap:6px; }
+        .link-breakdown-computation-entry { display:flex; flex-direction:column; gap:3px; padding:4px 0; }
+        .link-breakdown-computation-entry .label { font-weight:600; color:#111827; display:flex; align-items:center; gap:6px; font-size:12px; }
+        .link-breakdown-computation-entry .label .lane { font-weight:500; color:#4b5563; font-size:11px; }
+        .link-breakdown-computation-entry .formula { font-family:'Fira Mono','SFMono-Regular',Menlo,monospace; font-size:10px; color:#1f2937; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
         .formula-column { display:flex; flex-direction:column; gap:16px; }
@@ -3545,19 +3544,47 @@ class MainWindow(QMainWindow):
                 except Exception:
                     return "–"
 
-            def build_detail_block(
+            def build_computation_cell(
                 details: Optional[List[Dict[str, Any]]],
                 fallback_color: Optional[str] = None,
             ) -> str:
                 if not isinstance(details, (list, tuple)):
-                    return ""
-                entries: List[str] = []
+                    return '—'
+
+                entry_parts: List[str] = []
                 for detail in details:
                     if not isinstance(detail, dict):
                         continue
+
+                    lambda_total_txt = fmt_lambda(detail.get('lambda_total'))
+                    lambda_du_txt = fmt_lambda(detail.get('lambda_du'))
+                    lambda_dd_txt = fmt_lambda(detail.get('lambda_dd'))
+                    ratio_du_txt = fmt_ratio(detail.get('ratio_du'))
+                    ratio_dd_txt = fmt_ratio(detail.get('ratio_dd'))
+
+                    formula_bits: List[str] = []
+                    if (
+                        lambda_total_txt != '–'
+                        and ratio_du_txt != '–'
+                        and lambda_du_txt != '–'
+                    ):
+                        formula_bits.append(
+                            f'λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h'
+                        )
+                    if (
+                        lambda_total_txt != '–'
+                        and ratio_dd_txt != '–'
+                        and lambda_dd_txt != '–'
+                    ):
+                        formula_bits.append(
+                            f'λ_total {lambda_total_txt} × r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h'
+                        )
+                    if not formula_bits:
+                        continue
+
                     label_val = esc(detail.get('label') or 'Component')
-                    lane_title = esc(detail.get('lane_title') or '')
-                    lane_caption = f"<span class=\"lane\">{lane_title}</span>" if lane_title else ''
+                    lane_title = detail.get('lane_title') or ''
+                    lane_html = f'<span class="lane">{esc(lane_title)}</span>' if lane_title else ''
                     members = detail.get('member_labels')
                     tooltip_attr = ''
                     if isinstance(members, (list, tuple)) and members:
@@ -3567,54 +3594,25 @@ class MainWindow(QMainWindow):
                             + '"'
                         )
                     dot_color = sanitize_color(detail.get('color') or fallback_color)
-                    label_bits = ['<div class="label"' + tooltip_attr + '>']
+
+                    entry_html: List[str] = ['<div class="link-breakdown-computation-entry">']
+                    entry_html.append('<div class="label"' + tooltip_attr + '>')
                     if dot_color:
-                        label_bits.append(f'<span class="chip-link-dot" style="background:{dot_color};"></span>')
-                    label_bits.append(f'<span>{label_val}</span>')
-                    if lane_caption:
-                        label_bits.append(lane_caption)
-                    label_bits.append('</div>')
-
-                    lambda_total_txt = fmt_lambda(detail.get('lambda_total'))
-                    lambda_du_txt = fmt_lambda(detail.get('lambda_du'))
-                    lambda_dd_txt = fmt_lambda(detail.get('lambda_dd'))
-                    ratio_du_txt = fmt_ratio(detail.get('ratio_du'))
-                    ratio_dd_txt = fmt_ratio(detail.get('ratio_dd'))
-                    formula_du = (
-                        f'<div class="link-breakdown-detail-formula">λ_total {lambda_total_txt} '
-                        f'× r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h</div>'
-                    )
-                    formula_dd = (
-                        f'<div class="link-breakdown-detail-formula">λ_total {lambda_total_txt} '
-                        f'× r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h</div>'
-                    )
-                    pfd_txt = fmt_pfd(detail.get('pfd'))
-                    pfh_txt = fmt_pfh(detail.get('pfh'))
-                    result_bits: List[str] = []
-                    if pfd_txt != '–':
-                        result_bits.append(f'PFDavg {pfd_txt}')
-                    if pfh_txt != '–':
-                        result_bits.append(f'PFHavg {pfh_txt} 1/h')
-                    result_line = ''
-                    if result_bits:
-                        result_line = (
-                            '<div class="link-breakdown-detail-result">Result: '
-                            + ' | '.join(result_bits)
-                            + '</div>'
+                        entry_html.append(
+                            f'<span class="chip-link-dot" style="background:{dot_color};"></span>'
                         )
-
-                    entry_html = ['<div class="link-breakdown-detail-entry">']
-                    entry_html.extend(label_bits)
-                    entry_html.append(formula_du)
-                    entry_html.append(formula_dd)
-                    if result_line:
-                        entry_html.append(result_line)
+                    entry_html.append(f'<span>{label_val}</span>')
+                    if lane_html:
+                        entry_html.append(lane_html)
                     entry_html.append('</div>')
-                    entries.append(''.join(entry_html))
+                    for formula in formula_bits:
+                        entry_html.append(f'<div class="formula">{formula}</div>')
+                    entry_html.append('</div>')
+                    entry_parts.append(''.join(entry_html))
 
-                if not entries:
-                    return ""
-                return '<div class="link-breakdown-details">' + ''.join(entries) + '</div>'
+                if not entry_parts:
+                    return '—'
+                return '<div class="link-breakdown-computation">' + ''.join(entry_parts) + '</div>'
 
             rows: List[str] = []
             has_rows = False
@@ -3631,26 +3629,23 @@ class MainWindow(QMainWindow):
                         lanes_display = '—'
                     source_bits = ['<div class="link-breakdown-source">']
                     if color:
-                        source_bits.append(f'<span class="chip-link-dot" style="background:{color};"></span>')
+                        source_bits.append(
+                            f'<span class="chip-link-dot" style="background:{color};"></span>'
+                        )
                     source_bits.append(f'<span>Subgroup {idx}</span>')
                     source_bits.append('</div>')
+                    computation_html = build_computation_cell(subgroup.get('details'), color)
                     rows.append(
                         '<tr>'
                         f'<td>{"".join(source_bits)}</td>'
                         f'<td>{esc(lanes_display)}</td>'
+                        f'<td>{computation_html}</td>'
                         f'<td class="numeric">{fmt_pfd(subgroup.get("pfd"))}</td>'
                         f'<td class="numeric">{fmt_pfh(subgroup.get("pfh"))}</td>'
                         f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_du"))}</td>'
                         f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_dd"))}</td>'
                         '</tr>'
                     )
-                    details_html = build_detail_block(subgroup.get('details'), color)
-                    if details_html:
-                        rows.append(
-                            '<tr class="link-breakdown-detail-row">'
-                            f'<td colspan="6">{details_html}</td>'
-                            '</tr>'
-                        )
                     has_rows = True
 
             if residuals:
@@ -3664,23 +3659,18 @@ class MainWindow(QMainWindow):
                         f'<span>{esc(lane_title)} (ungrouped)</span>'
                         '</div>'
                     )
+                    computation_html = build_computation_cell(entry.get('details'))
                     rows.append(
                         '<tr>'
                         f'<td>{source_html}</td>'
                         f'<td>{esc(lane_display)}</td>'
+                        f'<td>{computation_html}</td>'
                         f'<td class="numeric">{fmt_pfd(entry.get("pfd"))}</td>'
                         f'<td class="numeric">{fmt_pfh(entry.get("pfh"))}</td>'
                         f'<td class="numeric">{fmt_lambda(entry.get("lambda_du"))}</td>'
                         f'<td class="numeric">{fmt_lambda(entry.get("lambda_dd"))}</td>'
                         '</tr>'
                     )
-                    details_html = build_detail_block(entry.get('details'))
-                    if details_html:
-                        rows.append(
-                            '<tr class="link-breakdown-detail-row">'
-                            f'<td colspan="6">{details_html}</td>'
-                            '</tr>'
-                        )
                     has_rows = True
 
             if not has_rows:
@@ -3695,13 +3685,13 @@ class MainWindow(QMainWindow):
             parts_box = ['<div class="link-breakdown-box">']
             parts_box.append('<div class="link-breakdown-title">Total composition</div>')
             parts_box.append('<table class="link-breakdown-table">')
-            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th><th class="numeric">λ_DU [1/h]</th><th class="numeric">λ_DD [1/h]</th></tr></thead>')
+            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th>Computation</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th><th class="numeric">λ_DU [1/h]</th><th class="numeric">λ_DD [1/h]</th></tr></thead>')
             parts_box.append('<tbody>')
             parts_box.extend(rows)
             parts_box.append('</tbody>')
             parts_box.append(
                 '<tfoot>'
-                f'<tr><td colspan="2">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td><td class="numeric">{total_lambda_du_txt}</td><td class="numeric">{total_lambda_dd_txt}</td></tr>'
+                f'<tr><td colspan="3">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td><td class="numeric">{total_lambda_du_txt}</td><td class="numeric">{total_lambda_dd_txt}</td></tr>'
                 '</tfoot>'
             )
             parts_box.append('</table>')
@@ -5005,31 +4995,34 @@ class MainWindow(QMainWindow):
             for detail in details:
                 if not isinstance(detail, dict):
                     continue
-                label = detail.get('label')
-                sub_indent = indent
-                if label:
-                    lines.append(f"{indent}{label}:")
-                    sub_indent = indent + "  "
+                label = detail.get('label') or detail.get('lane_title') or 'Component'
+                lane_title = detail.get('lane_title')
+                if lane_title and lane_title not in label:
+                    label = f"{label} ({lane_title})"
                 lambda_total_txt = fmt_lambda_value(detail.get('lambda_total'))
                 ratio_du_txt = fmt_ratio_percent(detail.get('ratio_du'))
                 lambda_du_txt = fmt_lambda_value(detail.get('lambda_du'))
                 ratio_dd_txt = fmt_ratio_percent(detail.get('ratio_dd'))
                 lambda_dd_txt = fmt_lambda_value(detail.get('lambda_dd'))
-                lines.append(
-                    f"{sub_indent}λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h"
-                )
-                lines.append(
-                    f"{sub_indent}λ_total {lambda_total_txt} × r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h"
-                )
-                result_bits: List[str] = []
-                pfd_val = fmt_pfd_value(detail.get('pfd'))
-                if pfd_val != "–":
-                    result_bits.append(f"PFDavg {pfd_val}")
-                pfh_val = fmt_pfh_value(detail.get('pfh'))
-                if pfh_val != "–":
-                    result_bits.append(f"PFHavg {pfh_val} 1/h")
-                if result_bits:
-                    lines.append(f"{sub_indent}Result: {' | '.join(result_bits)}")
+                segments: List[str] = []
+                if (
+                    lambda_total_txt != "–"
+                    and ratio_du_txt != "–"
+                    and lambda_du_txt != "–"
+                ):
+                    segments.append(
+                        f"λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h"
+                    )
+                if (
+                    lambda_total_txt != "–"
+                    and ratio_dd_txt != "–"
+                    and lambda_dd_txt != "–"
+                ):
+                    segments.append(
+                        f"λ_total {lambda_total_txt} × r_DD {ratio_dd_txt} → λ_DD {lambda_dd_txt} 1/h"
+                    )
+                if segments:
+                    lines.append(f"{indent}{label}: {' | '.join(segments)}")
             return lines
 
         combined_groups: List[Dict[str, Any]] = []
