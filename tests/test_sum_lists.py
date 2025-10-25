@@ -99,7 +99,16 @@ class SumHarness:
     ):
         key = tuple(sorted(m.get("id") for m in members if isinstance(m, dict)))
         metrics = self._group_metrics_map[key]
-        return metrics, "group tooltip", None, []
+        detail = {
+            "lambda_total": float(metrics.lambda_total),
+            "lambda_du": float(metrics.lambda_du),
+            "lambda_dd": float(metrics.lambda_dd),
+            "ratio_du": float(du_ratio),
+            "ratio_dd": float(dd_ratio),
+            "pfd": float(metrics.pfd),
+            "pfh": float(metrics.pfh),
+        }
+        return metrics, "group tooltip", [], [], detail
 
     def _handle_conversion_error(self, error: Exception) -> None:
         self._errors.append(error)
@@ -113,7 +122,16 @@ class SumHarness:
         assumptions: Assumptions,
     ):
         metrics = self._component_metrics_map[payload["id"]]
-        return metrics, None, "tooltip", None
+        detail = {
+            "lambda_total": float(metrics.lambda_total),
+            "lambda_du": float(metrics.lambda_du),
+            "lambda_dd": float(metrics.lambda_dd),
+            "ratio_du": float(du_ratio),
+            "ratio_dd": float(dd_ratio),
+            "pfd": float(metrics.pfd),
+            "pfh": float(metrics.pfh),
+        }
+        return metrics, None, "tooltip", detail, None
 
 
 @pytest.fixture
@@ -198,6 +216,13 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     assert pytest.approx(subgroup["lambda_du"]) == 5.0e-6
     assert pytest.approx(subgroup["lambda_dd"]) == 7.2e-6
     assert set(subgroup["lanes"]) == {"Sensors / Inputs", "Logic", "Outputs / Actuators"}
+    subgroup_details = subgroup.get("details")
+    assert subgroup_details and len(subgroup_details) == 3
+    subgroup_labels = {detail["label"] for detail in subgroup_details}
+    assert subgroup_labels == {"SENSOR-1", "LOGIC-1", "A1 ∥ A2"}
+    sensor_detail = next(detail for detail in subgroup_details if detail["label"] == "SENSOR-1")
+    assert pytest.approx(sensor_detail["lambda_total"]) == 3.3e-6
+    assert pytest.approx(sensor_detail["ratio_du"]) == 0.6
 
     residuals = breakdown.get("lane_residuals")
     assert residuals and {entry["lane"] for entry in residuals} == {"sensor", "actuator"}
@@ -208,6 +233,10 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     assert pytest.approx(residual_map["sensor"]["lambda_dd"]) == 6.0e-7
     assert pytest.approx(residual_map["actuator"]["lambda_du"]) == 7.0e-7
     assert pytest.approx(residual_map["actuator"]["lambda_dd"]) == 8.0e-7
+    sensor_residual_detail = residual_map["sensor"].get("details")
+    assert sensor_residual_detail and len(sensor_residual_detail) == 1
+    assert pytest.approx(sensor_residual_detail[0]["lambda_total"]) == 1.1e-6
+    assert pytest.approx(sensor_residual_detail[0]["ratio_dd"]) == 0.4
 
     totals = breakdown.get("total")
     assert totals is not None
@@ -215,3 +244,5 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     assert pytest.approx(totals["pfh"]) == pfh_sum
     assert pytest.approx(totals["lambda_du"]) == 6.2e-6
     assert pytest.approx(totals["lambda_dd"]) == 8.6e-6
+    total_details = totals.get("details")
+    assert total_details and len(total_details) == 5
