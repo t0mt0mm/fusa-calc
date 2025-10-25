@@ -1,14 +1,14 @@
 # FuSa Calculator
 
 ## Overview
-FuSa Calculator is a PyQt-based desktop tool for building and analysing Safety Instrumented Functions (SIFs). Within the application every safety function is managed as a **SIFU**—die Abkürzung für *Sicherheitsfunktion*, also “safety function”—with dedicated lanes for sensors, logic, and outputs. The tool calculates PFDavg and PFH metrics and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
+FuSa Calculator is a PyQt-based desktop tool for building and analysing Safety Functions (SIFUs). Within the application every safety function is managed as a **SIFU**—die Abkürzung für *Sicherheitsfunktion*, also “safety function”—with dedicated lanes for sensors, logic, and outputs. The tool calculates PFDavg and PFH metrics and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
 
 The repository ships with YAML libraries for sensors, logic, and actuators, sample assignments, and configuration hooks for importing Cause & Effect matrices or FuSa component catalogues.
 
 ## Features at a Glance
-- **Lane-centric editor:** Manage each SIF across Sensor, Logic, and Output lanes with drag-and-drop chip widgets and in-place editing dialogs.
+- **Lane-centric editor:** Manage each safety function (SIFU) across Sensor, Logic, and Output lanes with drag-and-drop chip widgets and in-place editing dialogs.
 - **Link mode with colour-driven subgroups:** Assign components to cross-lane subgroups by choosing or picking a colour; linked chips show a coloured indicator dot, and the HTML export draws connectors between matching colours.
-- **Live safety metrics:** Lane summaries and the overall SIF result cell recompute immediately, and hover tooltips list subgroup totals alongside ungrouped contributions.
+- **Live safety metrics:** Lane summaries and the overall SIFU result cell recompute immediately, and hover tooltips list subgroup totals alongside ungrouped contributions.
 - **Rich exports:** Generate HTML dossiers featuring architecture overviews, subgroup summaries, connector lines, and formula references.
 - **Data persistence:** Save or restore complete assignments (including subgroup colours) via YAML, or duplicate SIFUs while preserving metadata.
 
@@ -30,7 +30,7 @@ Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ra
 ### Loading Data
 - **Assignment YAML:** Use *File → Open* to load `sifu_assignment.yaml` or your own export. All subgroup colours and connectors are restored.
 - **Component libraries:** Sensor, logic, and actuator libraries are read from the YAML files in the repo and populate the add-component dialogs.
-- **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull SIF definitions directly from project documentation.
+- **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull safety-function definitions directly from project documentation.
 
 ## Daily Workflow
 1. **Create or duplicate a SIFU:** Use the SIFU list to add, rename, or copy safety-function definitions.
@@ -51,7 +51,7 @@ Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ra
 ### Aggregation Rules
 1. Components sharing the same normalised colour belong to one subgroup, independent of lane.
 2. For each SIFU, the tool computes metrics per subgroup (summing all member channels once) and separately sums ungrouped components per lane.
-3. The overall SIF result is the sum of all subgroup totals plus every ungrouped component across the three lanes, ensuring each chip contributes exactly once.
+3. The overall SIFU result is the sum of all subgroup totals plus every ungrouped component across the three lanes, ensuring each chip contributes exactly once.
 4. Hover tooltips and HTML exports display subgroup membership, lane coverage, and PFD/PFH totals.
 
 ### Architecture Formulas
