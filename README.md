@@ -30,7 +30,18 @@ Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ra
 ### Loading Data
 - **Assignment YAML:** Use *File → Open* to load `sifu_assignment.yaml` or your own export. All subgroup colours and connectors are restored.
 - **Component libraries:** Sensor, logic, and actuator libraries are read from the YAML files in the repo and populate the add-component dialogs.
-- **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull safety-function definitions directly from project documentation.
+- **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull safety-function definitions directly from project documentation. The expected workbook layout is documented in [docs/README.md](docs/README.md).
+
+## Docs folder & spreadsheet structure
+The default configuration expects the following artefacts inside the `docs/` directory:
+
+| File | Purpose | Key requirements |
+| --- | --- | --- |
+| `PSI129_Cosmos_SAS060400 - Rev07 - MeOH 500 C&E Matrix.xlsx` | Cause & Effect matrix that seeds safety functions. | Worksheet `Cause-And-Effect-Matrix` must contain the live data. Rows start at index 4 (1-based). Columns are addressed by index: 1 – status (must equal `complete` to import), 4 – SIFU name, 6 – SIL level, 13 – criteria/safety action description, 19 – demand mode, 20 – target safety action. Additional lookup terms referenced in `config.yaml > ce_matrix > terms_vs_actuators` should exist in a `Definitions` sheet. |
+| `ELMO_Interfaces_MeOH500_240209_local.xlsx` | Maps plant identifiers (PID) to hardware modules (PDM) for component lookup. | Contains sheets named `Aktoren Sensoren H2MO`, `Aktoren Sensoren FCMO 500kW`, and `Aktoren Sensoren Interfacearea`. Each sheet has a header row, with PID codes in column 2 (B) and PDM codes in column 3 (C), starting at row 3. |
+| `FusaData.csv` | Provides reliability master data per component. | Must include a `comp_id` column plus fields listed under `config.yaml > fusa > col_names_vs_comp_properties` (e.g., `pfd_avg`, `pfh_avg`, `sys_cap`). |
+
+If you adapt the structure, update the corresponding indices or sheet names in `config.yaml` so the import routines can parse the spreadsheets correctly.
 
 ## Daily Workflow
 1. **Create or duplicate a SIFU:** Use the SIFU list to add, rename, or copy safety-function definitions.
@@ -57,27 +68,38 @@ Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ra
 ### Architecture Formulas
 The HTML report’s formula appendix documents the governing equations:
 - **1oo1 channel:**
-  \[
-  \mathrm{PFD}_{1oo1} = \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \lambda_{DD} MTTR
-  \]
-  \[
-  \mathrm{PFH}_{1oo1} = \lambda_{DU}
-  \]
+
+  $$
+  \mathrm{PFD}_{1\!\operatorname{oo}\!1} = \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \lambda_{DD} \cdot MTTR
+  $$
+
+  $$
+  \mathrm{PFH}_{1\!\operatorname{oo}\!1} = \lambda_{DU}
+  $$
+
 - **1oo2 channel (beta model):**
-  \[
-  t_{CE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}\left(\tfrac{T_I}{2} + MTTR\right) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}} MTTR
-  \]
-  \[
-  t_{GE} = \frac{\lambda_{DU}^{ind}}{\lambda_D^{ind}}\left(\tfrac{T_I}{3} + MTTR\right) + \frac{\lambda_{DD}^{ind}}{\lambda_D^{ind}} MTTR
-  \]
-  \[
-  \mathrm{PFD}_{1oo2} = 2(1-\beta)^2(\lambda_D)^2 t_{CE} t_{GE} + \beta \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \beta_D \lambda_{DD} MTTR
-  \]
-  \[
-  \mathrm{PFH}_{1oo2} = 2(1-\beta)\lambda_D^{ind}\lambda_{DU}^{ind} t_{CE} + \beta \lambda_{DU}
-  \]
+
+  $$
+  t_{CE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{2} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
+  $$
+
+  $$
+  t_{GE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{3} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
+  $$
+
+  $$
+  \mathrm{PFD}_{1\!\operatorname{oo}\!2} = 2(1-\beta)^2\lambda_D^2\, t_{CE}\, t_{GE} + \beta\, \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \beta_D\, \lambda_{DD}\, MTTR
+  $$
+
+  $$
+  \mathrm{PFH}_{1\!\operatorname{oo}\!2} = 2(1-\beta)\lambda_D^{\mathrm{ind}}\lambda_{DU}^{\mathrm{ind}} t_{CE} + \beta\, \lambda_{DU}
+  $$
+
 - **Supporting relations:**
-  \(\lambda_D = \lambda_{DU} + \lambda_{DD}\), \(\lambda_{DU} = r_{DU}\lambda_D\), \(\lambda_{DD} = r_{DD}\lambda_D\), and \(\lambda_{DU}^{ind} = (1-\beta)\lambda_{DU}\).
+
+  $$
+  \lambda_D = \lambda_{DU} + \lambda_{DD},\quad \lambda_{DU} = r_{DU}\lambda_D,\quad \lambda_{DD} = r_{DD}\lambda_D,\quad \lambda_{DU}^{\mathrm{ind}} = (1-\beta)\lambda_{DU}
+  $$
 
 ## Reporting Highlights
 - **Architecture overview:** Three-lane layout with per-chip dots and cross-lane connectors rendered via SVG; connector start and end points respect lane-specific rules (e.g., sensors connect from right edge to downstream lanes).
