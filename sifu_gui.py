@@ -3559,6 +3559,14 @@ class MainWindow(QMainWindow):
             metric_key = 'pfh' if is_high else 'pfd'
             metric_formatter = fmt_pfh if is_high else fmt_pfd
 
+            def fmt_factor(value: Optional[float]) -> str:
+                if value is None:
+                    return '–'
+                try:
+                    return f"{float(value):.3f}"
+                except Exception:
+                    return '–'
+
             def build_computation_cell(
                 details: Optional[List[Dict[str, Any]]],
                 fallback_color: Optional[str] = None,
@@ -3572,18 +3580,33 @@ class MainWindow(QMainWindow):
                         continue
 
                     lambda_total_txt = fmt_lambda(detail.get('lambda_total'))
-                    lambda_du_txt = fmt_lambda(detail.get('lambda_du'))
                     ratio_du_txt = fmt_ratio(detail.get('ratio_du'))
+                    pfh_txt = fmt_pfh(detail.get('pfh'))
+                    pfd_txt = fmt_pfd(detail.get('pfd'))
+                    factor_txt = fmt_factor(detail.get('low_demand_factor'))
 
                     formula_bits: List[str] = []
-                    if (
-                        lambda_total_txt != '–'
-                        and ratio_du_txt != '–'
-                        and lambda_du_txt != '–'
-                    ):
-                        formula_bits.append(
-                            f'λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h'
-                        )
+                    if is_high:
+                        if (
+                            lambda_total_txt != '–'
+                            and ratio_du_txt != '–'
+                            and pfh_txt != '–'
+                        ):
+                            formula_bits.append(
+                                f'λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → PFH {pfh_txt} 1/h'
+                            )
+                    else:
+                        if (
+                            lambda_total_txt != '–'
+                            and ratio_du_txt != '–'
+                            and factor_txt != '–'
+                            and pfd_txt != '–'
+                        ):
+                            formula_bits.append(
+                                'λ_total '
+                                f"{lambda_total_txt} × r_DU {ratio_du_txt} × (TI/2 + MTTR) {factor_txt} h "
+                                f"→ PFD {pfd_txt} (–)"
+                            )
                     if not formula_bits:
                         continue
 
@@ -4405,6 +4428,7 @@ class MainWindow(QMainWindow):
             extra_fields={k: v for k, v in payload.items() if isinstance(k, str)},
             note=note,
         )
+        low_demand_factor = float(assumptions.TI) / 2.0 + float(assumptions.MTTR)
         detail = {
             'lambda_total': float(lambda_total),
             'lambda_du': float(metrics.lambda_du),
@@ -4413,6 +4437,7 @@ class MainWindow(QMainWindow):
             'ratio_dd': float(dd_ratio),
             'pfd': float(metrics.pfd),
             'pfh': float(metrics.pfh),
+            'low_demand_factor': float(low_demand_factor),
         }
         return metrics, provenance, tooltip, detail, None
 
@@ -4451,6 +4476,7 @@ class MainWindow(QMainWindow):
                 'lambda_dd': lam * float(dd_ratio),
                 'ratio_du': float(du_ratio),
                 'ratio_dd': float(dd_ratio),
+                'low_demand_factor': float(assumptions.TI) / 2.0 + float(assumptions.MTTR),
             })
 
         metrics = calculate_one_out_of_two(lambda_values, du_ratio, dd_ratio, assumptions)
@@ -4463,6 +4489,7 @@ class MainWindow(QMainWindow):
             'ratio_dd': float(dd_ratio),
             'pfd': float(metrics.pfd),
             'pfh': float(metrics.pfh),
+            'low_demand_factor': float(assumptions.TI) / 2.0 + float(assumptions.MTTR),
         }
         return metrics, tooltip, member_infos, errors, detail
 
@@ -4596,7 +4623,7 @@ class MainWindow(QMainWindow):
         ) -> Optional[Dict[str, Any]]:
             if not metrics_detail:
                 return None
-            return {
+            entry = {
                 'label': label,
                 'lane': lane,
                 'lane_title': lane_title_map.get(lane, lane.title()),
@@ -4611,6 +4638,12 @@ class MainWindow(QMainWindow):
                 'pfd': float(metrics_detail.get('pfd', 0.0)),
                 'pfh': float(metrics_detail.get('pfh', 0.0)),
             }
+            if 'low_demand_factor' in metrics_detail:
+                try:
+                    entry['low_demand_factor'] = float(metrics_detail['low_demand_factor'])
+                except Exception:
+                    pass
+            return entry
 
         for idx, lw in enumerate(lists):
             group = group_of(idx)
@@ -4832,7 +4865,7 @@ class MainWindow(QMainWindow):
                 for detail in info.get('details', []):
                     if not isinstance(detail, dict):
                         continue
-                    detail_entries.append({
+                    detail_entry = {
                         'label': detail.get('label'),
                         'lane': detail.get('lane'),
                         'lane_title': detail.get('lane_title'),
@@ -4846,7 +4879,13 @@ class MainWindow(QMainWindow):
                         'ratio_dd': float(detail.get('ratio_dd', 0.0)),
                         'pfd': float(detail.get('pfd', 0.0)),
                         'pfh': float(detail.get('pfh', 0.0)),
-                    })
+                    }
+                    if 'low_demand_factor' in detail:
+                        try:
+                            detail_entry['low_demand_factor'] = float(detail['low_demand_factor'])
+                        except Exception:
+                            pass
+                    detail_entries.append(detail_entry)
                 lanes = sorted(info.get('lanes', set()))
                 combined_payload.append({
                     'id': group_id,
@@ -4871,7 +4910,7 @@ class MainWindow(QMainWindow):
                 for detail in lane_metrics.get('details', []):
                     if not isinstance(detail, dict):
                         continue
-                    lane_detail_entries.append({
+                    lane_detail = {
                         'label': detail.get('label'),
                         'lane': detail.get('lane', lane_key),
                         'lane_title': detail.get('lane_title') or lane_title_map.get(lane_key, lane_key.title()),
@@ -4885,7 +4924,13 @@ class MainWindow(QMainWindow):
                         'ratio_dd': float(detail.get('ratio_dd', 0.0)),
                         'pfd': float(detail.get('pfd', 0.0)),
                         'pfh': float(detail.get('pfh', 0.0)),
-                    })
+                    }
+                    if 'low_demand_factor' in detail:
+                        try:
+                            lane_detail['low_demand_factor'] = float(detail['low_demand_factor'])
+                        except Exception:
+                            pass
+                    lane_detail_entries.append(lane_detail)
                 lane_entries.append({
                     'lane': lane_key,
                     'lane_title': lane_title_map.get(lane_key, lane_key.title()),
@@ -5019,6 +5064,14 @@ class MainWindow(QMainWindow):
             except Exception:
                 return "–"
 
+        def fmt_factor_value(value: Optional[float]) -> str:
+            if value is None:
+                return "–"
+            try:
+                return f"{float(value):.3f}"
+            except Exception:
+                return "–"
+
         def build_detail_lines(details: Any, indent: str = "    ") -> List[str]:
             lines: List[str] = []
             if not isinstance(details, (list, tuple)):
@@ -5032,16 +5085,31 @@ class MainWindow(QMainWindow):
                     label = f"{label} ({lane_title})"
                 lambda_total_txt = fmt_lambda_value(detail.get('lambda_total'))
                 ratio_du_txt = fmt_ratio_percent(detail.get('ratio_du'))
-                lambda_du_txt = fmt_lambda_value(detail.get('lambda_du'))
+                pfh_txt = fmt_pfh_value(detail.get('pfh'))
+                pfd_txt = fmt_pfd_value(detail.get('pfd'))
+                factor_txt = fmt_factor_value(detail.get('low_demand_factor'))
                 segments: List[str] = []
-                if (
-                    lambda_total_txt != "–"
-                    and ratio_du_txt != "–"
-                    and lambda_du_txt != "–"
-                ):
-                    segments.append(
-                        f"λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → λ_DU {lambda_du_txt} 1/h"
-                    )
+                if is_high:
+                    if (
+                        lambda_total_txt != "–"
+                        and ratio_du_txt != "–"
+                        and pfh_txt != "–"
+                    ):
+                        segments.append(
+                            f"λ_total {lambda_total_txt} × r_DU {ratio_du_txt} → PFH {pfh_txt} 1/h"
+                        )
+                else:
+                    if (
+                        lambda_total_txt != "–"
+                        and ratio_du_txt != "–"
+                        and factor_txt != "–"
+                        and pfd_txt != "–"
+                    ):
+                        segments.append(
+                            "λ_total "
+                            f"{lambda_total_txt} × r_DU {ratio_du_txt} × (TI/2 + MTTR) {factor_txt} h "
+                            f"→ PFD {pfd_txt} (–)"
+                        )
                 if segments:
                     lines.append(f"{indent}{label}: {' | '.join(segments)}")
             return lines

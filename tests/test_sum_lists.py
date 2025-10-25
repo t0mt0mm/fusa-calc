@@ -107,6 +107,7 @@ class SumHarness:
             "ratio_dd": float(dd_ratio),
             "pfd": float(metrics.pfd),
             "pfh": float(metrics.pfh),
+            "low_demand_factor": float(assumptions.TI) / 2.0 + float(assumptions.MTTR),
         }
         return metrics, "group tooltip", [], [], detail
 
@@ -130,6 +131,7 @@ class SumHarness:
             "ratio_dd": float(dd_ratio),
             "pfd": float(metrics.pfd),
             "pfh": float(metrics.pfh),
+            "low_demand_factor": float(assumptions.TI) / 2.0 + float(assumptions.MTTR),
         }
         return metrics, None, "tooltip", detail, None
 
@@ -223,6 +225,7 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     sensor_detail = next(detail for detail in subgroup_details if detail["label"] == "SENSOR-1")
     assert pytest.approx(sensor_detail["lambda_total"]) == 3.3e-6
     assert pytest.approx(sensor_detail["ratio_du"]) == 0.6
+    assert pytest.approx(sensor_detail["low_demand_factor"]) == 4388.0
 
     residuals = breakdown.get("lane_residuals")
     assert residuals and {entry["lane"] for entry in residuals} == {"sensor", "actuator"}
@@ -237,6 +240,7 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     assert sensor_residual_detail and len(sensor_residual_detail) == 1
     assert pytest.approx(sensor_residual_detail[0]["lambda_total"]) == 1.1e-6
     assert pytest.approx(sensor_residual_detail[0]["ratio_dd"]) == 0.4
+    assert pytest.approx(sensor_residual_detail[0]["low_demand_factor"]) == 4388.0
 
     totals = breakdown.get("total")
     assert totals is not None
