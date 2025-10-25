@@ -2970,6 +2970,12 @@ class MainWindow(QMainWindow):
             except Exception:
                 return "–"
 
+        def fmt_lambda(x):
+            try:
+                return f"{float(x):.3e}"  # 1/h
+            except Exception:
+                return "–"
+
         def fmt_fit(x):
             try:
                 return f"{float(x) * 1e9:.2f}"
@@ -2997,7 +3003,12 @@ class MainWindow(QMainWindow):
             )
             combined_groups: List[Dict[str, Any]] = []
             lane_residuals: List[Dict[str, Any]] = []
-            breakdown_total = {'pfd': float(pfd_sum), 'pfh': float(pfh_sum)}
+            breakdown_total: Dict[str, float] = {
+                'pfd': float(pfd_sum),
+                'pfh': float(pfh_sum),
+                'lambda_du': 0.0,
+                'lambda_dd': 0.0,
+            }
             if isinstance(subgroup_info, dict):
                 combined_groups = copy.deepcopy(subgroup_info.get('combined', []) or [])
                 lane_residuals = copy.deepcopy(subgroup_info.get('lane_residuals', []) or [])
@@ -3006,6 +3017,8 @@ class MainWindow(QMainWindow):
                     breakdown_total = {
                         'pfd': float(total_entry.get('pfd', pfd_sum)),
                         'pfh': float(total_entry.get('pfh', pfh_sum)),
+                        'lambda_du': float(total_entry.get('lambda_du', 0.0)),
+                        'lambda_dd': float(total_entry.get('lambda_dd', 0.0)),
                     }
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
@@ -3454,6 +3467,12 @@ class MainWindow(QMainWindow):
                 pfh_val = subgroup.get('pfh')
                 if pfh_val not in (None, ''):
                     metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
+                lambda_du_val = subgroup.get('lambda_du')
+                if lambda_du_val not in (None, ''):
+                    metrics_bits.append(f"λ_DU {fmt_lambda(lambda_du_val)} 1/h")
+                lambda_dd_val = subgroup.get('lambda_dd')
+                if lambda_dd_val not in (None, ''):
+                    metrics_bits.append(f"λ_DD {fmt_lambda(lambda_dd_val)} 1/h")
                 count_val = subgroup.get('count')
                 if isinstance(count_val, int) and count_val > 0:
                     metrics_bits.append(f"{count_val} component{'s' if count_val != 1 else ''}")
@@ -3506,8 +3525,7 @@ class MainWindow(QMainWindow):
             return ''.join(cards)
 
         def render_link_breakdown(
-            total_pfd: Optional[float],
-            total_pfh: Optional[float],
+            total_entry: Optional[Dict[str, Any]],
             subgroups: Optional[List[Dict[str, Any]]],
             residuals: Optional[List[Dict[str, Any]]],
         ) -> str:
@@ -3535,6 +3553,8 @@ class MainWindow(QMainWindow):
                         f'<td>{esc(lanes_display)}</td>'
                         f'<td class="numeric">{fmt_pfd(subgroup.get("pfd"))}</td>'
                         f'<td class="numeric">{fmt_pfh(subgroup.get("pfh"))}</td>'
+                        f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_du"))}</td>'
+                        f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_dd"))}</td>'
                         '</tr>'
                     )
                     has_rows = True
@@ -3556,6 +3576,8 @@ class MainWindow(QMainWindow):
                         f'<td>{esc(lane_display)}</td>'
                         f'<td class="numeric">{fmt_pfd(entry.get("pfd"))}</td>'
                         f'<td class="numeric">{fmt_pfh(entry.get("pfh"))}</td>'
+                        f'<td class="numeric">{fmt_lambda(entry.get("lambda_du"))}</td>'
+                        f'<td class="numeric">{fmt_lambda(entry.get("lambda_dd"))}</td>'
                         '</tr>'
                     )
                     has_rows = True
@@ -3563,19 +3585,22 @@ class MainWindow(QMainWindow):
             if not has_rows:
                 return ""
 
-            total_pfd_txt = fmt_pfd(total_pfd)
-            total_pfh_txt = fmt_pfh(total_pfh)
+            total_entry = total_entry or {}
+            total_pfd_txt = fmt_pfd(total_entry.get('pfd'))
+            total_pfh_txt = fmt_pfh(total_entry.get('pfh'))
+            total_lambda_du_txt = fmt_lambda(total_entry.get('lambda_du'))
+            total_lambda_dd_txt = fmt_lambda(total_entry.get('lambda_dd'))
 
             parts_box = ['<div class="link-breakdown-box">']
             parts_box.append('<div class="link-breakdown-title">Total composition</div>')
             parts_box.append('<table class="link-breakdown-table">')
-            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th></tr></thead>')
+            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th><th class="numeric">λ_DU [1/h]</th><th class="numeric">λ_DD [1/h]</th></tr></thead>')
             parts_box.append('<tbody>')
             parts_box.extend(rows)
             parts_box.append('</tbody>')
             parts_box.append(
                 '<tfoot>'
-                f'<tr><td colspan="2">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td></tr>'
+                f'<tr><td colspan="2">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td><td class="numeric">{total_lambda_du_txt}</td><td class="numeric">{total_lambda_dd_txt}</td></tr>'
                 '</tfoot>'
             )
             parts_box.append('</table>')
@@ -3750,12 +3775,9 @@ class MainWindow(QMainWindow):
                 anchor_prefix=anchor_prefix,
             )
             subgroup_html = render_link_subgroups(s.get('link_subgroups'))
-            breakdown_total = s.get('breakdown_total') or {}
-            total_pfd_breakdown = breakdown_total.get('pfd', s.get('pfd_sum'))
-            total_pfh_breakdown = breakdown_total.get('pfh', s.get('pfh_sum'))
+            breakdown_total = s.get('breakdown_total')
             breakdown_html = render_link_breakdown(
-                total_pfd_breakdown,
-                total_pfh_breakdown,
+                breakdown_total,
                 s.get('link_subgroups'),
                 s.get('lane_residuals'),
             )
@@ -4362,10 +4384,12 @@ class MainWindow(QMainWindow):
 
         subgroup_totals: Dict[str, Dict[str, Any]] = {}
         lane_totals: Dict[str, Dict[str, float]] = {
-            'sensor': {'pfd': 0.0, 'pfh': 0.0},
-            'logic': {'pfd': 0.0, 'pfh': 0.0},
-            'actuator': {'pfd': 0.0, 'pfh': 0.0},
+            'sensor': {'pfd': 0.0, 'pfh': 0.0, 'lambda_du': 0.0, 'lambda_dd': 0.0},
+            'logic': {'pfd': 0.0, 'pfh': 0.0, 'lambda_du': 0.0, 'lambda_dd': 0.0},
+            'actuator': {'pfd': 0.0, 'pfh': 0.0, 'lambda_du': 0.0, 'lambda_dd': 0.0},
         }
+        total_lambda_du = 0.0
+        total_lambda_dd = 0.0
 
         def describe_payload(payload: dict, default_label: str) -> Tuple[str, List[str]]:
             if payload.get('group') and payload.get('architecture') == '1oo2':
@@ -4444,6 +4468,8 @@ class MainWindow(QMainWindow):
 
                     metrics_pfd = float(metrics.pfd)
                     metrics_pfh = float(metrics.pfh)
+                    metrics_lambda_du = float(metrics.lambda_du)
+                    metrics_lambda_dd = float(metrics.lambda_dd)
                     label, member_labels = describe_payload(ud, item.text() or 'Component')
                     component_info = {
                         'label': label,
@@ -4462,6 +4488,8 @@ class MainWindow(QMainWindow):
                                 'color': link_color,
                                 'pfd': 0.0,
                                 'pfh': 0.0,
+                                'lambda_du': 0.0,
+                                'lambda_dd': 0.0,
                                 'components': [],
                                 'lanes': set(),
                             },
@@ -4470,11 +4498,15 @@ class MainWindow(QMainWindow):
                             entry['color'] = link_color
                         entry['pfd'] += metrics_pfd
                         entry['pfh'] += metrics_pfh
+                        entry['lambda_du'] += metrics_lambda_du
+                        entry['lambda_dd'] += metrics_lambda_dd
                         entry['components'].append(component_info)
                         entry['lanes'].add(group)
                     else:
                         lane_totals[group]['pfd'] += metrics_pfd
                         lane_totals[group]['pfh'] += metrics_pfh
+                        lane_totals[group]['lambda_du'] += metrics_lambda_du
+                        lane_totals[group]['lambda_dd'] += metrics_lambda_dd
 
                     item.setToolTip(tooltip)
                     continue
@@ -4492,6 +4524,8 @@ class MainWindow(QMainWindow):
 
                 metrics_pfd = float(metrics.pfd)
                 metrics_pfh = float(metrics.pfh)
+                metrics_lambda_du = float(metrics.lambda_du)
+                metrics_lambda_dd = float(metrics.lambda_dd)
                 label, member_labels = describe_payload(ud, item.text() or 'Component')
                 component_info = {
                     'label': label,
@@ -4510,6 +4544,8 @@ class MainWindow(QMainWindow):
                             'color': link_color,
                             'pfd': 0.0,
                             'pfh': 0.0,
+                            'lambda_du': 0.0,
+                            'lambda_dd': 0.0,
                             'components': [],
                             'lanes': set(),
                         },
@@ -4518,11 +4554,15 @@ class MainWindow(QMainWindow):
                         entry['color'] = link_color
                     entry['pfd'] += metrics_pfd
                     entry['pfh'] += metrics_pfh
+                    entry['lambda_du'] += metrics_lambda_du
+                    entry['lambda_dd'] += metrics_lambda_dd
                     entry['components'].append(component_info)
                     entry['lanes'].add(group)
                 else:
                     lane_totals[group]['pfd'] += metrics_pfd
                     lane_totals[group]['pfh'] += metrics_pfh
+                    lane_totals[group]['lambda_du'] += metrics_lambda_du
+                    lane_totals[group]['lambda_dd'] += metrics_lambda_dd
 
                 if tooltip:
                     item.setToolTip(tooltip)
@@ -4533,6 +4573,8 @@ class MainWindow(QMainWindow):
             for group_id, info in subgroup_totals.items():
                 pfd_sum += info['pfd']
                 pfh_sum += info['pfh']
+                total_lambda_du += info.get('lambda_du', 0.0)
+                total_lambda_dd += info.get('lambda_dd', 0.0)
                 comp_entries: List[Dict[str, Any]] = []
                 labels: List[str] = []
                 for comp in info['components']:
@@ -4556,6 +4598,8 @@ class MainWindow(QMainWindow):
                     'color': info.get('color'),
                     'pfd': float(info['pfd']),
                     'pfh': float(info['pfh']),
+                    'lambda_du': float(info.get('lambda_du', 0.0)),
+                    'lambda_dd': float(info.get('lambda_dd', 0.0)),
                     'components': comp_entries,
                     'member_labels': labels,
                     'lanes': [lane_title_map.get(lane, lane) for lane in lanes],
@@ -4571,14 +4615,20 @@ class MainWindow(QMainWindow):
                     'lane_title': lane_title_map.get(lane_key, lane_key.title()),
                     'pfd': float(lane_metrics['pfd']),
                     'pfh': float(lane_metrics['pfh']),
+                    'lambda_du': float(lane_metrics['lambda_du']),
+                    'lambda_dd': float(lane_metrics['lambda_dd']),
                 })
             pfd_sum += lane_metrics['pfd']
             pfh_sum += lane_metrics['pfh']
+            total_lambda_du += lane_metrics['lambda_du']
+            total_lambda_dd += lane_metrics['lambda_dd']
 
         subgroup_payload['lane_residuals'] = lane_entries
         subgroup_payload['total'] = {
             'pfd': float(pfd_sum),
             'pfh': float(pfh_sum),
+            'lambda_du': float(total_lambda_du),
+            'lambda_dd': float(total_lambda_dd),
         }
 
         return pfd_sum, pfh_sum, subgroup_payload
@@ -4642,6 +4692,22 @@ class MainWindow(QMainWindow):
             except Exception:
                 return ""
 
+        def fmt_optional_lambda_du(value: Optional[float]) -> str:
+            if value is None:
+                return ""
+            try:
+                return f"λ_DU {float(value):.3e} 1/h"
+            except Exception:
+                return ""
+
+        def fmt_optional_lambda_dd(value: Optional[float]) -> str:
+            if value is None:
+                return ""
+            try:
+                return f"λ_DD {float(value):.3e} 1/h"
+            except Exception:
+                return ""
+
         combined_groups: List[Dict[str, Any]] = []
         lane_residuals: List[Dict[str, Any]] = []
         total_entry: Optional[Dict[str, Any]] = None
@@ -4671,6 +4737,12 @@ class MainWindow(QMainWindow):
                 pfh_txt = fmt_optional_pfh(subgroup.get('pfh'))
                 if pfh_txt:
                     metric_bits.append(pfh_txt)
+                lambda_du_txt = fmt_optional_lambda_du(subgroup.get('lambda_du'))
+                if lambda_du_txt:
+                    metric_bits.append(lambda_du_txt)
+                lambda_dd_txt = fmt_optional_lambda_dd(subgroup.get('lambda_dd'))
+                if lambda_dd_txt:
+                    metric_bits.append(lambda_dd_txt)
                 if metric_bits:
                     tooltip_lines.append("    " + " | ".join(metric_bits))
 
@@ -4700,6 +4772,12 @@ class MainWindow(QMainWindow):
                 pfh_txt = fmt_optional_pfh(entry.get('pfh'))
                 if pfh_txt:
                     metric_bits.append(pfh_txt)
+                lambda_du_txt = fmt_optional_lambda_du(entry.get('lambda_du'))
+                if lambda_du_txt:
+                    metric_bits.append(lambda_du_txt)
+                lambda_dd_txt = fmt_optional_lambda_dd(entry.get('lambda_dd'))
+                if lambda_dd_txt:
+                    metric_bits.append(lambda_dd_txt)
                 if metric_bits:
                     tooltip_lines.append(f"  {lane_label}: {' | '.join(metric_bits)}")
                 else:
@@ -4713,6 +4791,12 @@ class MainWindow(QMainWindow):
             total_pfh_txt = fmt_optional_pfh(total_entry.get('pfh'))
             if total_pfh_txt:
                 total_bits.append(total_pfh_txt)
+            total_lambda_du_txt = fmt_optional_lambda_du(total_entry.get('lambda_du'))
+            if total_lambda_du_txt:
+                total_bits.append(total_lambda_du_txt)
+            total_lambda_dd_txt = fmt_optional_lambda_dd(total_entry.get('lambda_dd'))
+            if total_lambda_dd_txt:
+                total_bits.append(total_lambda_dd_txt)
             if total_bits:
                 tooltip_lines.append("")
                 tooltip_lines.append("Overall composition total:")

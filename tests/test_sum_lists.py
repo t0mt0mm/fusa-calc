@@ -119,13 +119,13 @@ class SumHarness:
 @pytest.fixture
 def summation_harness() -> SumHarness:
     component_metrics = {
-        "sensor-1": ChannelMetrics(0.0, 0.0, 0.0, 0.010, 1.0e-6),
-        "logic-1": ChannelMetrics(0.0, 0.0, 0.0, 0.020, 2.0e-6),
-        "sensor-u": ChannelMetrics(0.0, 0.0, 0.0, 0.003, 3.0e-7),
-        "actuator-u": ChannelMetrics(0.0, 0.0, 0.0, 0.004, 4.0e-7),
+        "sensor-1": ChannelMetrics(3.3e-6, 1.1e-6, 2.2e-6, 0.010, 1.0e-6),
+        "logic-1": ChannelMetrics(7.0e-6, 3.0e-6, 4.0e-6, 0.020, 2.0e-6),
+        "sensor-u": ChannelMetrics(1.1e-6, 5.0e-7, 6.0e-7, 0.003, 3.0e-7),
+        "actuator-u": ChannelMetrics(1.5e-6, 7.0e-7, 8.0e-7, 0.004, 4.0e-7),
     }
     group_metrics = {
-        ("act-1", "act-2"): ChannelMetrics(0.0, 0.0, 0.0, 0.005, 5.0e-7)
+        ("act-1", "act-2"): ChannelMetrics(1.9e-6, 9.0e-7, 1.0e-6, 0.005, 5.0e-7)
     }
     return SumHarness(component_metrics, group_metrics)
 
@@ -195,6 +195,8 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     assert subgroup["count"] == 3
     assert pytest.approx(subgroup["pfd"]) == 0.035
     assert pytest.approx(subgroup["pfh"]) == 3.5e-6
+    assert pytest.approx(subgroup["lambda_du"]) == 5.0e-6
+    assert pytest.approx(subgroup["lambda_dd"]) == 7.2e-6
     assert set(subgroup["lanes"]) == {"Sensors / Inputs", "Logic", "Outputs / Actuators"}
 
     residuals = breakdown.get("lane_residuals")
@@ -202,8 +204,14 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
     residual_map = {entry["lane"]: entry for entry in residuals}
     assert pytest.approx(residual_map["sensor"]["pfd"]) == 0.003
     assert pytest.approx(residual_map["actuator"]["pfd"]) == 0.004
+    assert pytest.approx(residual_map["sensor"]["lambda_du"]) == 5.0e-7
+    assert pytest.approx(residual_map["sensor"]["lambda_dd"]) == 6.0e-7
+    assert pytest.approx(residual_map["actuator"]["lambda_du"]) == 7.0e-7
+    assert pytest.approx(residual_map["actuator"]["lambda_dd"]) == 8.0e-7
 
     totals = breakdown.get("total")
     assert totals is not None
     assert pytest.approx(totals["pfd"]) == pfd_sum
     assert pytest.approx(totals["pfh"]) == pfh_sum
+    assert pytest.approx(totals["lambda_du"]) == 6.2e-6
+    assert pytest.approx(totals["lambda_dd"]) == 8.6e-6
