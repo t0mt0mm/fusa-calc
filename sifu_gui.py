@@ -3041,6 +3041,7 @@ class MainWindow(QMainWindow):
                 "pfd_sum": float(pfd_sum),
                 "pfh_sum": float(pfh_sum),
                 "mode": mode,
+                "mode_key": mode_key,
                 "sil_calc": sil_calc,
                 "ok": ok,
                 "req_sil": req_sil_str,
@@ -3537,12 +3538,20 @@ class MainWindow(QMainWindow):
             total_entry: Optional[Dict[str, Any]],
             subgroups: Optional[List[Dict[str, Any]]],
             residuals: Optional[List[Dict[str, Any]]],
+            mode_key: str,
         ) -> str:
+            is_high = str(mode_key).lower() == 'high_demand'
+            mode_label = 'High demand' if is_high else 'Low demand'
+
             def fmt_ratio(value: Optional[float]) -> str:
                 try:
                     return f"{float(value) * 100.0:.1f}%"
                 except Exception:
                     return "–"
+
+            metric_header = 'PFHavg [1/h]' if is_high else 'PFDavg'
+            metric_key = 'pfh' if is_high else 'pfd'
+            metric_formatter = fmt_pfh if is_high else fmt_pfd
 
             def build_computation_cell(
                 details: Optional[List[Dict[str, Any]]],
@@ -3630,8 +3639,7 @@ class MainWindow(QMainWindow):
                         f'<td>{"".join(source_bits)}</td>'
                         f'<td>{esc(lanes_display)}</td>'
                         f'<td>{computation_html}</td>'
-                        f'<td class="numeric">{fmt_pfd(subgroup.get("pfd"))}</td>'
-                        f'<td class="numeric">{fmt_pfh(subgroup.get("pfh"))}</td>'
+                        f'<td class="numeric">{metric_formatter(subgroup.get(metric_key))}</td>'
                         f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_du"))}</td>'
                         f'<td class="numeric">{fmt_lambda(subgroup.get("lambda_dd"))}</td>'
                         '</tr>'
@@ -3655,8 +3663,7 @@ class MainWindow(QMainWindow):
                         f'<td>{source_html}</td>'
                         f'<td>{esc(lane_display)}</td>'
                         f'<td>{computation_html}</td>'
-                        f'<td class="numeric">{fmt_pfd(entry.get("pfd"))}</td>'
-                        f'<td class="numeric">{fmt_pfh(entry.get("pfh"))}</td>'
+                        f'<td class="numeric">{metric_formatter(entry.get(metric_key))}</td>'
                         f'<td class="numeric">{fmt_lambda(entry.get("lambda_du"))}</td>'
                         f'<td class="numeric">{fmt_lambda(entry.get("lambda_dd"))}</td>'
                         '</tr>'
@@ -3667,21 +3674,28 @@ class MainWindow(QMainWindow):
                 return ""
 
             total_entry = total_entry or {}
-            total_pfd_txt = fmt_pfd(total_entry.get('pfd'))
-            total_pfh_txt = fmt_pfh(total_entry.get('pfh'))
+            total_metric_txt = metric_formatter(total_entry.get(metric_key))
             total_lambda_du_txt = fmt_lambda(total_entry.get('lambda_du'))
             total_lambda_dd_txt = fmt_lambda(total_entry.get('lambda_dd'))
 
             parts_box = ['<div class="link-breakdown-box">']
-            parts_box.append('<div class="link-breakdown-title">Total composition</div>')
+            parts_box.append(
+                f'<div class="link-breakdown-title">Total composition — {mode_label}</div>'
+            )
             parts_box.append('<table class="link-breakdown-table">')
-            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th>Computation</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th><th class="numeric">λ_DU [1/h]</th><th class="numeric">λ_DD [1/h]</th></tr></thead>')
+            parts_box.append(
+                '<thead><tr>'
+                '<th>Source</th><th>Lanes</th><th>Computation</th>'
+                f'<th class="numeric">{metric_header}</th>'
+                '<th class="numeric">λ_DU [1/h]</th><th class="numeric">λ_DD [1/h]</th>'
+                '</tr></thead>'
+            )
             parts_box.append('<tbody>')
             parts_box.extend(rows)
             parts_box.append('</tbody>')
             parts_box.append(
                 '<tfoot>'
-                f'<tr><td colspan="3">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td><td class="numeric">{total_lambda_du_txt}</td><td class="numeric">{total_lambda_dd_txt}</td></tr>'
+                f'<tr><td colspan="3">Total</td><td class="numeric">{total_metric_txt}</td><td class="numeric">{total_lambda_du_txt}</td><td class="numeric">{total_lambda_dd_txt}</td></tr>'
                 '</tfoot>'
             )
             parts_box.append('</table>')
@@ -3861,6 +3875,7 @@ class MainWindow(QMainWindow):
                 breakdown_total,
                 s.get('link_subgroups'),
                 s.get('lane_residuals'),
+                s.get('mode_key', 'high_demand'),
             )
             if arch_html or subgroup_html or breakdown_html:
                 parts.append('<div class="architecture">')
@@ -5028,12 +5043,14 @@ class MainWindow(QMainWindow):
                 tooltip_lines.append(" ".join(header_bits))
 
                 metric_bits: List[str] = []
-                pfd_txt = fmt_optional_pfd(subgroup.get('pfd'))
-                if pfd_txt:
-                    metric_bits.append(pfd_txt)
-                pfh_txt = fmt_optional_pfh(subgroup.get('pfh'))
-                if pfh_txt:
-                    metric_bits.append(pfh_txt)
+                if is_high:
+                    pfh_txt = fmt_optional_pfh(subgroup.get('pfh'))
+                    if pfh_txt:
+                        metric_bits.append(pfh_txt)
+                else:
+                    pfd_txt = fmt_optional_pfd(subgroup.get('pfd'))
+                    if pfd_txt:
+                        metric_bits.append(pfd_txt)
                 lambda_du_txt = fmt_optional_lambda_du(subgroup.get('lambda_du'))
                 if lambda_du_txt:
                     metric_bits.append(lambda_du_txt)
@@ -5066,12 +5083,14 @@ class MainWindow(QMainWindow):
                     continue
                 lane_label = entry.get('lane_title') or entry.get('lane') or 'Lane'
                 metric_bits: List[str] = []
-                pfd_txt = fmt_optional_pfd(entry.get('pfd'))
-                if pfd_txt:
-                    metric_bits.append(pfd_txt)
-                pfh_txt = fmt_optional_pfh(entry.get('pfh'))
-                if pfh_txt:
-                    metric_bits.append(pfh_txt)
+                if is_high:
+                    pfh_txt = fmt_optional_pfh(entry.get('pfh'))
+                    if pfh_txt:
+                        metric_bits.append(pfh_txt)
+                else:
+                    pfd_txt = fmt_optional_pfd(entry.get('pfd'))
+                    if pfd_txt:
+                        metric_bits.append(pfd_txt)
                 lambda_du_txt = fmt_optional_lambda_du(entry.get('lambda_du'))
                 if lambda_du_txt:
                     metric_bits.append(lambda_du_txt)
@@ -5088,12 +5107,14 @@ class MainWindow(QMainWindow):
 
         if total_entry:
             total_bits: List[str] = []
-            total_pfd_txt = fmt_optional_pfd(total_entry.get('pfd'))
-            if total_pfd_txt:
-                total_bits.append(total_pfd_txt)
-            total_pfh_txt = fmt_optional_pfh(total_entry.get('pfh'))
-            if total_pfh_txt:
-                total_bits.append(total_pfh_txt)
+            if is_high:
+                total_pfh_txt = fmt_optional_pfh(total_entry.get('pfh'))
+                if total_pfh_txt:
+                    total_bits.append(total_pfh_txt)
+            else:
+                total_pfd_txt = fmt_optional_pfd(total_entry.get('pfd'))
+                if total_pfd_txt:
+                    total_bits.append(total_pfd_txt)
             total_lambda_du_txt = fmt_optional_lambda_du(total_entry.get('lambda_du'))
             if total_lambda_du_txt:
                 total_bits.append(total_lambda_du_txt)
