@@ -1,7 +1,7 @@
-# FuSa Calc (SIFU GUI)
+# FuSa Calculator
 
 ## Overview
-FuSa Calc is a PyQt-based desktop tool for building and analysing Safety Instrumented Functions (SIFs). It provides lane-based editing for sensors, logic, and outputs, calculates PFDavg and PFH metrics, and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
+FuSa Calculator is a PyQt-based desktop tool for building and analysing Safety Instrumented Functions (SIFs). Within the application every safety function is managed as a **SIFU**—die Abkürzung für *Sicherheitsfunktion*, also “safety function”—with dedicated lanes for sensors, logic, and outputs. The tool calculates PFDavg and PFH metrics and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
 
 The repository ships with YAML libraries for sensors, logic, and actuators, sample assignments, and configuration hooks for importing Cause & Effect matrices or FuSa component catalogues.
 
@@ -33,7 +33,7 @@ Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ra
 - **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull SIF definitions directly from project documentation.
 
 ## Daily Workflow
-1. **Create or duplicate a SIFU:** Use the SIFU list to add, rename, or copy SIF definitions.
+1. **Create or duplicate a SIFU:** Use the SIFU list to add, rename, or copy safety-function definitions.
 2. **Populate lanes:** Drag existing chips or add new components via the toolbar. 1oo2 logic can be expanded into grouped widgets for redundant architectures.
 3. **Edit component parameters:** Double-click a chip to adjust PFDavg, PFH, FIT, SIL capability, demand mode, or descriptive notes.
 4. **Activate link mode:**
