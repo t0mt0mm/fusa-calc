@@ -1586,12 +1586,12 @@ class MainWindow(QMainWindow):
         self.du_dd_ratios = {'sensor': (0.7, 0.3), 'logic': (0.6, 0.4), 'actuator': (0.6, 0.4)}
 
         self.link_palette: List[Tuple[str, str]] = [
-            ("#FDE68A", "link0"),
-            ("#BFDBFE", "link1"),
-            ("#CFFAFE", "link2"),
-            ("#D9F99D", "link3"),
-            ("#FBCFE8", "link4"),
-            ("#F5D0C5", "link5"),
+            ("#92400E", "link0"),
+            ("#1E3A8A", "link1"),
+            ("#047857", "link2"),
+            ("#166534", "link3"),
+            ("#9D174D", "link4"),
+            ("#7C3AED", "link5"),
         ]
         self._link_color_tags: Dict[str, str] = {color.lower(): tag for color, tag in self.link_palette}
         self._link_selected_color: str = self._sanitize_link_color(self.link_palette[0][0]) or self.link_palette[0][0]
