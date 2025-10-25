@@ -49,6 +49,11 @@ If you adapt the structure, update the relevant settings in the configuration so
 5. **Inspect results:** Hover the overall result cell to see subgroup totals and ungrouped lane contributions in the current demand mode (PFDavg or PFH).
 6. **Export:** Generate an HTML dossier via *File → Export → HTML report*. The report reproduces lane layouts, subgroup callouts, and connectors, followed by component tables and a formula appendix.
 
+## Automated Verification & Qualification Support
+- A dedicated pytest suite exercises the core reliability routines (`calculate_single_channel` and the 1oo2 beta-model implementation) to confirm that the equations documented below remain intact, including edge cases such as zero common-cause factors and invalid DU/DD ratios.
+- Additional fixtures emulate lane compositions with both grouped and ungrouped chips to validate the subgroup aggregation logic, ensuring every component contributes exactly once to the SIFU totals.
+- A continuous integration workflow runs the suite on every push and pull request, providing an auditable evidence trail for tool-qualification dossiers.
+
 ## Reliability Calculations
 ### Inputs
 - **Demand mode:** Toggle between low-demand (PFDavg) and high-/continuous-demand (PFH) analysis; all lanes share the selection.
@@ -137,6 +142,7 @@ Use the glossary below to keep symbols consistent between safety assessments and
 ## Reporting Highlights
 - **Architecture overview:** Three-lane layout with per-chip dots and cross-lane connectors rendered via SVG; connector start and end points respect lane-specific rules (e.g., sensors connect from right edge to downstream lanes).
 - **Subgroup summary box:** Lists each colour subgroup once, showing the colour swatch, participating lanes, member codes, and aggregated metrics.
+- **Composition breakdown panel:** Summarises how the SIFU total derives from subgroup sums plus ungrouped lane contributions, mirroring the aggregation logic used in the application.
 - **Component tables & SIL summary:** Tabular breakdown of each lane plus SIL classification based on calculated sums.
 
 ## Keyboard & Productivity Tips

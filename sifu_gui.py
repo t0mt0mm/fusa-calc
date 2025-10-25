@@ -2996,8 +2996,17 @@ class MainWindow(QMainWindow):
                 mode_key,
             )
             combined_groups: List[Dict[str, Any]] = []
+            lane_residuals: List[Dict[str, Any]] = []
+            breakdown_total = {'pfd': float(pfd_sum), 'pfh': float(pfh_sum)}
             if isinstance(subgroup_info, dict):
                 combined_groups = copy.deepcopy(subgroup_info.get('combined', []) or [])
+                lane_residuals = copy.deepcopy(subgroup_info.get('lane_residuals', []) or [])
+                total_entry = subgroup_info.get('total')
+                if isinstance(total_entry, dict):
+                    breakdown_total = {
+                        'pfd': float(total_entry.get('pfd', pfd_sum)),
+                        'pfh': float(total_entry.get('pfh', pfh_sum)),
+                    }
             sil_calc = classify_sil_from_pfh(pfh_sum) if 'high' in mode.lower() else classify_sil_from_pfd(pfd_sum)
             req_sil_str, req_rank_raw = normalize_required_sil(meta.get('sil_required', 'n.a.'))
             req_rank = int(req_rank_raw)
@@ -3020,6 +3029,8 @@ class MainWindow(QMainWindow):
                 "req_sil": req_sil_str,
                 "uid": uid,
                 "link_subgroups": combined_groups,
+                "lane_residuals": lane_residuals,
+                "breakdown_total": breakdown_total,
             })
 
         # Global assumptions and DU/DD ratios
@@ -3116,6 +3127,13 @@ class MainWindow(QMainWindow):
         .link-subgroup-members { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
         .link-subgroup-member { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#ede9fe; color:#312e81; font-size:12px; }
         .link-subgroup-member .lane { color:#4338ca; font-size:11px; }
+        .link-breakdown-box { margin-top:16px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); }
+        .link-breakdown-title { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#1f2937; margin:0 0 10px; }
+        .link-breakdown-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .link-breakdown-table th, .link-breakdown-table td { padding:6px 8px; border:1px solid #e5e7eb; text-align:left; }
+        .link-breakdown-table th.numeric, .link-breakdown-table td.numeric { text-align:right; font-variant-numeric:tabular-nums; }
+        .link-breakdown-source { display:flex; align-items:center; gap:6px; }
+        .link-breakdown-table tfoot td { font-weight:600; background:#f8fafc; }
         .formula-section { margin: 24px 0; }
         .formula-layout { display:flex; flex-wrap:wrap; gap:20px; align-items:stretch; }
         .formula-column { display:flex; flex-direction:column; gap:16px; }
@@ -3487,6 +3505,83 @@ class MainWindow(QMainWindow):
                 return ""
             return ''.join(cards)
 
+        def render_link_breakdown(
+            total_pfd: Optional[float],
+            total_pfh: Optional[float],
+            subgroups: Optional[List[Dict[str, Any]]],
+            residuals: Optional[List[Dict[str, Any]]],
+        ) -> str:
+            rows: List[str] = []
+            has_rows = False
+
+            if subgroups:
+                for idx, subgroup in enumerate(subgroups, 1):
+                    if not isinstance(subgroup, dict):
+                        continue
+                    color = sanitize_color(subgroup.get('color'))
+                    lanes = subgroup.get('lanes')
+                    if isinstance(lanes, (list, tuple)) and lanes:
+                        lanes_display = ', '.join(str(l) for l in lanes if l)
+                    else:
+                        lanes_display = '—'
+                    source_bits = ['<div class="link-breakdown-source">']
+                    if color:
+                        source_bits.append(f'<span class="chip-link-dot" style="background:{color};"></span>')
+                    source_bits.append(f'<span>Subgroup {idx}</span>')
+                    source_bits.append('</div>')
+                    rows.append(
+                        '<tr>'
+                        f'<td>{"".join(source_bits)}</td>'
+                        f'<td>{esc(lanes_display)}</td>'
+                        f'<td class="numeric">{fmt_pfd(subgroup.get("pfd"))}</td>'
+                        f'<td class="numeric">{fmt_pfh(subgroup.get("pfh"))}</td>'
+                        '</tr>'
+                    )
+                    has_rows = True
+
+            if residuals:
+                for entry in residuals:
+                    if not isinstance(entry, dict):
+                        continue
+                    lane_title = entry.get('lane_title') or entry.get('lane') or '—'
+                    lane_display = lane_title or '—'
+                    source_html = (
+                        '<div class="link-breakdown-source">'
+                        f'<span>{esc(lane_title)} (ungrouped)</span>'
+                        '</div>'
+                    )
+                    rows.append(
+                        '<tr>'
+                        f'<td>{source_html}</td>'
+                        f'<td>{esc(lane_display)}</td>'
+                        f'<td class="numeric">{fmt_pfd(entry.get("pfd"))}</td>'
+                        f'<td class="numeric">{fmt_pfh(entry.get("pfh"))}</td>'
+                        '</tr>'
+                    )
+                    has_rows = True
+
+            if not has_rows:
+                return ""
+
+            total_pfd_txt = fmt_pfd(total_pfd)
+            total_pfh_txt = fmt_pfh(total_pfh)
+
+            parts_box = ['<div class="link-breakdown-box">']
+            parts_box.append('<div class="link-breakdown-title">Total composition</div>')
+            parts_box.append('<table class="link-breakdown-table">')
+            parts_box.append('<thead><tr><th>Source</th><th>Lanes</th><th class="numeric">PFDavg</th><th class="numeric">PFHavg [1/h]</th></tr></thead>')
+            parts_box.append('<tbody>')
+            parts_box.extend(rows)
+            parts_box.append('</tbody>')
+            parts_box.append(
+                '<tfoot>'
+                f'<tr><td colspan="2">Total</td><td class="numeric">{total_pfd_txt}</td><td class="numeric">{total_pfh_txt}</td></tr>'
+                '</tfoot>'
+            )
+            parts_box.append('</table>')
+            parts_box.append('</div>')
+            return ''.join(parts_box)
+
         def build_formula_reference() -> str:
             section_parts: List[str] = []
             section_parts.append('<section class="formula-section">')
@@ -3655,7 +3750,16 @@ class MainWindow(QMainWindow):
                 anchor_prefix=anchor_prefix,
             )
             subgroup_html = render_link_subgroups(s.get('link_subgroups'))
-            if arch_html or subgroup_html:
+            breakdown_total = s.get('breakdown_total') or {}
+            total_pfd_breakdown = breakdown_total.get('pfd', s.get('pfd_sum'))
+            total_pfh_breakdown = breakdown_total.get('pfh', s.get('pfh_sum'))
+            breakdown_html = render_link_breakdown(
+                total_pfd_breakdown,
+                total_pfh_breakdown,
+                s.get('link_subgroups'),
+                s.get('lane_residuals'),
+            )
+            if arch_html or subgroup_html or breakdown_html:
                 parts.append('<div class="architecture">')
                 if arch_html:
                     parts.append('<h3>Architecture overview</h3>')
@@ -3668,6 +3772,8 @@ class MainWindow(QMainWindow):
                         parts.append('</script>')
                 if subgroup_html:
                     parts.append(subgroup_html)
+                if breakdown_html:
+                    parts.append(breakdown_html)
                 parts.append('</div>')
 
             def render_group(title, items):
@@ -4457,9 +4563,23 @@ class MainWindow(QMainWindow):
                 })
             subgroup_payload['combined'] = combined_payload
 
-        for lane_metrics in lane_totals.values():
+        lane_entries: List[Dict[str, Any]] = []
+        for lane_key, lane_metrics in lane_totals.items():
+            if lane_metrics['pfd'] != 0.0 or lane_metrics['pfh'] != 0.0:
+                lane_entries.append({
+                    'lane': lane_key,
+                    'lane_title': lane_title_map.get(lane_key, lane_key.title()),
+                    'pfd': float(lane_metrics['pfd']),
+                    'pfh': float(lane_metrics['pfh']),
+                })
             pfd_sum += lane_metrics['pfd']
             pfh_sum += lane_metrics['pfh']
+
+        subgroup_payload['lane_residuals'] = lane_entries
+        subgroup_payload['total'] = {
+            'pfd': float(pfd_sum),
+            'pfh': float(pfh_sum),
+        }
 
         return pfd_sum, pfh_sum, subgroup_payload
 
@@ -4506,27 +4626,33 @@ class MainWindow(QMainWindow):
             f"{metric_caption}: {metric_value}",
         ]
 
-        combined_groups = []
+        def fmt_optional_pfd(value: Optional[float]) -> str:
+            if value is None:
+                return ""
+            try:
+                return f"PFDavg {float(value):.6f}"
+            except Exception:
+                return ""
+
+        def fmt_optional_pfh(value: Optional[float]) -> str:
+            if value is None:
+                return ""
+            try:
+                return f"PFHavg {float(value):.3e} 1/h"
+            except Exception:
+                return ""
+
+        combined_groups: List[Dict[str, Any]] = []
+        lane_residuals: List[Dict[str, Any]] = []
+        total_entry: Optional[Dict[str, Any]] = None
         if isinstance(subgroup_info, dict):
             combined_groups = subgroup_info.get('combined', []) or []
+            lane_residuals = subgroup_info.get('lane_residuals', []) or []
+            total_candidate = subgroup_info.get('total')
+            if isinstance(total_candidate, dict):
+                total_entry = total_candidate
 
         if combined_groups:
-            def fmt_optional_pfd(value: Optional[float]) -> str:
-                if value is None:
-                    return ""
-                try:
-                    return f"PFDavg {float(value):.6f}"
-                except Exception:
-                    return ""
-
-            def fmt_optional_pfh(value: Optional[float]) -> str:
-                if value is None:
-                    return ""
-                try:
-                    return f"PFHavg {float(value):.3e} 1/h"
-                except Exception:
-                    return ""
-
             tooltip_lines.append("")
             tooltip_lines.append("Link subgroups:")
             for idx, subgroup in enumerate(combined_groups, 1):
@@ -4559,6 +4685,38 @@ class MainWindow(QMainWindow):
                     tooltip_lines.append(
                         "    Members: " + ", ".join(str(lbl) for lbl in members if lbl)
                     )
+
+        if lane_residuals:
+            tooltip_lines.append("")
+            tooltip_lines.append("Ungrouped lane contributions:")
+            for entry in lane_residuals:
+                if not isinstance(entry, dict):
+                    continue
+                lane_label = entry.get('lane_title') or entry.get('lane') or 'Lane'
+                metric_bits: List[str] = []
+                pfd_txt = fmt_optional_pfd(entry.get('pfd'))
+                if pfd_txt:
+                    metric_bits.append(pfd_txt)
+                pfh_txt = fmt_optional_pfh(entry.get('pfh'))
+                if pfh_txt:
+                    metric_bits.append(pfh_txt)
+                if metric_bits:
+                    tooltip_lines.append(f"  {lane_label}: {' | '.join(metric_bits)}")
+                else:
+                    tooltip_lines.append(f"  {lane_label}: —")
+
+        if total_entry:
+            total_bits: List[str] = []
+            total_pfd_txt = fmt_optional_pfd(total_entry.get('pfd'))
+            if total_pfd_txt:
+                total_bits.append(total_pfd_txt)
+            total_pfh_txt = fmt_optional_pfh(total_entry.get('pfh'))
+            if total_pfh_txt:
+                total_bits.append(total_pfh_txt)
+            if total_bits:
+                tooltip_lines.append("")
+                tooltip_lines.append("Overall composition total:")
+                tooltip_lines.append("  " + " | ".join(total_bits))
 
         widgets.result.setToolTip("\n".join(tooltip_lines))
 
