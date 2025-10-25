@@ -1,7 +1,7 @@
 # FuSa Calculator
 
 ## Overview
-FuSa Calculator is a PyQt-based desktop tool for building and analysing Safety Functions (SIFUs). Within the application every safety function is managed as a **SIFU**—die Abkürzung für *Sicherheitsfunktion*, also “safety function”—with dedicated lanes for sensors, logic, and outputs. The tool calculates PFDavg and PFH metrics and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
+FuSa Calculator is a PyQt-based desktop tool for building and analysing Safety Functions (SIFUs). Within the application every safety function is managed as a **SIFU**—the German abbreviation for *Sicherheitsfunktion*, i.e. “safety function”—with dedicated lanes for sensors, logic, and outputs. The tool calculates PFDavg and PFH metrics and exports HTML reports that visualise colour-coded component subgroups and their interconnections.
 
 The repository ships with YAML libraries for sensors, logic, and actuators, sample assignments, and configuration hooks for importing Cause & Effect matrices or FuSa component catalogues.
 
