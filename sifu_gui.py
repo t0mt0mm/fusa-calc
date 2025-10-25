@@ -3136,19 +3136,6 @@ class MainWindow(QMainWindow):
         .lane-note { font-size:11px; color:#6b7280; margin-top:4px; }
         .component-label { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
         .component-label-text { font-weight:600; color:#1f2937; }
-        .link-subgroup-box { margin-top:16px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); }
-        .link-subgroup-heading { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#1f2937; margin:0 0 10px; }
-        .link-subgroup-list { display:flex; flex-direction:column; gap:10px; }
-        .link-subgroup-card { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; background:#f9fafb; }
-        .link-subgroup-header { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-        .link-subgroup-title { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; }
-        .pill.subgroup { background:#dbeafe; color:#1d4ed8; border:1px solid #bfdbfe; }
-        .link-subgroup-color { width:14px; height:14px; border-radius:999px; border:1px solid rgba(17,24,39,0.18); }
-        .link-subgroup-lanes { font-size:12px; color:#4b5563; }
-        .link-subgroup-metrics { margin-top:6px; font-size:12px; color:#1f2937; font-variant-numeric:tabular-nums; }
-        .link-subgroup-members { margin-top:8px; display:flex; flex-wrap:wrap; gap:6px; }
-        .link-subgroup-member { display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; background:#ede9fe; color:#312e81; font-size:12px; }
-        .link-subgroup-member .lane { color:#4338ca; font-size:11px; }
         .link-breakdown-box { margin-top:16px; border:1px solid #e5e7eb; border-radius:12px; padding:12px 14px; background:#fff; box-shadow:0 6px 18px rgba(15,23,42,0.04); }
         .link-breakdown-title { font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:#1f2937; margin:0 0 10px; }
         .link-breakdown-table { width:100%; border-collapse:collapse; font-size:12px; }
@@ -3454,89 +3441,6 @@ class MainWindow(QMainWindow):
                 })
 
             return ''.join(html_parts), connector_payload
-
-        def render_link_subgroups(entries: Optional[List[Dict[str, Any]]]) -> str:
-            if not entries:
-                return ""
-
-            cards: List[str] = []
-            cards.append('<div class="link-subgroup-box">')
-            cards.append('<div class="link-subgroup-heading">Link subgroups</div>')
-            cards.append('<div class="link-subgroup-list">')
-            has_card = False
-            for idx, subgroup in enumerate(entries, 1):
-                if not isinstance(subgroup, dict):
-                    continue
-
-                color = sanitize_color(subgroup.get('color'))
-                lanes = subgroup.get('lanes')
-                lanes_display = ''
-                if isinstance(lanes, (list, tuple)) and lanes:
-                    lanes_display = ', '.join(str(l) for l in lanes if l)
-
-                metrics_bits: List[str] = []
-                pfd_val = subgroup.get('pfd')
-                if pfd_val not in (None, ''):
-                    metrics_bits.append(f"PFDavg {fmt_pfd(pfd_val)}")
-                pfh_val = subgroup.get('pfh')
-                if pfh_val not in (None, ''):
-                    metrics_bits.append(f"PFHavg {fmt_pfh(pfh_val)} 1/h")
-                lambda_du_val = subgroup.get('lambda_du')
-                if lambda_du_val not in (None, ''):
-                    metrics_bits.append(f"λ_DU {fmt_lambda(lambda_du_val)} 1/h")
-                lambda_dd_val = subgroup.get('lambda_dd')
-                if lambda_dd_val not in (None, ''):
-                    metrics_bits.append(f"λ_DD {fmt_lambda(lambda_dd_val)} 1/h")
-                count_val = subgroup.get('count')
-                if isinstance(count_val, int) and count_val > 0:
-                    metrics_bits.append(f"{count_val} component{'s' if count_val != 1 else ''}")
-
-                cards.append('<div class="link-subgroup-card">')
-                has_card = True
-                cards.append('<div class="link-subgroup-header">')
-                title_parts = [f'<span class="pill subgroup">Subgroup {idx}</span>']
-                if color:
-                    title_parts.append(f'<span class="link-subgroup-color" style="background:{color};"></span>')
-                cards.append(f"<div class=\"link-subgroup-title\">{''.join(title_parts)}</div>")
-                if lanes_display:
-                    cards.append(f'<div class="link-subgroup-lanes">Lanes: {esc(lanes_display)}</div>')
-                else:
-                    cards.append('<div class="link-subgroup-lanes muted">Lanes: —</div>')
-                cards.append('</div>')
-
-                if metrics_bits:
-                    cards.append(f"<div class=\"link-subgroup-metrics\">{' | '.join(metrics_bits)}</div>")
-
-                components = [comp for comp in subgroup.get('components', []) if isinstance(comp, dict)]
-                if components:
-                    cards.append('<div class="link-subgroup-members">')
-                    for comp in components:
-                        label_val = comp.get('label') or 'Component'
-                        if comp.get('architecture') == '1oo2':
-                            label_val = f"{label_val} (1oo2)"
-                        lane_title = comp.get('lane_title') or lane_display_map.get(comp.get('lane'), comp.get('lane', ''))
-                        lane_caption = esc(lane_title) if lane_title else ''
-                        member_labels = [lbl for lbl in comp.get('member_labels', []) if lbl]
-                        tooltip_attr = ''
-                        if member_labels:
-                            tooltip_attr = f' title="{esc("Members: " + ", ".join(member_labels))}"'
-                        comp_color = sanitize_color(comp.get('color') or subgroup.get('color'))
-                        cards.append(f'<div class="link-subgroup-member"{tooltip_attr}>')
-                        if comp_color:
-                            cards.append(f'<span class="chip-link-dot" style="background:{comp_color};"></span>')
-                        cards.append(f'<span class="member-tag">{esc(label_val)}</span>')
-                        if lane_caption:
-                            cards.append(f'<span class="lane">{lane_caption}</span>')
-                        cards.append('</div>')
-                    cards.append('</div>')
-
-                cards.append('</div>')
-
-            cards.append('</div>')
-            cards.append('</div>')
-            if not has_card:
-                return ""
-            return ''.join(cards)
 
         def render_link_breakdown(
             total_entry: Optional[Dict[str, Any]],
@@ -3898,7 +3802,6 @@ class MainWindow(QMainWindow):
                 s['actuators'],
                 anchor_prefix=anchor_prefix,
             )
-            subgroup_html = render_link_subgroups(s.get('link_subgroups'))
             breakdown_total = s.get('breakdown_total')
             breakdown_html = render_link_breakdown(
                 breakdown_total,
@@ -3907,7 +3810,7 @@ class MainWindow(QMainWindow):
                 s.get('mode_key'),
                 s.get('mode'),
             )
-            if arch_html or subgroup_html or breakdown_html:
+            if arch_html or breakdown_html:
                 parts.append('<div class="architecture">')
                 if arch_html:
                     parts.append('<h3>Architecture overview</h3>')
@@ -3918,8 +3821,6 @@ class MainWindow(QMainWindow):
                         parts.append('<script type="application/json" class="link-connector-data">')
                         parts.append(safe_json)
                         parts.append('</script>')
-                if subgroup_html:
-                    parts.append(subgroup_html)
                 if breakdown_html:
                     parts.append(breakdown_html)
                 parts.append('</div>')
