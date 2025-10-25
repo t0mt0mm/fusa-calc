@@ -21,27 +21,22 @@ The repository ships with YAML libraries for sensors, logic, and actuators, samp
    The GUI itself relies on PyQt5, while YAML import/export and numerical processing require PyYAML and NumPy. The helper scripts for spreadsheet integration expect pandas.
 
 ## Running the Application
-Launch the enhanced GUI from the repository root:
-```bash
-python sifu_gui.py
-```
-Use `python sifu_gui.py --selftest` to run unit checks for SIL classification ranges.
+Launch the enhanced GUI from the repository root by executing the Python entry point included alongside this README.
+Use the optional `--selftest` flag on that entry point to run unit checks for SIL classification ranges.
 
 ### Loading Data
-- **Assignment YAML:** Use *File → Open* to load `sifu_assignment.yaml` or your own export. All subgroup colours and connectors are restored.
-- **Component libraries:** Sensor, logic, and actuator libraries are read from the YAML files in the repo and populate the add-component dialogs.
-- **Cause & Effect imports:** Configure spreadsheet paths in `config.yaml` to pull safety-function definitions directly from project documentation. The expected workbook layout is documented in [docs/README.md](docs/README.md).
+- **Assignment exports:** Use *File → Open* to load previously saved safety-function collections. All subgroup colours and connectors are restored.
+- **Component libraries:** Sensor, logic, and actuator libraries are read from the bundled YAML resources and populate the add-component dialogs.
+- **Cause & Effect imports:** Configure spreadsheet paths in the project settings to pull safety-function definitions directly from project documentation. The expected workbook layout is described in the documentation folder.
 
 ## Docs folder & spreadsheet structure
-The default configuration expects the following artefacts inside the `docs/` directory:
+The default configuration expects three artefacts inside the documentation directory:
 
-| File | Purpose | Key requirements |
-| --- | --- | --- |
-| `PSI129_Cosmos_SAS060400 - Rev07 - MeOH 500 C&E Matrix.xlsx` | Cause & Effect matrix that seeds safety functions. | Worksheet `Cause-And-Effect-Matrix` must contain the live data. Rows start at index 4 (1-based). Columns are addressed by index: 1 – status (must equal `complete` to import), 4 – SIFU name, 6 – SIL level, 13 – criteria/safety action description, 19 – demand mode, 20 – target safety action. Additional lookup terms referenced in `config.yaml > ce_matrix > terms_vs_actuators` should exist in a `Definitions` sheet. |
-| `ELMO_Interfaces_MeOH500_240209_local.xlsx` | Maps plant identifiers (PID) to hardware modules (PDM) for component lookup. | Contains sheets named `Aktoren Sensoren H2MO`, `Aktoren Sensoren FCMO 500kW`, and `Aktoren Sensoren Interfacearea`. Each sheet has a header row, with PID codes in column 2 (B) and PDM codes in column 3 (C), starting at row 3. |
-| `FusaData.csv` | Provides reliability master data per component. | Must include a `comp_id` column plus fields listed under `config.yaml > fusa > col_names_vs_comp_properties` (e.g., `pfd_avg`, `pfh_avg`, `sys_cap`). |
+- **Cause & Effect matrix workbook:** Contains the safety-function definitions that seed new SIFUs. Use the worksheet dedicated to the matrix (data typically starts on the fourth row). Required columns include status flags, SIFU labels, SIL levels, demand-mode keywords, and the safety-action description and reference. Keep supporting lookup terms in a separate definitions sheet so actuator substitution rules resolve correctly.
+- **E/E overview workbook:** Maps plant identifiers (PID) to hardware modules used for component lookup. Multiple worksheets split the data by subsystem; each sheet starts on the third row with PID codes in column B and hardware identifiers in column C.
+- **FuSa component catalogue (CSV):** Provides reliability master data per component, including identifiers and the properties referenced by the configuration (for example PFDavg, PFH, system capability, proof-test intervals, and repair times).
 
-If you adapt the structure, update the corresponding indices or sheet names in `config.yaml` so the import routines can parse the spreadsheets correctly.
+If you adapt the structure, update the relevant settings in the configuration so the import routines can parse the spreadsheets correctly.
 
 ## Daily Workflow
 1. **Create or duplicate a SIFU:** Use the SIFU list to add, rename, or copy safety-function definitions.
@@ -114,7 +109,7 @@ The HTML report’s formula appendix documents the governing equations:
 ## Troubleshooting
 - **Missing Qt platform plugin:** Ensure PyQt5 is installed and your environment has access to a GUI backend (e.g., X11 on Linux, Windows subsystem, or macOS).
 - **No connectors in HTML export:** Verify that components share the exact colour (hex or named) and that at least two lanes contain members; the exporter skips single-lane groups.
-- **Unexpected SIL classification:** Run `python sifu_gui.py --selftest` to validate the classification boundaries.
+- **Unexpected SIL classification:** Execute the GUI entry point with the `--selftest` flag to validate the classification boundaries.
 
 ## Licensing
 Please refer to project documentation or contact the maintainers for licensing terms.
