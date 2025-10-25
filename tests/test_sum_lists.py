@@ -157,8 +157,8 @@ def make_linked_payload(component_id: str, lane: str) -> Dict[str, Any]:
         "id": component_id,
         "code": component_id.upper(),
         "kind": lane,
-        "link_color": "#92400E",
-        "link_group_id": "row-uid:92400e",
+        "link_color": "#2E406E",
+        "link_group_id": "row-uid:2e406e",
     }
 
 
@@ -182,8 +182,8 @@ def test_sum_lists_groups_by_colour_across_lanes(summation_harness: SumHarness) 
                 "architecture": "1oo2",
                 "members": [{"id": "act-1", "code": "A1"}, {"id": "act-2", "code": "A2"}],
                 "kind": "actuator",
-                "link_color": "#92400e",
-                "link_group_id": "row-uid:92400e",
+                "link_color": "#2e406e",
+                "link_group_id": "row-uid:2e406e",
             },
         ),
         FakeItem(
