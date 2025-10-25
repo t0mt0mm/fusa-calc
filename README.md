@@ -54,6 +54,18 @@ If you adapt the structure, update the relevant settings in the configuration so
 - **Demand mode:** Toggle between low-demand (PFDavg) and high-/continuous-demand (PFH) analysis; all lanes share the selection.
 - **Component data:** Each chip stores PFDavg, PFH (1/h), FIT, SIL capability, beta factors, proof-test interval (TI), and mean time to repair (MTTR).
 
+### Global Assumptions
+The configuration dialog (*Tools → Configuration → Assumptions*) exposes the global parameters that feed every channel calculation. The defaults shipped with the project are summarised below; adjust them to match the plant-level reliability programme before importing data or editing lanes.
+
+| Symbol | Default | Meaning |
+| --- | --- | --- |
+| $T_I$ | 8760 h | Proof-test interval shared by all components. |
+| $\text{MTTR}$ | 8 h | Mean time to repair after a detected failure. |
+| $\beta$ | 0.10 | Common-cause fraction applied to dangerous undetected failures. |
+| $\beta_D$ | 0.02 | Common-cause fraction applied to dangerous detected failures. |
+
+If your programme tracks additional assumptions (e.g., partial-stroke test coverage), document them alongside these values when distributing reports so reviewers understand the calculation context.
+
 ### Aggregation Rules
 1. Components sharing the same normalised colour belong to one subgroup, independent of lane.
 2. For each SIFU, the tool computes metrics per subgroup (summing all member channels once) and separately sums ungrouped components per lane.
@@ -61,40 +73,66 @@ If you adapt the structure, update the relevant settings in the configuration so
 4. Hover tooltips and HTML exports display subgroup membership, lane coverage, and PFD/PFH totals.
 
 ### Architecture Formulas
-The HTML report’s formula appendix documents the governing equations:
-- **1oo1 channel:**
+The HTML report’s formula appendix documents the governing equations together with brief interpretations:
 
-  $$
-  \mathrm{PFD}_{1\!\operatorname{oo}\!1} = \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \lambda_{DD} \cdot MTTR
-  $$
+#### 1oo1 architecture
+*Average probability and rate of dangerous failure for a single channel.*
 
-  $$
-  \mathrm{PFH}_{1\!\operatorname{oo}\!1} = \lambda_{DU}
-  $$
+$$
+\mathrm{PFD}_{1\!\operatorname{oo}\!1} = \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \lambda_{DD} \cdot MTTR
+$$
 
-- **1oo2 channel (beta model):**
+$$
+\mathrm{PFH}_{1\!\operatorname{oo}\!1} = \lambda_{DU}
+$$
 
-  $$
-  t_{CE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{2} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
-  $$
+#### 1oo2 architecture (beta model)
+*Exposure times for independent portions feed into the redundant-channel reliability.*
 
-  $$
-  t_{GE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{3} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
-  $$
+$$
+t_{CE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{2} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
+$$
 
-  $$
-  \mathrm{PFD}_{1\!\operatorname{oo}\!2} = 2(1-\beta)^2\lambda_D^2\, t_{CE}\, t_{GE} + \beta\, \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \beta_D\, \lambda_{DD}\, MTTR
-  $$
+$$
+t_{GE} = \frac{\lambda_{DU}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}}\left(\tfrac{T_I}{3} + MTTR\right) + \frac{\lambda_{DD}^{\mathrm{ind}}}{\lambda_D^{\mathrm{ind}}} \cdot MTTR
+$$
 
-  $$
-  \mathrm{PFH}_{1\!\operatorname{oo}\!2} = 2(1-\beta)\lambda_D^{\mathrm{ind}}\lambda_{DU}^{\mathrm{ind}} t_{CE} + \beta\, \lambda_{DU}
-  $$
+*System-level demand and frequency metrics for the redundant set.*
 
-- **Supporting relations:**
+$$
+\mathrm{PFD}_{1\!\operatorname{oo}\!2} = 2(1-\beta)^2\lambda_D^2\, t_{CE}\, t_{GE} + \beta\, \lambda_{DU}\left(\tfrac{T_I}{2} + MTTR\right) + \beta_D\, \lambda_{DD}\, MTTR
+$$
 
-  $$
-  \lambda_D = \lambda_{DU} + \lambda_{DD},\quad \lambda_{DU} = r_{DU}\lambda_D,\quad \lambda_{DD} = r_{DD}\lambda_D,\quad \lambda_{DU}^{\mathrm{ind}} = (1-\beta)\lambda_{DU}
-  $$
+$$
+\mathrm{PFH}_{1\!\operatorname{oo}\!2} = 2(1-\beta)\lambda_D^{\mathrm{ind}}\lambda_{DU}^{\mathrm{ind}} t_{CE} + \beta\, \lambda_{DU}
+$$
+
+#### Supporting relations
+*Ratios and independent-channel adjustments used by both architectures.*
+
+$$
+\lambda_D = \lambda_{DU} + \lambda_{DD},\quad \lambda_{DU} = r_{DU}\lambda_D,\quad \lambda_{DD} = r_{DD}\lambda_D,\quad \lambda_{DU}^{\mathrm{ind}} = (1-\beta)\lambda_{DU},\quad \lambda_{DD}^{\mathrm{ind}} = (1-\beta_D)\lambda_{DD}
+$$
+
+### Variable Summary
+Use the glossary below to keep symbols consistent between safety assessments and the generated HTML dossier.
+
+| Symbol | Meaning |
+| --- | --- |
+| $t_{CE}$ | Exposure window for common-cause dangerous undetected failures. |
+| $t_{GE}$ | Exposure window for general dangerous undetected failures. |
+| $\lambda_{DU}$ | Dangerous undetected failure rate. |
+| $\lambda_{DD}$ | Dangerous detected failure rate. |
+| $\lambda_D$ | Total dangerous failure rate (detected + undetected). |
+| $\lambda_D^{\mathrm{ind}}$ | Independent-channel dangerous failure rate (excludes common cause). |
+| $\lambda_{DU}^{\mathrm{ind}}$ | Independent-channel dangerous undetected failure rate. |
+| $\lambda_{DD}^{\mathrm{ind}}$ | Independent-channel dangerous detected failure rate. |
+| $r_{DU}$ | Fraction of dangerous failures that are undetected. |
+| $r_{DD}$ | Fraction of dangerous failures that are detected. |
+| $\beta$ | Common-cause factor for dangerous undetected failures. |
+| $\beta_D$ | Common-cause factor for dangerous detected failures. |
+| $T_I$ | Proof-test interval. |
+| $\text{MTTR}$ | Mean time to repair. |
 
 ## Reporting Highlights
 - **Architecture overview:** Three-lane layout with per-chip dots and cross-lane connectors rendered via SVG; connector start and end points respect lane-specific rules (e.g., sensors connect from right edge to downstream lanes).
